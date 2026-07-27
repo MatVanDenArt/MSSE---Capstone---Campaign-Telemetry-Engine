@@ -1,0 +1,49 @@
+<div class="max-w-6xl mx-auto">
+    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    <div class="glass-panel rounded-xl p-6 md:p-8">
+        <h3 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-wider border-b border-dark-700 pb-2">Account & Persona Matrix</h3>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-center text-sm text-slate-300 border-separate" style="border-spacing: 4px;">
+                <thead class="text-xs text-slate-400 uppercase">
+                    <tr>
+                        <th class="px-4 py-3 text-left w-1/5 font-semibold">Target Account</th>
+                        <th class="px-4 py-3 font-semibold">C-Suite</th>
+                        <th class="px-4 py-3 font-semibold">VP / Director</th>
+                        <th class="px-4 py-3 font-semibold">Manager</th>
+                        <th class="px-4 py-3 font-semibold">Individual Contributor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company, roles in penetration.items() %}
+                    <tr>
+                        <td class="px-4 py-3 font-medium text-slate-100 text-left bg-dark-800 rounded">{{ company }}</td>
+                        
+                        {% for role, api_role in [('C-Suite', 'C-Suite'), ('VP / Director', 'VP/Director'), ('Manager', 'Manager'), ('Individual Contributor', 'IC')] %}
+                            {% set val = roles.get(api_role, 0) %}
+                            {% if val == 0 %}
+                                {% set bg_class = 'bg-dark-800/30 text-slate-600 hover:bg-dark-700/50 cursor-pointer' %}
+                            {% elif val <= 2 %}
+                                {% set bg_class = 'bg-brand-900/30 text-brand-400 hover:bg-brand-900/50 cursor-pointer border border-brand-800/30' %}
+                            {% elif val <= 6 %}
+                                {% set bg_class = 'bg-brand-800/60 text-brand-300 hover:bg-brand-800/80 cursor-pointer border border-brand-700/50' %}
+                            {% else %}
+                                {% set bg_class = 'bg-brand-600 text-white hover:bg-brand-500 cursor-pointer shadow-[0_0_15px_rgba(37,99,235,0.3)]' %}
+                            {% endif %}
+                            
+                            <td class="px-6 py-2 text-center"
+                                hx-get="/api/dashboard/penetration-details?campaign_id={{ campaign_id }}&company={{ company | urlencode }}&seniority={{ api_role | urlencode }}"
+                                hx-target="body"
+                                hx-swap="beforeend">
+                                <div class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium transition-all {{ bg_class }}">
+                                    {{ val }}
+                                </div>
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B Marketing OS - Core Views</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        .heatmap-high {
+            background-color: #4f46e5;
+            color: white;
+        }
+
+        .heatmap-med {
+            background-color: #818cf8;
+            color: white;
+        }
+
+        .heatmap-low {
+            background-color: #e0e7ff;
+            color: #1e1b4b;
+        }
+
+        .heatmap-zero {
+            background-color: #f8fafc;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body class="p-6 md:p-12 text-slate-800">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+
+        <!-- Header Context -->
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Campaign: Offshore Wind Q3</h1>
+            <p class="text-slate-500">Core Dashboard Views</p>
+        </div>
+
+        <!-- VIEW 1: EXECUTIVE KPI SUMMARY -->
+        <section>
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">View 1: Executive KPI Summary
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                <!-- KPI Card 1 -->
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden">
+                    <p class="text-sm text-slate-500 font-medium">Total Spend</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">$45,200</p>
+                    <div class="absolute bottom-0 left-0 right-0 h-10 opacity-40">
+                        <canvas id="kpiSpark1"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI Card 2 -->
+                <div
+                    class="bg-white rounded-xl border border-indigo-200 p-5 shadow-sm relative overflow-hidden ring-1 ring-indigo-50">
+                    <p class="text-sm text-indigo-600 font-medium">Marketing Influenced Pipeline</p>
+                    <p class="text-2xl font-bold text-indigo-900 mt-1">$1.24M</p>
+                    <div class="absolute bottom-0 left-0 right-0 h-10 opacity-40">
+                        <canvas id="kpiSpark2"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI Card 3 -->
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden">
+                    <p class="text-sm text-slate-500 font-medium">Cost Per Engaged Account</p>
+                    <p class="text-2xl font-bold text-slate-900 mt-1">$340</p>
+                    <div class="absolute bottom-0 left-0 right-0 h-10 opacity-40">
+                        <canvas id="kpiSpark3"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI Card 4 -->
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm relative overflow-hidden">
+                    <p class="text-sm text-slate-500 font-medium">Sales Velocity</p>
+                    <p class="text-2xl font-bold text-emerald-600 mt-1">+15.2% <span
+                            class="text-xs font-normal text-slate-400 text-slate-500">vs avg</span></p>
+                    <div class="absolute bottom-0 left-0 right-0 h-10 opacity-40">
+                        <canvas id="kpiSpark4"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- VIEW 2: TIMELINE & VELOCITY MAPPER -->
+        <section>
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">View 2: Timeline & Velocity
+                Mapper</h2>
+            <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+
+                <!-- Outbound Milestones (Gantt-style layer) -->
+                <div class="relative h-16 border-b border-dashed border-slate-200 mb-2">
+                    <div class="absolute top-2 left-[15%] flex flex-col items-center">
+                        <span
+                            class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded shadow-sm border border-blue-200">Email
+                            Blast: Sus. Eng</span>
+                        <div class="h-6 w-px bg-blue-400 mt-1"></div>
+                    </div>
+                    <div class="absolute top-2 left-[45%] flex flex-col items-center">
+                        <span
+                            class="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-1 rounded shadow-sm border border-purple-200">Webinar:
+                            Deepwater</span>
+                        <div class="h-6 w-px bg-purple-400 mt-1"></div>
+                    </div>
+                    <div class="absolute top-2 left-[75%] flex flex-col items-center">
+                        <span
+                            class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded shadow-sm border border-amber-200">Global
+                            Energy Summit</span>
+                        <div class="h-6 w-px bg-amber-400 mt-1"></div>
+                    </div>
+                </div>
+
+                <!-- Inbound Metrics (Line chart layer) -->
+                <div class="h-[300px] w-full">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: ACCOUNT & PERSONA MATRIX -->
+        <section>
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">View 3: Account & Persona Matrix
+            </h2>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold">Target Account</th>
+                            <th class="px-6 py-4 font-semibold text-center">C-Suite</th>
+                            <th class="px-6 py-4 font-semibold text-center">VP / Director</th>
+                            <th class="px-6 py-4 font-semibold text-center">Manager</th>
+                            <th class="px-6 py-4 font-semibold text-center">Individual</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr>
+                            <td class="px-6 py-4 font-medium text-slate-900">BP plc</td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-low">
+                                    2</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-high">
+                                    14</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-med">
+                                    8</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-zero">
+                                    0</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium text-slate-900">Equinor</td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-zero">
+                                    0</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-low">
+                                    3</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-high">
+                                    21</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-med">
+                                    12</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 font-medium text-slate-900">Shell</td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-low">
+                                    1</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-low">
+                                    1</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-low">
+                                    4</div>
+                            </td>
+                            <td class="px-6 py-2 text-center">
+                                <div
+                                    class="w-10 h-10 rounded-md mx-auto flex items-center justify-center font-medium heatmap-zero">
+                                    0</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- VIEW 4: ASSET FATIGUE & CONVERSION MONITOR -->
+        <section class="mb-12">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">View 4: Asset Fatigue &
+                Conversion Monitor</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <!-- Asset 1 (Healthy) -->
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Webinar</p>
+                            <h3 class="font-bold text-slate-900 leading-tight">Deepwater Tech Demo</h3>
+                        </div>
+                        <span
+                            class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-full border border-emerald-200">🟢
+                            Healthy</span>
+                    </div>
+                    <div class="h-16 w-full mb-4">
+                        <canvas id="fatigueSpark1"></canvas>
+                    </div>
+                    <div class="flex justify-between text-sm border-t border-slate-100 pt-3">
+                        <div><span class="text-slate-400 block text-xs">Ad Spend</span><span
+                                class="font-medium">$1,200</span></div>
+                        <div class="text-right"><span class="text-slate-400 block text-xs">Infl. Pipeline</span><span
+                                class="font-medium text-indigo-600">$450k</span></div>
+                    </div>
+                </div>
+
+                <!-- Asset 2 (Saturated) -->
+                <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Whitepaper</p>
+                            <h3 class="font-bold text-slate-900 leading-tight">Q3 Offshore Report</h3>
+                        </div>
+                        <span
+                            class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-full border border-amber-200">🟡
+                            Saturated</span>
+                    </div>
+                    <div class="h-16 w-full mb-4">
+                        <canvas id="fatigueSpark2"></canvas>
+                    </div>
+                    <div class="flex justify-between text-sm border-t border-slate-100 pt-3">
+                        <div><span class="text-slate-400 block text-xs">Ad Spend</span><span
+                                class="font-medium">$4,500</span></div>
+                        <div class="text-right"><span class="text-slate-400 block text-xs">Infl. Pipeline</span><span
+                                class="font-medium text-indigo-600">$210k</span></div>
+                    </div>
+                </div>
+
+                <!-- Asset 3 (Decaying) -->
+                <div
+                    class="bg-white rounded-xl border border-rose-200 p-5 shadow-sm ring-1 ring-rose-50 relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 border-t-[40px] border-l-[40px] border-t-rose-500 border-l-transparent">
+                    </div>
+                    <span class="absolute top-1 right-2 text-white text-xs font-bold">!</span>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">LinkedIn Ad
+                            </p>
+                            <h3 class="font-bold text-slate-900 leading-tight">ESG Compliance Video</h3>
+                        </div>
+                        <span
+                            class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-1 rounded-full border border-rose-200 z-10 mr-4">🔴
+                            Decaying</span>
+                    </div>
+                    <div class="h-16 w-full mb-4">
+                        <canvas id="fatigueSpark3"></canvas>
+                    </div>
+                    <div class="flex justify-between text-sm border-t border-slate-100 pt-3">
+                        <div><span class="text-slate-400 block text-xs">Ad Spend</span><span
+                                class="font-bold text-rose-600">$2,800</span></div>
+                        <div class="text-right"><span class="text-slate-400 block text-xs">Infl. Pipeline</span><span
+                                class="font-medium text-indigo-600">$0</span></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Common Sparkline Options
+        const sparklineOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: { x: { display: false }, y: { display: false } },
+            elements: { point: { radius: 0 } },
+            layout: { padding: 0 }
+        };
+
+        // KPI Sparklines
+        new Chart(document.getElementById('kpiSpark1'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6], datasets: [{ data: [10, 20, 30, 25, 40, 45], borderColor: '#cbd5e1', borderWidth: 2, tension: 0.3 }] }, options: sparklineOptions });
+        new Chart(document.getElementById('kpiSpark2'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6], datasets: [{ data: [100, 120, 110, 180, 190, 240], borderColor: '#818cf8', backgroundColor: 'rgba(129, 140, 248, 0.1)', fill: true, borderWidth: 2, tension: 0.3 }] }, options: sparklineOptions });
+        new Chart(document.getElementById('kpiSpark3'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6], datasets: [{ data: [500, 480, 450, 400, 380, 340], borderColor: '#cbd5e1', borderWidth: 2, tension: 0.3 }] }, options: sparklineOptions });
+        new Chart(document.getElementById('kpiSpark4'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6], datasets: [{ data: [5, 8, 7, 12, 14, 15], borderColor: '#34d399', borderWidth: 2, tension: 0.3 }] }, options: sparklineOptions });
+
+        // Timeline Chart
+        new Chart(document.getElementById('timelineChart'), {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+                datasets: [
+                    {
+                        label: 'Web Traffic (GA4)',
+                        data: [1200, 1500, 2800, 2100, 2400, 4200, 3100, 3400],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'CRM Form Fills / Meetings',
+                        data: [20, 25, 60, 45, 50, 120, 95, 105],
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 10 } },
+                    tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)' }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { type: 'linear', display: true, position: 'left', grid: { borderDash: [4, 4] } },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { display: false } }
+                }
+            }
+        });
+
+        // Fatigue Sparklines
+        const fatigueOptions = { ...sparklineOptions, scales: { y: { min: 0, display: false }, x: { display: false } } };
+        new Chart(document.getElementById('fatigueSpark1'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6, 7], datasets: [{ data: [2, 3, 4, 5, 7, 9, 11], borderColor: '#10b981', borderWidth: 2, tension: 0.4 }] }, options: fatigueOptions });
+        new Chart(document.getElementById('fatigueSpark2'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6, 7], datasets: [{ data: [15, 18, 17, 17, 16, 16, 15], borderColor: '#f59e0b', borderWidth: 2, tension: 0.4 }] }, options: fatigueOptions });
+        new Chart(document.getElementById('fatigueSpark3'), { type: 'line', data: { labels: [1, 2, 3, 4, 5, 6, 7], datasets: [{ data: [25, 20, 15, 10, 8, 4, 1], borderColor: '#f43f5e', borderWidth: 2, tension: 0.4 }] }, options: fatigueOptions });
+    </script>
+</body>
+
+</html>

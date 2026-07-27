@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+faker
+google-genai
+pytest
+jinja2
+python-multipart
+python-dotenv

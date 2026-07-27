@@ -1,0 +1,73 @@
+<div class="max-w-6xl mx-auto">
+    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <div class="mb-6 flex justify-between items-center">
+        <h3 class="text-xl font-bold text-slate-100 flex items-center gap-3">
+            <i class="fa-solid fa-battery-half text-brand-500"></i> Asset Fatigue Monitor
+        </h3>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for asset in assets %}
+        <div class="glass-panel p-6 rounded-xl flex flex-col hover:border-brand-500/30 transition-colors">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">
+                        <i class="fa-solid {% if asset.type == 'PDF' %}fa-file-pdf{% else %}fa-globe{% endif %} mr-1"></i> {{ asset.type }}
+                    </span>
+                    <h4 class="text-md font-bold text-slate-200">{{ asset.name }}</h4>
+                </div>
+                <span class="px-2 py-1 text-xs font-bold rounded border {{ asset.badge_class }}">
+                    {{ asset.health }}
+                </span>
+            </div>
+            
+            <div class="flex-1 mt-4 relative">
+                <p class="text-xs text-slate-500 mb-2">30-Day Trend</p>
+                <div class="w-full h-16" x-data="{
+                        sparkline: {{ asset.sparkline | tojson | safe }},
+                        initSparkline() {
+                            const ctx = this.$refs.canvas.getContext('2d');
+                            new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: Array.from({length: this.sparkline.length}, (_, i) => i + 1),
+                                    datasets: [{
+                                        data: this.sparkline,
+                                        borderColor: '{% if asset.health == 'Healthy' %}#10b981{% elif asset.health == 'Action Required' %}#f43f5e{% else %}#f59e0b{% endif %}',
+                                        borderWidth: 2,
+                                        tension: 0.3,
+                                        pointRadius: 0
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                    scales: {
+                                        x: { display: false },
+                                        y: { display: false, min: 0 }
+                                    },
+                                    layout: { padding: { top: 5, bottom: 5 } }
+                                }
+                            });
+                        }
+                    }" x-init="initSparkline()">
+                    <canvas x-ref="canvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-dark-700/50 flex justify-between items-center text-sm">
+                <span class="text-slate-400">Total 30-Day Views</span>
+                <span class="font-bold text-slate-200">{{ asset.recent_views }}</span>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if not assets %}
+        <div class="col-span-full p-8 text-center text-slate-500 border border-dashed border-dark-700 rounded-xl glass-panel">
+            No assets have been consumed in this campaign yet.
+        </div>
+        {% endif %}
+    </div>
+</div>

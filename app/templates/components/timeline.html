@@ -1,0 +1,221 @@
+<div class="max-w-6xl mx-auto">
+    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <div class="glass-panel rounded-xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6 border-b border-dark-700 pb-2">
+            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Interactive Campaign Timeline & Velocity</h3>
+        </div>
+        
+        <div class="w-full h-[500px] relative" x-data="{
+                chartData: {{ chart_data | tojson | forceescape }},
+                matrixData: {{ matrix | tojson | forceescape }},
+                initChart() {
+                    const ctx = this.$refs.canvas.getContext('2d');
+                    
+                    const assetDropData = this.chartData.labels.map(label => {
+                        const drops = this.matrixData.filter(m => m.date.startsWith(label));
+                        return drops.length > 0 ? {x: label, y: 0, names: drops.map(d=>d.asset_name).join(', ')} : null;
+                    }).filter(item => item !== null);
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: this.chartData.labels,
+                            datasets: [
+                                {
+                                    label: 'Asset Release Drops',
+                                    data: assetDropData,
+                                    type: 'scatter',
+                                    pointBackgroundColor: '#f43f5e',
+                                    pointBorderColor: '#f43f5e',
+                                    pointRadius: 6,
+                                    pointHoverRadius: 10,
+                                    pointStyle: 'triangle',
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'Email Opens (Mailchimp)',
+                                    data: this.chartData.email,
+                                    borderColor: '#6366f1',
+                                    tension: 0.4,
+                                    borderDash: [5, 5],
+                                    pointRadius: 0,
+                                    pointHoverRadius: 6,
+                                    borderWidth: 2,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'Ad Clicks (LinkedIn)',
+                                    data: this.chartData.ads,
+                                    borderColor: '#0ea5e9',
+                                    tension: 0.4,
+                                    pointRadius: 0,
+                                    pointHoverRadius: 6,
+                                    borderWidth: 2,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'Website Traffic (Visits)',
+                                    data: this.chartData.traffic,
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointRadius: 0,
+                                    pointHoverRadius: 6,
+                                    borderWidth: 2,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'CRM Opps Created',
+                                    data: this.chartData.opps,
+                                    borderColor: '#10b981',
+                                    backgroundColor: '#10b981',
+                                    type: 'bar',
+                                    barThickness: 20,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: { color: '#94a3b8' }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                    titleColor: '#f8fafc',
+                                    bodyColor: '#cbd5e1',
+                                    borderColor: 'rgba(51, 65, 85, 1)',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            if (context.dataset.label === 'Asset Release Drops') {
+                                                return 'Asset Dropped: ' + context.raw.names;
+                                            }
+                                            return context.dataset.label + ': ' + context.raw;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                                    ticks: { 
+                                        color: '#94a3b8',
+                                        maxRotation: 0,
+                                        maxTicksLimit: window.innerWidth < 768 ? 6 : 15,
+                                        callback: function(value, index, values) {
+                                            const label = this.getLabelForValue(value);
+                                            if (label && label.length === 10) {
+                                                const d = new Date(label);
+                                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+                                            }
+                                            if (label && label.length === 7) {
+                                                const d = new Date(label + '-01');
+                                                return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                },
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: { display: true, text: 'Engagement Volume', color: '#64748b' },
+                                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                                    ticks: { color: '#94a3b8' }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: { display: true, text: 'CRM Opps', color: '#64748b' },
+                                    grid: { drawOnChartArea: false },
+                                    ticks: { color: '#94a3b8', stepSize: 1 }
+                                }
+                            }
+                        }
+                    });
+                }
+            }" x-init="initChart()">
+            <canvas x-ref="canvas"></canvas>
+        </div>
+        
+        <!-- Omnichannel Asset Impact Matrix -->
+        <div class="mt-8 border-t border-dark-700 pt-8">
+            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Omnichannel Asset Impact Matrix</h4>
+            <div class="space-y-4">
+                {% for m in matrix %}
+                <div class="relative bg-dark-800/40 border border-dark-600 rounded-xl p-5 hover:bg-dark-800/60 transition shadow-[0_4px_20px_rgba(0,0,0,0.2)] overflow-hidden group">
+                    
+                    <!-- Pipeline Progress Bar -->
+                    <div class="absolute bottom-0 left-0 h-1 bg-dark-700 w-full">
+                        <div class="h-full {% if m.type == 'Web' %}bg-fuchsia-500{% elif m.type == 'LinkedIn' %}bg-brand-500{% else %}bg-indigo-500{% endif %}" style="width: {{ m.pipeline_share }}%"></div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                        
+                        <!-- Left: Asset Info -->
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border shadow-inner {% if m.type == 'Web' %}bg-fuchsia-500/10 border-fuchsia-500/30 text-fuchsia-400{% elif m.type == 'LinkedIn' %}bg-brand-500/10 border-brand-500/30 text-brand-400{% else %}bg-indigo-500/10 border-indigo-500/30 text-indigo-400{% endif %}">
+                                {% if m.type == 'Web' %}<i class="fa-solid fa-globe text-xl"></i>
+                                {% elif m.type == 'LinkedIn' %}<i class="fa-brands fa-linkedin text-xl"></i>
+                                {% else %}<i class="fa-solid fa-envelope text-xl"></i>{% endif %}
+                            </div>
+                            
+                            <div>
+                                <h5 class="text-sm font-bold text-slate-100">{{ m.asset_name }}</h5>
+                                <div class="flex items-center gap-3 mt-1 text-xs">
+                                    <span class="text-slate-400 font-mono"><i class="fa-regular fa-calendar mr-1"></i>{{ m.date }}</span>
+                                    <span class="text-dark-600">|</span>
+                                    <span class="text-slate-300 font-semibold">{{ "{:,}".format(m.engagement) }} <span class="text-slate-500 font-normal uppercase text-[10px]">{% if m.type == 'Web' %}Views{% elif m.type == 'LinkedIn' %}Clicks{% else %}Opens{% endif %}</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Performance Metrics -->
+                        <div class="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
+                            
+                            <!-- Individuals vs Accounts -->
+                            <div class="flex items-center gap-4 text-center">
+                                <div>
+                                    <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
+                                    <div class="text-lg font-bold {% if m.individuals_engaged > 0 %}text-emerald-400{% else %}text-slate-500{% endif %}">{{ m.individuals_engaged }}</div>
+                                </div>
+                                <div class="w-px h-8 bg-dark-600"></div>
+                                <div>
+                                    <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
+                                    <div class="text-lg font-bold {% if m.accounts_activated > 0 %}text-emerald-400{% else %}text-slate-500{% endif %}">{{ m.accounts_activated }}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pipeline Influenced -->
+                            <div class="text-right min-w-[120px]">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Pipeline Influenced</div>
+                                <div class="text-2xl font-black {% if m.pipeline_influenced > 0 %}text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]{% else %}text-slate-600{% endif %}">{{ m.pipeline_formatted }}</div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not matrix %}
+                <div class="p-12 text-center border border-dashed border-dark-600 rounded-xl bg-dark-800/30">
+                    <i class="fa-solid fa-ghost text-4xl text-dark-600 mb-3"></i>
+                    <p class="text-slate-400 text-sm font-medium">No assets discovered in this timeframe.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+    </div>
+</div>

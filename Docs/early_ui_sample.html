@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Wireframe: Campaign Telemetry Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 500: '#3b82f6', 600: '#2563eb', 400: '#60a5fa' },
+                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+
+        /* Glowing text effect for AI insights */
+        .ai-glow-text {
+            background: linear-gradient(to right, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex overflow-hidden antialiased">
+
+    <!-- Sidebar / Mission Control List -->
+    <aside class="w-72 border-r border-dark-700 bg-dark-900 flex flex-col hidden md:flex z-20 shrink-0">
+        <div class="p-6 border-b border-dark-700">
+            <div class="flex items-center gap-3 text-brand-400 font-bold text-xl tracking-tight">
+                <i class="fa-solid fa-satellite-dish"></i>
+                Telemetry Engine
+            </div>
+        </div>
+
+        <div class="p-4 overflow-y-auto custom-scrollbar">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Active Portfolio</p>
+            <nav class="space-y-2">
+                <!-- Active Campaign Link -->
+                <a href="#"
+                    class="flex items-center justify-between p-3 bg-brand-600/20 border border-brand-500/30 rounded-lg text-brand-400 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
+                        <span class="font-medium text-sm text-slate-100">Q3 Decarbonization</span>
+                    </div>
+                </a>
+
+                <!-- Other Campaigns -->
+                <a href="#"
+                    class="flex items-center justify-between p-3 hover:bg-dark-800 rounded-lg transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-emerald-400 opacity-50"></div>
+                        <span class="font-medium text-sm text-slate-400 group-hover:text-slate-200">August Webinar
+                            Series</span>
+                    </div>
+                </a>
+
+                <a href="#"
+                    class="flex items-center justify-between p-3 hover:bg-dark-800 rounded-lg transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-2 h-2 rounded-full bg-rose-400 opacity-80 shadow-[0_0_8px_rgba(251,113,133,0.6)] animate-pulse">
+                        </div>
+                        <span class="font-medium text-sm text-slate-400 group-hover:text-slate-200">Fleet
+                            Electrification</span>
+                    </div>
+                </a>
+            </nav>
+        </div>
+
+        <div class="mt-auto p-4 border-t border-dark-700">
+            <button
+                class="w-full py-2 px-4 bg-dark-800 hover:bg-dark-700 border border-dark-700 rounded-lg text-sm font-medium text-slate-300 transition-colors flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate w-4 text-center"></i> Sync Mock Data (ETL)
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main
+        class="flex-1 flex flex-col h-full relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-dark-800 via-dark-900 to-dark-900 min-w-0">
+
+        <!-- Header -->
+        <header
+            class="h-16 border-b border-dark-700 flex items-center justify-between px-8 shrink-0 z-10 glass-panel overflow-hidden">
+            <div class="flex items-center gap-4 truncate">
+                <span
+                    class="px-2 py-1 text-xs font-semibold bg-dark-800 border border-dark-700 rounded text-slate-400 shrink-0">Past
+                    7 Days (Pulse View)</span>
+                <h1 class="text-xl font-bold text-slate-100 truncate">Q3 Decarbonization Overview</h1>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <button
+                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 rounded-md text-sm font-medium transition-all">
+                    <i class="fa-brands fa-microsoft"></i> Push to Teams
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Canvas Content -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 lg:p-8">
+            <div class="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-48">
+
+                <!-- Top-Line AI TL;DR -->
+                <div
+                    class="glass-panel p-4 md:p-6 rounded-xl border-l-4 border-l-brand-500 flex flex-col md:flex-row items-start gap-4">
+                    <div class="mt-1 w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-sparkles text-brand-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-400 mb-1">Strategic TL;DR</h2>
+                        <p class="text-base md:text-lg text-slate-200 leading-relaxed font-medium">
+                            The campaign is generating strong initial pipeline (<span
+                                class="text-emerald-400">$125k</span>), but <span
+                                class="text-rose-400 underline decoration-rose-400/50 underline-offset-4">web traffic
+                                bounce rates spiked to 82%</span> on Wednesday, severely inflating our blended Cost Per
+                            Acquisition.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quant Core (Metrics) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Card 1 -->
+                    <div
+                        class="glass-panel p-4 lg:p-5 rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors cursor-default">
+                        <div class="text-slate-400 text-sm font-medium mb-3 flex justify-between">Total Spend <i
+                                class="fa-solid fa-money-bill text-slate-500"></i></div>
+                        <div class="text-2xl lg:text-3xl font-bold text-slate-100">$4,250</div>
+                        <div class="text-xs font-medium text-emerald-400 mt-2 flex items-center gap-1"><i
+                                class="fa-solid fa-arrow-down"></i> 12% vs baseline</div>
+                    </div>
+                    <!-- Card 2 -->
+                    <div
+                        class="glass-panel p-4 lg:p-5 rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors">
+                        <div class="text-slate-400 text-sm font-medium mb-3 flex justify-between">Pipeline Generated <i
+                                class="fa-solid fa-bullseye text-slate-500"></i></div>
+                        <div class="text-2xl lg:text-3xl font-bold text-slate-100">$125,000</div>
+                        <div class="text-xs font-medium text-emerald-400 mt-2 flex items-center gap-1"><i
+                                class="fa-solid fa-arrow-up"></i> 4% vs baseline</div>
+                    </div>
+                    <!-- Card 3 -->
+                    <div
+                        class="glass-panel p-4 lg:p-5 rounded-xl flex flex-col justify-between border-rose-500/30 bg-rose-500/5 relative group">
+                        <div class="text-slate-400 text-sm font-medium mb-3 flex justify-between">Blended CPA <i
+                                class="fa-solid fa-user-tag text-slate-500"></i></div>
+                        <div class="text-2xl lg:text-3xl font-bold text-rose-300">$215.00</div>
+                        <div class="text-xs font-medium text-rose-400 mt-2 flex items-center gap-1"><i
+                                class="fa-solid fa-arrow-up"></i> 35% vs baseline (Anomaly)</div>
+                        <!-- Tooltip -->
+                        <div
+                            class="absolute -top-10 left-1/2 -translate-x-1/2 bg-dark-900 border border-dark-600 text-xs text-slate-300 py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Python Pandas Calculation Result
+                        </div>
+                    </div>
+                    <!-- Card 4 -->
+                    <div
+                        class="glass-panel p-4 lg:p-5 rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors">
+                        <div class="text-slate-400 text-sm font-medium mb-3 flex justify-between">Global Conv. Rate <i
+                                class="fa-solid fa-percent text-slate-500"></i></div>
+                        <div class="text-2xl lg:text-3xl font-bold text-slate-100">3.2%</div>
+                        <div class="text-xs font-medium text-slate-400 mt-2 flex items-center gap-1"><i
+                                class="fa-solid fa-minus"></i> Flat vs baseline</div>
+                    </div>
+                </div>
+
+                <!-- Campaign Timeline Visulizer -->
+                <div class="glass-panel rounded-xl p-4 md:p-6 overflow-x-auto">
+                    <h3 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-wider">Campaign Threading
+                        Timeline</h3>
+                    <div class="relative pt-4 pb-2 min-w-[600px]">
+                        <!-- Connecting Line -->
+                        <div class="absolute left-4 right-4 top-[22px] h-1 bg-dark-700 rounded z-0"></div>
+
+                        <!-- Timeline Nodes -->
+                        <div class="relative z-10 flex justify-between w-full px-4">
+                            <!-- Node 1 -->
+                            <div class="flex flex-col items-center group cursor-pointer w-24">
+                                <div
+                                    class="w-6 h-6 rounded-full bg-dark-900 border-2 border-brand-500 flex items-center justify-center mb-2 shadow-[0_0_10px_rgba(59,130,246,0.5)] group-hover:scale-125 transition-transform bg-dark-900">
+                                    <div class="w-2 h-2 bg-brand-500 rounded-full"></div>
+                                </div>
+                                <span class="text-xs font-bold text-slate-300">Mon, 12th</span>
+                                <span
+                                    class="text-[10px] text-slate-500 mt-1 uppercase text-center leading-tight">Mailchimp
+                                    Drop 1</span>
+                            </div>
+                            <!-- Node 2 -->
+                            <div class="flex flex-col items-center group cursor-pointer w-24">
+                                <div
+                                    class="w-6 h-6 rounded-full bg-dark-900 border-2 border-indigo-500 flex items-center justify-center mb-2 shadow-[0_0_10px_rgba(99,102,241,0.5)] group-hover:scale-125 transition-transform bg-dark-900">
+                                    <div class="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                                </div>
+                                <span class="text-xs font-bold text-slate-300">Tue, 13th</span>
+                                <span
+                                    class="text-[10px] text-slate-500 mt-1 uppercase text-center leading-tight">LinkedIn
+                                    Ads Live</span>
+                            </div>
+                            <!-- Node 3 (Anomaly) -->
+                            <div class="flex flex-col items-center group cursor-pointer relative w-24">
+                                <div
+                                    class="w-6 h-6 rounded-full bg-rose-900 border-2 border-rose-500 flex items-center justify-center mb-2 shadow-[0_0_15px_rgba(244,63,94,0.8)] group-hover:scale-125 transition-transform animate-pulse z-10">
+                                    <i class="fa-solid fa-exclamation text-[10px] text-rose-300"></i>
+                                </div>
+                                <span class="text-xs font-bold text-rose-300">Wed, 14th</span>
+                                <span
+                                    class="text-[10px] text-rose-400 mt-1 uppercase font-bold text-center leading-tight">High
+                                    Bounce</span>
+                                <!-- Tooltip -->
+                                <div
+                                    class="absolute bottom-full mb-2 bg-dark-900 border border-rose-500 text-xs text-rose-200 p-2 rounded w-48 text-center hidden group-hover:block opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-xl pointer-events-none left-1/2 -translate-x-1/2">
+                                    GA4 recorded 800 visits with 82% bounce rate from LinkedIn UTMs.
+                                </div>
+                            </div>
+                            <!-- Node 4 -->
+                            <div class="flex flex-col items-center group cursor-pointer w-24">
+                                <div
+                                    class="w-6 h-6 rounded-full bg-dark-900 border-2 border-emerald-500 flex items-center justify-center mb-2 shadow-[0_0_10px_rgba(16,185,129,0.5)] group-hover:scale-125 transition-transform bg-dark-900">
+                                    <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                                </div>
+                                <span class="text-xs font-bold text-slate-300">Fri, 16th</span>
+                                <span class="text-[10px] text-slate-500 mt-1 uppercase text-center leading-tight">2 CRM
+                                    Opps Created</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- The Narrative Body -->
+                <div class="glass-panel rounded-xl p-6 md:p-8">
+                    <h3
+                        class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-wider border-b border-dark-700 pb-2">
+                        Full Strategic Narrative</h3>
+                    <div
+                        class="prose prose-invert prose-slate max-w-none text-slate-300 text-sm md:text-base leading-relaxed">
+                        <p>The "Q3 Decarbonization" campaign launched successfully on Monday with a multi-channel
+                            approach spanning email marketing (Mailchimp) and paid social (LinkedIn). Initial pipeline
+                            generation is healthy, but efficiency is currently compromised due to a bottleneck in the
+                            mid-funnel web experience.</p>
+
+                        <h4 class="text-slate-100 font-semibold mt-6 mb-3">Key Observations</h4>
+                        <ul class="list-disc pl-5 space-y-2 mb-6 text-sm md:text-base">
+                            <li><strong class="text-slate-200">Strong Top-of-Funnel:</strong> Email open rates exceeded
+                                the baseline by 14%, indicating the "Net-Zero Blueprint" subject line is highly resonant
+                                with the audience.</li>
+                            <li><strong class="text-rose-300">The Wednesday Bottleneck:</strong> When LinkedIn ads
+                                launched on Tuesday, traffic spiked by 400% on Wednesday. However, Python analysis of
+                                the joined GA4 dataset reveals an <strong>82% bounce rate</strong> exclusively for
+                                traffic tagged with <code>utm_source=linkedin</code>.</li>
+                            <li><strong class="text-slate-200">CPA Inflation:</strong> Because we spent $2,000 on
+                                LinkedIn to drive traffic that immediately bounced, our blended Cost Per Acquisition
+                                (CPA) has temporarily spiked to $215.00.</li>
+                        </ul>
+
+                        <h4 class="text-slate-100 font-semibold mt-6 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-lightbulb text-amber-400"></i> AI Recommendation
+                        </h4>
+                        <div
+                            class="bg-dark-800 border border-dark-700 p-4 md:p-5 rounded-lg text-slate-200 text-sm md:text-base">
+                            Pause the LinkedIn Ad campaign immediately. The data indicates a severe disconnect between
+                            the ad creative (which promises immediate pricing) and the landing page (which requires a
+                            form fill before showing pricing). <strong>Action: Update landing page to include explicit
+                                pricing tiers before re-enabling ads.</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversational Layer (Ask Your Data) - Floating Bottom -->
+        <div
+            class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-dark-900 via-dark-900/90 to-transparent pt-20 pb-4 px-4 md:px-8 z-20 pointer-events-none">
+            <div
+                class="max-w-4xl mx-auto glass-panel border border-brand-500/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden pointer-events-auto flex flex-col">
+
+                <!-- Mock Chat History (Visible to demonstrate Tool Calling) -->
+                <div
+                    class="p-4 md:p-5 bg-dark-900/80 max-h-56 overflow-y-auto text-sm space-y-5 border-b border-dark-700 custom-scrollbar">
+
+                    <!-- User Prompt -->
+                    <div class="flex gap-3">
+                        <div
+                            class="w-7 h-7 rounded bg-dark-700 flex items-center justify-center shrink-0 border border-dark-600">
+                            <i class="fa-solid fa-user text-xs text-slate-400"></i></div>
+                        <div class="text-slate-200 leading-relaxed mt-1">If we fix the landing page and double the
+                            LinkedIn budget next week, what happens to our CPA assuming the bounce rate drops back to
+                            our 45% historical baseline?</div>
+                    </div>
+
+                    <!-- System MCP Call Indication -->
+                    <div class="flex gap-3 items-center pl-10 opacity-80">
+                        <i class="fa-solid fa-gear fa-spin text-brand-500 text-xs"></i>
+                        <span
+                            class="text-xs text-brand-400 font-mono tracking-tight bg-brand-900/30 px-2 py-0.5 rounded border border-brand-500/20">Tool
+                            Called: simulate_budget_shift(channel="linkedin", budget=4000)</span>
+                    </div>
+
+                    <!-- AI Response -->
+                    <div class="flex gap-3">
+                        <div
+                            class="w-7 h-7 rounded bg-brand-600 flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(37,99,235,0.8)]">
+                            <i class="fa-solid fa-robot text-xs text-white"></i></div>
+                        <div
+                            class="text-slate-200 bg-dark-800 p-4 rounded-lg border border-dark-700 w-full shadow-inner leading-relaxed">
+                            Based on the Python backend simulation using historical conversion metrics: If the bounce
+                            rate stabilizes at 45% and spend is doubled to $4,000, the blended CPA will normalize to
+                            <strong>$142.50</strong>, yielding an estimated 28 net new leads.
+
+                            <!-- Action Buttons -->
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <button
+                                    class="px-3 py-1.5 bg-dark-700 hover:bg-dark-600 rounded text-xs font-medium text-slate-300 transition border border-dark-600 hover:border-slate-500 flex items-center gap-2">
+                                    <i class="fa-solid fa-pen-nib"></i> Draft Retargeting Email
+                                </button>
+                                <button
+                                    class="px-3 py-1.5 bg-dark-700 hover:bg-dark-600 rounded text-xs font-medium text-slate-300 transition border border-dark-600 hover:border-slate-500 flex items-center gap-2">
+                                    <i class="fa-brands fa-microsoft"></i> Push to Teams
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-2 md:p-3 flex items-center gap-2 bg-dark-800/90 backdrop-blur-xl">
+                    <button
+                        class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-brand-400 transition-colors shrink-0">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <!-- Input shows a mock typed sentence -->
+                    <input type="text"
+                        class="w-full bg-transparent border-none text-slate-200 text-sm focus:ring-0 placeholder-slate-500 py-2 outline-none"
+                        value="Draft 3 new subject lines for the retargeting email..." readonly>
+                    <button
+                        class="w-10 h-10 flex items-center justify-center bg-brand-600 hover:bg-brand-500 rounded-lg text-white transition-colors shrink-0 shadow-[0_0_10px_rgba(37,99,235,0.5)]">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+
+</html>
