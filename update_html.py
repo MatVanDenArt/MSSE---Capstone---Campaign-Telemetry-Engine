@@ -1,4 +1,5 @@
-<div class="max-w-6xl mx-auto mt-6">
+def update_html():
+    new_content = """<div class="max-w-6xl mx-auto mt-6">
     <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
     <div class="glass-panel rounded-xl p-6 md:p-8 relative overflow-hidden border border-brand-500/20">
         <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -8,7 +9,7 @@
         <div class="flex justify-between items-center mb-6 border-b border-dark-700 pb-4 relative z-10">
             <div>
                 <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center mb-1">
-                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Module 3: Prioritized Target Actions
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Prioritized Target Actions
                 </h3>
                 <p class="text-xs text-slate-400">AI-synthesized sales pipeline recommendations scoped to the active campaign.</p>
             </div>
@@ -54,4 +55,10 @@
             </div>
         </div>
     </div>
-</div>
+</div>"""
+
+    with open('app/templates/components/account_penetration.html', 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    print('Updated account_penetration.html')
+
+update_html()

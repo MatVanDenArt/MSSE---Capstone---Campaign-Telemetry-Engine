@@ -2,37 +2,72 @@
     <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
     
     <div class="glass-panel rounded-xl p-6 md:p-8">
-        <div class="flex justify-between items-center mb-6 border-b border-dark-700 pb-2">
-            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Interactive Campaign Timeline & Velocity</h3>
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b border-dark-700 pb-2 gap-4">
+            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Module 2: Omnichannel Asset Impact Matrix</h3>
+            <div class="text-[10px] font-bold text-slate-500 uppercase flex gap-4 bg-dark-900/50 px-3 py-1.5 rounded-lg border border-dark-700 tracking-wider">
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-emerald-500"></div> Web</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-amber-500 rounded-full"></div> Email</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-sky-500 rotate-45"></div> Social</span>
+            </div>
         </div>
         
-        <div class="w-full h-[500px] relative" x-data="{
+        <div class="w-full relative flex flex-col" x-data="{
                 chartData: {{ chart_data | tojson | forceescape }},
                 matrixData: {{ matrix | tojson | forceescape }},
+                activePixelX: null,
+                
                 initChart() {
-                    const ctx = this.$refs.canvas.getContext('2d');
+                    const ctxMain = this.$refs.canvas.getContext('2d');
+                    const ctxTimeline = this.$refs.timelineCanvas.getContext('2d');
                     
-                    const assetDropData = this.chartData.labels.map(label => {
+                    const webDrops = [];
+                    const emailDrops = [];
+                    const socialDrops = [];
+                    
+                    this.chartData.labels.forEach(label => {
                         const drops = this.matrixData.filter(m => m.date.startsWith(label));
-                        return drops.length > 0 ? {x: label, y: 0, names: drops.map(d=>d.asset_name).join(', ')} : null;
-                    }).filter(item => item !== null);
+                        if (drops.length > 0) {
+                            const web = drops.filter(d => d.type === 'Web');
+                            if (web.length > 0) webDrops.push({x: label, y: 3, names: web.map(d=>d.asset_name).join(', ')});
+                            
+                            const email = drops.filter(d => d.type === 'Email');
+                            if (email.length > 0) emailDrops.push({x: label, y: 1, names: email.map(d=>d.asset_name).join(', ')});
+                            
+                            const social = drops.filter(d => d.type === 'LinkedIn');
+                            if (social.length > 0) socialDrops.push({x: label, y: 2, names: social.map(d=>d.asset_name).join(', ')});
+                        }
+                    });
 
-                    new Chart(ctx, {
+                    // COMMON X-AXIS CONFIGURATION TO ENSURE PERFECT ALIGNMENT
+                    const commonXAxis = {
+                        min: this.chartData.start_date,
+                        max: this.chartData.end_date,
+                        grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                        ticks: { 
+                            color: '#94a3b8',
+                            maxRotation: 0,
+                            maxTicksLimit: window.innerWidth < 768 ? 6 : 15,
+                            callback: function(value, index, values) {
+                                const label = this.getLabelForValue(value);
+                                if (label && label.length === 10) {
+                                    const d = new Date(label);
+                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+                                }
+                                if (label && label.length === 7) {
+                                    const d = new Date(label + '-01');
+                                    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+                                }
+                                return label;
+                            }
+                        }
+                    };
+
+                    // TOP CHART: Engagement Metrics
+                    new Chart(ctxMain, {
                         type: 'line',
                         data: {
                             labels: this.chartData.labels,
                             datasets: [
-                                {
-                                    label: 'Asset Release Drops',
-                                    data: assetDropData,
-                                    type: 'scatter',
-                                    pointBackgroundColor: '#f43f5e',
-                                    pointBorderColor: '#f43f5e',
-                                    pointRadius: 6,
-                                    pointHoverRadius: 10,
-                                    pointStyle: 'triangle',
-                                    yAxisID: 'y'
-                                },
                                 {
                                     label: 'Email Opens (Mailchimp)',
                                     data: this.chartData.email,
@@ -70,9 +105,9 @@
                                     label: 'CRM Opps Created',
                                     data: this.chartData.opps,
                                     borderColor: '#10b981',
-                                    backgroundColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.4)',
                                     type: 'bar',
-                                    barThickness: 20,
+                                    barThickness: 8,
                                     yAxisID: 'y1'
                                 }
                             ]
@@ -80,131 +115,278 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            interaction: {
-                                mode: 'index',
-                                intersect: false,
+                            onHover: (e, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    this.activePixelX = activeElements[0].element.x;
+                                } else {
+                                    this.activePixelX = null;
+                                }
                             },
+                            layout: { padding: { left: 10, right: 10 } },
+                            interaction: { mode: 'index', intersect: false },
                             plugins: {
-                                legend: {
-                                    labels: { color: '#94a3b8' }
-                                },
+                                legend: { labels: { color: '#94a3b8' } },
                                 tooltip: {
                                     backgroundColor: 'rgba(15, 23, 42, 0.9)',
                                     titleColor: '#f8fafc',
                                     bodyColor: '#cbd5e1',
                                     borderColor: 'rgba(51, 65, 85, 1)',
-                                    borderWidth: 1,
+                                    borderWidth: 1
+                                }
+                            },
+                            scales: {
+                                x: { ...commonXAxis, display: true }, // Keep dates visible on top chart too as requested
+                                y: {
+                                    type: 'linear', display: true, position: 'left',
+                                    title: { display: true, text: 'Engagement Volume', color: '#64748b' },
+                                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                                    ticks: { color: '#94a3b8' },
+                                    afterFit: function(scale) { scale.width = 75; }
+                                },
+                                y1: {
+                                    type: 'linear', display: true, position: 'right',
+                                    title: { display: true, text: 'CRM Opps', color: '#64748b' },
+                                    grid: { drawOnChartArea: false },
+                                    ticks: { color: '#94a3b8', stepSize: 1 },
+                                    afterFit: function(scale) { scale.width = 50; }
+                                }
+                            }
+                        }
+                    });
+
+                    // BOTTOM CHART: Categorical Dot Plot Track
+                    new Chart(ctxTimeline, {
+                        type: 'line',
+                        data: {
+                            labels: this.chartData.labels,
+                            datasets: [
+                                {
+                                    label: 'Web Releases', data: webDrops, type: 'scatter',
+                                    pointBackgroundColor: '#10b981', pointBorderColor: '#10b981',
+                                    pointRadius: 6, pointHoverRadius: 10, pointStyle: 'circle'
+                                },
+                                {
+                                    label: 'Social Ads', data: socialDrops, type: 'scatter',
+                                    pointBackgroundColor: '#0ea5e9', pointBorderColor: '#0ea5e9',
+                                    pointRadius: 6, pointHoverRadius: 10, pointStyle: 'circle'
+                                },
+                                {
+                                    label: 'Email Drops', data: emailDrops, type: 'scatter',
+                                    pointBackgroundColor: '#f59e0b', pointBorderColor: '#f59e0b',
+                                    pointRadius: 6, pointHoverRadius: 10, pointStyle: 'circle'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            onHover: (e, activeElements) => {
+                                if (activeElements.length > 0) {
+                                    this.activePixelX = activeElements[0].element.x;
+                                } else {
+                                    this.activePixelX = null;
+                                }
+                            },
+                            layout: { padding: { left: 10, right: 10, top: 10, bottom: 5 } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                    titleColor: '#f8fafc', bodyColor: '#cbd5e1',
+                                    borderColor: 'rgba(51, 65, 85, 1)', borderWidth: 1,
                                     callbacks: {
                                         label: function(context) {
-                                            if (context.dataset.label === 'Asset Release Drops') {
-                                                return 'Asset Dropped: ' + context.raw.names;
-                                            }
-                                            return context.dataset.label + ': ' + context.raw;
+                                            return context.dataset.label + ': ' + context.raw.names;
                                         }
                                     }
                                 }
                             },
                             scales: {
-                                x: {
-                                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
-                                    ticks: { 
-                                        color: '#94a3b8',
-                                        maxRotation: 0,
-                                        maxTicksLimit: window.innerWidth < 768 ? 6 : 15,
-                                        callback: function(value, index, values) {
-                                            const label = this.getLabelForValue(value);
-                                            if (label && label.length === 10) {
-                                                const d = new Date(label);
-                                                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-                                            }
-                                            if (label && label.length === 7) {
-                                                const d = new Date(label + '-01');
-                                                return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                },
+                                x: { ...commonXAxis, display: true },
                                 y: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'left',
-                                    title: { display: true, text: 'Engagement Volume', color: '#64748b' },
-                                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
-                                    ticks: { color: '#94a3b8' }
+                                    type: 'linear', display: true, position: 'left',
+                                    min: 0.5, max: 3.5,
+                                    grid: { color: 'rgba(51, 65, 85, 0.1)', drawBorder: false },
+                                    ticks: {
+                                        color: '#cbd5e1', font: { weight: 'bold' },
+                                        stepSize: 1,
+                                        callback: function(value) {
+                                            if (value === 3) return 'Web';
+                                            if (value === 2) return 'Social';
+                                            if (value === 1) return 'Email';
+                                            return '';
+                                        }
+                                    },
+                                    afterFit: function(scale) { scale.width = 75; }
                                 },
-                                y1: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'right',
-                                    title: { display: true, text: 'CRM Opps', color: '#64748b' },
-                                    grid: { drawOnChartArea: false },
-                                    ticks: { color: '#94a3b8', stepSize: 1 }
+                                y1: { // Invisible right axis to enforce identical padding to top chart
+                                    type: 'linear', display: true, position: 'right',
+                                    title: { display: true, text: 'CRM Opps', color: 'transparent' },
+                                    grid: { display: false, drawBorder: false },
+                                    ticks: { color: 'transparent', stepSize: 1 },
+                                    afterFit: function(scale) { scale.width = 50; }
                                 }
                             }
                         }
                     });
                 }
             }" x-init="initChart()">
-            <canvas x-ref="canvas"></canvas>
+            
+            <!-- Crosshair Line -->
+            <div x-show="activePixelX !== null"
+                 class="absolute top-0 bottom-0 pointer-events-none border-l-2 border-dashed border-fuchsia-500 opacity-70 z-50 transition-all duration-75"
+                 :style="`left: ${activePixelX}px;`" x-cloak>
+            </div>
+            
+            <!-- Top Canvas: Engagement -->
+            <div class="w-full h-[400px]">
+                <canvas x-ref="canvas"></canvas>
+            </div>
+            
+            <!-- Bottom Canvas: Timeline Track -->
+            <div class="w-full h-[150px] mt-4 pt-4 border-t border-dark-700/50 relative">
+                <div class="absolute top-2 left-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Release Cadence</div>
+                <canvas x-ref="timelineCanvas"></canvas>
+            </div>
         </div>
         
         <!-- Omnichannel Asset Impact Matrix -->
         <div class="mt-8 border-t border-dark-700 pt-8">
-            <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Omnichannel Asset Impact Matrix</h4>
-            <div class="space-y-4">
-                {% for m in matrix %}
-                <div class="relative bg-dark-800/40 border border-dark-600 rounded-xl p-5 hover:bg-dark-800/60 transition shadow-[0_4px_20px_rgba(0,0,0,0.2)] overflow-hidden group">
+            <div x-data="{ currentTab: 'Web' }">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-dark-700 pb-2">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 md:mb-0">Omnichannel Asset Impact Matrix</h4>
                     
-                    <!-- Pipeline Progress Bar -->
-                    <div class="absolute bottom-0 left-0 h-1 bg-dark-700 w-full">
-                        <div class="h-full {% if m.type == 'Web' %}bg-fuchsia-500{% elif m.type == 'LinkedIn' %}bg-brand-500{% else %}bg-indigo-500{% endif %}" style="width: {{ m.pipeline_share }}%"></div>
+                    <!-- Tabs -->
+                    <div class="flex gap-6">
+                        <button @click="currentTab = 'Web'" :class="currentTab === 'Web' ? 'border-slate-300 text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-400'" class="border-b-2 pb-1 text-sm font-bold uppercase tracking-wider transition">Web Pages</button>
+                        <button @click="currentTab = 'LinkedIn'" :class="currentTab === 'LinkedIn' ? 'border-slate-300 text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-400'" class="border-b-2 pb-1 text-sm font-bold uppercase tracking-wider transition">Social Ads</button>
+                        <button @click="currentTab = 'Email'" :class="currentTab === 'Email' ? 'border-slate-300 text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-400'" class="border-b-2 pb-1 text-sm font-bold uppercase tracking-wider transition">Email</button>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                                                {% for m in matrix %}
+                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-dark-800/40 border-l-4 border-l-dark-700 rounded-xl p-5 hover:bg-dark-800/60 transition shadow-[0_4px_20px_rgba(0,0,0,0.2)] overflow-hidden group flex flex-col justify-between"
+                     x-data="{
+                        sparkline: {{ m.sparkline | default([]) | tojson | safe }},
+                        chartInstance: null,
+                        initSparkline() {
+                            this.$watch('currentTab', (val) => {
+                                if (val === '{{ m.type }}') {
+                                    this.$nextTick(() => { this.renderChart(); });
+                                }
+                            });
+                            // Initial render if active
+                            if (this.currentTab === '{{ m.type }}') {
+                                this.$nextTick(() => { this.renderChart(); });
+                            }
+                        },
+                        renderChart() {
+                            if (!this.$refs.canvas || this.sparkline.length === 0) return;
+                            if (this.chartInstance) { this.chartInstance.destroy(); }
+                            const ctx = this.$refs.canvas.getContext('2d');
+                            this.chartInstance = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: Array.from({length: this.sparkline.length}, (_, i) => i + 1),
+                                    datasets: [{
+                                        data: this.sparkline,
+                                        borderColor: '#10b981',
+                                        backgroundColor: '#10b98133',
+                                        borderWidth: 3,
+                                        tension: 0.4,
+                                        fill: true,
+                                        pointRadius: 0
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    animation: false,
+                                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                                    scales: {
+                                        x: { display: false },
+                                        y: { display: false, min: -2, suggestedMax: 10 }
+                                    },
+                                    layout: { padding: { top: 10, bottom: -5 } }
+                                }
+                            });
+                        }
+                     }" x-init="initSparkline()">
+                    
+                    <!-- Background Sparkline Chart -->
+                    <div class="absolute inset-0 w-full h-full opacity-40 pointer-events-none z-0">
+                        <canvas x-ref="canvas"></canvas>
                     </div>
 
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
                         
                         <!-- Left: Asset Info -->
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 border shadow-inner {% if m.type == 'Web' %}bg-fuchsia-500/10 border-fuchsia-500/30 text-fuchsia-400{% elif m.type == 'LinkedIn' %}bg-brand-500/10 border-brand-500/30 text-brand-400{% else %}bg-indigo-500/10 border-indigo-500/30 text-indigo-400{% endif %}">
-                                {% if m.type == 'Web' %}<i class="fa-solid fa-globe text-xl"></i>
-                                {% elif m.type == 'LinkedIn' %}<i class="fa-brands fa-linkedin text-xl"></i>
-                                {% else %}<i class="fa-solid fa-envelope text-xl"></i>{% endif %}
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-3 mb-1">
+                                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full {% if m.type == 'Web' %}bg-fuchsia-500/20 text-fuchsia-300{% elif m.type == 'LinkedIn' %}bg-brand-500/20 text-brand-300{% else %}bg-indigo-500/20 text-indigo-300{% endif %}">
+                                    {{ m.subtype | default(m.type ~ ' ASSET') }}
+                                </span>
+                                {% if m.ai_recommendation %}
+                                <span class="text-[10px] px-2 py-0.5 font-bold rounded border {{ m.badge_class | default('bg-slate-800 text-slate-400 border-slate-700') }}">
+                                    {{ m.health }}
+                                </span>
+                                {% endif %}
                             </div>
                             
-                            <div>
-                                <h5 class="text-sm font-bold text-slate-100">{{ m.asset_name }}</h5>
-                                <div class="flex items-center gap-3 mt-1 text-xs">
-                                    <span class="text-slate-400 font-mono"><i class="fa-regular fa-calendar mr-1"></i>{{ m.date }}</span>
-                                    <span class="text-dark-600">|</span>
-                                    <span class="text-slate-300 font-semibold">{{ "{:,}".format(m.engagement) }} <span class="text-slate-500 font-normal uppercase text-[10px]">{% if m.type == 'Web' %}Views{% elif m.type == 'LinkedIn' %}Clicks{% else %}Opens{% endif %}</span></span>
-                                </div>
+                            <h5 class="text-base font-bold text-slate-100">{{ m.asset_name }}</h5>
+                            <div class="flex items-center gap-3 mt-0.5 text-xs">
+                                <span class="text-slate-500 font-mono"><i class="fa-regular fa-calendar mr-1"></i>{{ m.formatted_date }}</span>
                             </div>
                         </div>
 
                         <!-- Right: Performance Metrics -->
-                        <div class="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
+                        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end bg-dark-900/40 px-4 py-2 rounded-lg backdrop-blur-sm border border-dark-700/50">
                             
-                            <!-- Individuals vs Accounts -->
-                            <div class="flex items-center gap-4 text-center">
-                                <div>
-                                    <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
-                                    <div class="text-lg font-bold {% if m.individuals_engaged > 0 %}text-emerald-400{% else %}text-slate-500{% endif %}">{{ m.individuals_engaged }}</div>
-                                </div>
-                                <div class="w-px h-8 bg-dark-600"></div>
-                                <div>
-                                    <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
-                                    <div class="text-lg font-bold {% if m.accounts_activated > 0 %}text-emerald-400{% else %}text-slate-500{% endif %}">{{ m.accounts_activated }}</div>
-                                </div>
+                            <!-- Engagement -->
+                            <div class="text-center">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">{% if m.type == 'Web' %}Views{% elif m.type == 'LinkedIn' %}Clicks{% else %}Opens{% endif %}</div>
+                                <div class="text-xl font-bold text-slate-100">{{ "{:,}".format(m.engagement) }}</div>
                             </div>
+                            <div class="w-px h-8 bg-dark-700/50"></div>
+                            
+                            <!-- Individuals -->
+                            <div class="text-center">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
+                                <div class="text-xl font-bold text-slate-100">{{ m.individuals_engaged }}</div>
+                            </div>
+                            <div class="w-px h-8 bg-dark-700/50"></div>
+                            
+                            <!-- Accounts -->
+                            <div class="text-center">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
+                                <div class="text-xl font-bold text-slate-100">{{ m.accounts_activated }}</div>
+                            </div>
+                            <div class="w-px h-8 bg-dark-700/50"></div>
                             
                             <!-- Pipeline Influenced -->
-                            <div class="text-right min-w-[120px]">
-                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Pipeline Influenced</div>
-                                <div class="text-2xl font-black {% if m.pipeline_influenced > 0 %}text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]{% else %}text-slate-600{% endif %}">{{ m.pipeline_formatted }}</div>
+                            <div class="text-right min-w-[100px]">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Pipeline</div>
+                                <div class="text-2xl font-black text-white">{{ m.pipeline_formatted }}</div>
                             </div>
 
                         </div>
                     </div>
+                    
+                    <!-- AI Recommendation (Pillar 3) -->
+                    {% if m.ai_recommendation %}
+                    <div class="relative z-10 mt-5 pt-3 border-t border-dark-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-6 h-6 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-[10px]"></i>
+                            </div>
+                            <p class="text-xs font-medium text-slate-400">{{ m.ai_recommendation }}</p>
+                        </div>
+                        <button class="px-4 py-1.5 rounded-lg bg-dark-700 hover:bg-dark-600 text-[10px] font-bold tracking-wider text-slate-300 uppercase transition border border-dark-600 whitespace-nowrap">
+                            Take Action <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
                 
@@ -215,6 +397,8 @@
                 </div>
                 {% endif %}
             </div>
+        </div>
+        <!-- End of x-data component -->
         </div>
         
     </div>

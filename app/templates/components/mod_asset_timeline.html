@@ -1,0 +1,230 @@
+<!-- Module D5: Interactive Campaign Timeline (Legacy) -->
+<div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{
+                loading: true, 
+                timelineData: [], 
+                init() {
+                    const campaignId = '{{ campaign_id }}';
+                    const timeframe = '{{ timeframe }}';
+                    fetch(`/api/dashboard/asset-timeline?campaign_id=${campaignId}&timeframe=${timeframe}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            this.timelineData = data || [];
+                            this.loading = false;
+                            this.renderChart();
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            this.loading = false;
+                        });
+                },
+                renderChart() {
+                    if(!this.timelineData || this.timelineData.length === 0) return;
+                    
+                    const loadD3 = () => {
+                        window.renderTimelineD3(this.timelineData);
+                    };
+
+                    if (!window.d3) {
+                        const script = document.createElement('script');
+                        script.src = 'https://d3js.org/d3.v7.min.js';
+                        script.onload = loadD3;
+                        document.head.appendChild(script);
+                    } else {
+                        loadD3();
+                    }
+                }
+            }">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-100">Module D5: Interactive Campaign Timeline (Legacy)</h3>
+                        <p class="text-sm text-slate-400 max-w-2xl mt-1">Plotting campaign resource release dates and total interaction volume over time.</p>
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div class="flex items-center space-x-4 text-xs font-medium text-slate-400 bg-dark-900 py-1.5 px-3 rounded-lg border border-dark-700">
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-sky-500 mr-2"></span> Web</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></span> Email</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-500 mr-2"></span> LinkedIn</div>
+                    </div>
+                </div>
+                
+                <div class="w-full h-[550px] relative bg-dark-900 rounded-xl border border-dark-700 p-6 overflow-hidden">
+                    <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+                    </div>
+                    
+                    <div id="d3-timeline-container" class="w-full h-full relative"></div>
+                </div>
+                
+                <script>
+                    window.renderTimelineD3 = function(data) {
+                        const container = d3.select('#d3-timeline-container');
+                        container.selectAll("*").remove(); 
+
+                        const width = container.node().clientWidth;
+                        const height = container.node().clientHeight || 500;
+                        const margin = {top: 20, right: 30, bottom: 40, left: 60};
+
+                        const svg = container.append("svg")
+                            .attr("width", width)
+                            .attr("height", height);
+
+                        // Prep data
+                        const processedData = data.map(d => {
+                            return {
+                                ...d,
+                                date: new Date(d.release_date),
+                                interactions: +d.interactions
+                            };
+                        });
+                        
+                        // Set up scales
+                        const x = d3.scaleTime()
+                            .domain(d3.extent(processedData, d => d.date))
+                            .range([margin.left, width - margin.right])
+                            .nice();
+                            
+                        const y = d3.scaleLinear()
+                            .domain([0, d3.max(processedData, d => d.interactions) * 1.15]) // Add headroom
+                            .range([height - margin.bottom, margin.top])
+                            .nice();
+                            
+                        // Determine dynamic tick format based on timeframe
+                        const timeSpan = d3.extent(processedData, d => d.date);
+                        const daysDiff = (timeSpan[1] - timeSpan[0]) / (1000 * 60 * 60 * 24);
+                        const tickFormat = daysDiff <= 100 ? d3.timeFormat("%b %d") : d3.timeFormat("%b %Y");
+
+                        // X Axis
+                        svg.append("g")
+                            .attr("transform", `translate(0,${height - margin.bottom})`)
+                            .attr("color", "#475569")
+                            .call(d3.axisBottom(x).ticks(8).tickFormat(tickFormat))
+                            .call(g => g.select(".domain").attr("stroke", "#334155"))
+                            .call(g => g.selectAll("text").attr("fill", "#94a3b8").attr("font-size", "12px").attr("font-weight", "500"));
+                            
+                        // Y Axis
+                        svg.append("g")
+                            .attr("transform", `translate(${margin.left},0)`)
+                            .attr("color", "#475569")
+                            .call(d3.axisLeft(y).ticks(6))
+                            .call(g => g.select(".domain").remove())
+                            .call(g => g.selectAll("text").attr("fill", "#94a3b8").attr("font-size", "12px").attr("font-weight", "500"))
+                            .call(g => g.selectAll(".tick line").attr("stroke", "#334155").attr("x2", width - margin.left - margin.right).attr("stroke-dasharray", "4,4"));
+                            
+                        // Color mapping
+                        const colorMap = {
+                            "Web": "#0ea5e9", // Sky blue
+                            "Email": "#10b981", // Emerald
+                            "LinkedIn": "#f59e0b" // Amber
+                        };
+                        
+                        // Draw Lollipops
+                        const chart = svg.append("g");
+                        
+                        // Add glow filter
+                        const defs = svg.append("defs");
+                        const filter = defs.append("filter").attr("id", "glow-timeline");
+                        filter.append("feGaussianBlur").attr("stdDeviation", "3").attr("result", "coloredBlur");
+                        const feMerge = filter.append("feMerge");
+                        feMerge.append("feMergeNode").attr("in", "coloredBlur");
+                        feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+                        
+                        // Drop stems (lines)
+                        chart.selectAll("line.stem")
+                            .data(processedData)
+                            .join("line")
+                            .attr("class", "stem")
+                            .attr("x1", d => x(d.date))
+                            .attr("x2", d => x(d.date))
+                            .attr("y1", height - margin.bottom)
+                            .attr("y2", d => y(d.interactions))
+                            .attr("stroke", d => colorMap[d.type] || "#94a3b8")
+                            .attr("stroke-width", 2)
+                            .attr("opacity", 0.4);
+                            
+                        // Add tooltip div
+                        const tooltip = d3.select("body").append("div")
+                            .attr("class", "absolute hidden bg-dark-900 border border-dark-600 rounded-lg p-3 text-white text-xs shadow-[0_0_20px_rgba(0,0,0,0.5)] pointer-events-none z-50")
+                            .style("opacity", 0)
+                            .style("transition", "opacity 0.2s")
+                            .attr("id", "timeline-tooltip");
+                            
+                        // Circles (nodes)
+                        chart.selectAll("circle.blob")
+                            .data(processedData)
+                            .join("circle")
+                            .attr("class", "blob")
+                            .attr("cx", d => x(d.date))
+                            .attr("cy", d => y(d.interactions))
+                            .attr("r", 7)
+                            .attr("fill", d => colorMap[d.type] || "#94a3b8")
+                            .style("filter", "url(#glow-timeline)")
+                            .style("cursor", "pointer")
+                            .on("mouseover", function(event, d) {
+                                d3.select(this)
+                                    .transition().duration(200)
+                                    .attr("r", 12)
+                                    .attr("stroke", "#ffffff")
+                                    .attr("stroke-width", 3);
+                                    
+                                tooltip.transition().duration(200).style("opacity", 1);
+                                tooltip.classed("hidden", false);
+                                
+                                const dateStr = d3.timeFormat("%B %d, %Y")(d.date);
+                                
+                                
+                                let interactionLabel = 'interactions';
+                                let extraHtml = '';
+                                
+                                if (d.type === 'Web') {
+                                    interactionLabel = 'page views';
+                                } else if (d.type === 'Email') {
+                                    interactionLabel = 'total engagements';
+                                    extraHtml = `
+                                        <div class="col-span-2 mt-2 pt-2 border-t border-dark-700/50 flex justify-between text-[10px]">
+                                            <span class="text-slate-400">Opens: <span class="text-emerald-400 font-bold">${d.opens || 0}</span></span>
+                                            <span class="text-slate-400">Clicks: <span class="text-emerald-400 font-bold">${d.clicks || 0}</span></span>
+                                        </div>
+                                    `;
+                                } else if (d.type === 'LinkedIn') {
+                                    interactionLabel = 'ad clicks';
+                                }
+                                
+                                tooltip.html(`
+                                    <div class="font-bold text-sm mb-1 text-slate-100">${d.name}</div>
+                                    <div class="text-[10px] text-slate-400 font-semibold mb-3 uppercase tracking-wider">${d.type} Asset</div>
+                                    <div class="grid grid-cols-2 gap-4 border-t border-dark-700 pt-2 mt-2">
+                                        <div>
+                                            <div class="text-[10px] text-slate-500 mb-0.5">Released</div>
+                                            <div class="font-medium text-slate-300">${dateStr}</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-[10px] text-slate-500 mb-0.5">Impact</div>
+                                            <div class="font-bold text-sky-400">${d.interactions} ${interactionLabel}</div>
+                                        </div>
+                                        ${extraHtml}
+                                    </div>
+                                `);
+                                
+                                // Position tooltip
+                                const tooltipWidth = tooltip.node().offsetWidth;
+                                const tooltipHeight = tooltip.node().offsetHeight;
+                                let left = event.pageX + 15;
+                                let top = event.pageY - tooltipHeight / 2;
+                                
+                                // Prevent falling off screen
+                                if (left + tooltipWidth > window.innerWidth) left = event.pageX - tooltipWidth - 15;
+                                
+                                tooltip.style("left", left + "px").style("top", top + "px");
+                            })
+                            .on("mouseout", function() {
+                                d3.select(this)
+                                    .transition().duration(200)
+                                    .attr("r", 7)
+                                    .attr("stroke", "none");
+                                    
+                                tooltip.transition().duration(200).style("opacity", 0);
+                                setTimeout(() => tooltip.classed("hidden", true), 200);
+                            });
+                    }
+                </script>

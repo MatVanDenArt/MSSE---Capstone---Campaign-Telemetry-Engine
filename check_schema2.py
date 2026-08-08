@@ -1,5 +1,5 @@
 import sqlite3
-conn = sqlite3.connect('app/data/telemetry.db')
+conn = sqlite3.connect('capstone.db')
 c = conn.cursor()
 c.execute('SELECT sql FROM sqlite_master WHERE type="table" AND name="ga4_events"')
 print(c.fetchone()[0])

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.0.0/dist/chartjs-chart-treemap.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         tailwind.config = {
@@ -37,6 +38,9 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden antialiased bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-dark-800 via-dark-900 to-dark-900" x-data="{ chatOpen: true }">
 
+    <!-- Global context state -->
+    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
     <!-- Top Bar -->
     <header class="h-16 border-b border-dark-700 flex items-center justify-between px-6 shrink-0 z-10 glass-panel">
         <div class="flex items-center gap-4 text-sm font-medium">
@@ -63,9 +67,7 @@
         
         <div class="flex items-center gap-2 shrink-0">
             <span class="px-2 py-1 text-xs font-semibold bg-dark-800 border border-dark-700 rounded text-slate-400 shrink-0 hidden lg:block">Timeframe:</span>
-            <div class="flex bg-dark-800 border border-dark-700 rounded-lg overflow-hidden p-0.5" x-data="{ activeTimeframe: 90 }">
-                <button @click="activeTimeframe = 30" hx-get="/api/dashboard/overview?timeframe=30" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 30 ? 'bg-dark-700 text-white' : 'text-slate-300 hover:text-white hover:bg-dark-700'" class="text-xs font-medium px-3 py-1.5 transition rounded-md">30 Days</button>
-                <button @click="activeTimeframe = 90" hx-get="/api/dashboard/overview?timeframe=90" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 90 ? 'bg-dark-700 text-white' : 'text-slate-300 hover:text-white hover:bg-dark-700'" class="text-xs font-medium px-3 py-1.5 transition rounded-md">90 Days</button>
+            <div class="flex bg-dark-800 border border-dark-700 rounded-lg overflow-hidden p-0.5" x-data="{ activeTimeframe: 0 }">
                 <button @click="activeTimeframe = 0" hx-get="/api/dashboard/overview?timeframe=0" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 0 ? 'bg-dark-700 text-brand-400' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-700'" class="text-xs font-medium px-3 py-1.5 transition rounded-md">All Time</button>
             </div>
             

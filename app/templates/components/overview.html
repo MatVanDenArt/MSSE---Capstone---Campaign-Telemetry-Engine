@@ -112,12 +112,20 @@
         </div>
     </div>
 
+    
+    <div class="flex flex-col gap-6 mt-6">
+        {% include 'components/mod_channel_roi.html' %}
+    </div>
+
     <!-- Interactive Timeline -->
     {% include 'components/timeline.html' %}
     
-    <!-- Account Penetration Matrix -->
-    {% include 'components/account_penetration.html' %}
+    <!-- Asset Contribution Treemap -->
+    {% include 'components/mod_asset_treemap.html' %}
     
-    <!-- Asset Fatigue -->
+    <!-- Module 4: Audience Penetration Engine -->
+    {% include 'components/mod_persona_matrix.html' %}
+
+    <!-- Module 5: Asset Fatigue -->
     {% include 'components/asset_fatigue.html' %}
 </div>

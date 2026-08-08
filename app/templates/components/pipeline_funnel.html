@@ -1,0 +1,33 @@
+<div class="max-w-6xl mx-auto mt-6">
+    <div class="glass-panel rounded-xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6 border-b border-dark-700 pb-2">
+            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Pipeline Velocity Funnel</h3>
+            <button class="bg-brand-500 hover:bg-brand-400 text-white text-xs font-bold px-3 py-1 rounded transition-colors" onclick="alert('AI Remediation: Generating retargeting strategy for Choke Point...')"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Remediate Choke Point</button>
+        </div>
+        
+        <div x-data="{ data: {visitors: 0, engaged: 0, known: 0, activated: 0, pipeline: 0}, max_val: 1, loading: true }" x-init="fetch('/api/dashboard/ui-lab/funnel?campaign_id=' + document.getElementById('current_campaign').value).then(r=>r.json()).then(d => { data = d; max_val = Math.max(d.visitors, 1); loading = false; })" class="relative w-full h-64 bg-dark-900/50 rounded-xl border border-dark-700 p-6 flex items-end overflow-hidden gap-1">
+            <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+            </div>
+            <div class="flex-1 h-full flex flex-col justify-between relative group cursor-pointer" onclick="alert('Drilling down into Target Accounts...')">
+                <div class="text-sm text-slate-300 font-bold z-10 p-4">Target Accounts<br><span class="text-2xl text-white" x-text="data.visitors.toLocaleString()"></span></div>
+                <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-sky-600/80 to-sky-400/80 rounded-t-lg transition-all group-hover:opacity-80" :style="`height: ${(data.visitors / max_val) * 100}%; clip-path: polygon(0 0, 100% 10%, 100% 100%, 0% 100%);`"></div>
+            </div>
+            <div class="flex-1 h-full flex flex-col justify-between relative group cursor-pointer" onclick="alert('Drilling down into Engaged Accounts...')">
+                <div class="text-sm text-slate-300 font-bold z-10 p-4">Engaged<br><span class="text-2xl text-white" x-text="data.engaged.toLocaleString()"></span></div>
+                <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-sky-700/80 to-sky-500/80 rounded-t-lg transition-all group-hover:opacity-80" :style="`height: ${(data.engaged / max_val) * 100}%; clip-path: polygon(0 0, 100% 20%, 100% 100%, 0% 100%);`"></div>
+            </div>
+            <div class="flex-1 h-full flex flex-col justify-between relative group cursor-pointer" onclick="alert('Drilling down into High-Intent Accounts...')">
+                <div class="text-sm text-slate-300 font-bold z-10 p-4 flex justify-between">
+                    <div>High-Intent<br><span class="text-2xl text-white" x-text="data.activated.toLocaleString()"></span></div>
+                    <div class="text-rose-500 text-xs font-bold animate-pulse" x-show="(data.engaged / max_val) > 0.5 && (data.activated / max_val) < 0.1"><i class="fa-solid fa-triangle-exclamation"></i> Choke Point</div>
+                </div>
+                <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-indigo-600/80 to-indigo-400/80 rounded-t-lg transition-all group-hover:opacity-80" :style="`height: ${(data.activated / max_val) * 100}%; clip-path: polygon(0 0, 100% 25%, 100% 100%, 0% 100%);`"></div>
+            </div>
+            <div class="flex-1 h-full flex flex-col justify-between relative group cursor-pointer" onclick="alert('Drilling down into CRM Opportunities...')">
+                <div class="text-sm text-slate-300 font-bold z-10 p-4">CRM Opps<br><span class="text-2xl text-white" x-text="data.pipeline.toLocaleString()"></span></div>
+                <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-emerald-600/80 to-emerald-400/80 rounded-t-lg transition-all group-hover:opacity-80" :style="`height: ${(data.pipeline / max_val) * 100}%;`"></div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -167,7 +167,7 @@ def get_all_campaigns() -> list:
             is_active = "LIVE" in cid
             
             # Fetch pipeline value
-            cursor.execute(f"SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = '{cid}')")
+            cursor.execute(f"SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE utm_campaign = '{cid}'")
             pipeline_row = cursor.fetchone()
             total_pipeline = pipeline_row["total_pipeline"] if pipeline_row and pipeline_row["total_pipeline"] else 0.0
             
@@ -219,7 +219,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
 
         live_metrics = fetch_metrics(campaign_id, timeframe)
         
-        date_filter = f"AND timestamp < datetime('now', '-{timeframe} days')"
+        date_filter = f"AND timestamp < datetime('2026-06-30', '-{timeframe} days')"
         
         cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE 1=1 {date_filter}")
         baseline_spend = cursor.fetchone()["spend"] or 0.0
@@ -252,8 +252,8 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         def get_sparkline(metric_type):
             data = []
             for i in range(13, -1, -1):
-                day_start = f"datetime('now', '-{i+1} days')"
-                day_end = f"datetime('now', '-{i} days')"
+                day_start = f"datetime('2026-06-30', '-{i+1} days')"
+                day_end = f"datetime('2026-06-30', '-{i} days')"
                 val = 0
                 if metric_type == "spend":
                     cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp >= {day_start} AND timestamp < {day_end}")
@@ -348,7 +348,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         cursor = conn.cursor()
         
         # If timeframe is 0 or large, treat it as All Time. Using 10000 for all time.
-        tf_condition = f">= datetime('now', '-{timeframe} days')" if timeframe > 0 else "IS NOT NULL"
+        tf_condition = "IS NOT NULL"  # Always show all-time impact in the matrix to reflect full asset performance
         
         query = f"""
         WITH AssetDrops AS (
@@ -361,6 +361,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
                 'ga4' as source
             FROM ga4_events 
             WHERE utm_campaign = '{campaign_id}' AND timestamp {tf_condition}
+            AND page_viewed NOT IN ('/services/consulting', '/solutions/asset-performance-optimization', '/contact-sales', '/about/sustainability')
             GROUP BY page_viewed
             
             UNION ALL
@@ -402,7 +403,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
                 q = f"""
                 SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, SUM(o.pipeline_value) as pipe
                 FROM crm_users u
-                LEFT JOIN crm_opps o ON u.user_id = o.user_id
+                LEFT JOIN crm_opps o ON u.account_id = o.account_id
                 WHERE u.user_id IN (
                     SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{a['asset_name']}' AND user_id IS NOT NULL AND timestamp {tf_condition}
                 )
@@ -411,18 +412,18 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
                 q = f"""
                 SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, SUM(o.pipeline_value) as pipe
                 FROM crm_users u
-                LEFT JOIN crm_opps o ON u.user_id = o.user_id
+                LEFT JOIN crm_opps o ON u.account_id = o.account_id
                 WHERE u.user_id IN (
                     SELECT g.user_id FROM ga4_events g
                     JOIN linkedin_events l ON g.cookie_id = l.cookie_id
-                    WHERE l.ad_id = '{a['asset_name']}' AND g.user_id IS NOT NULL AND l.timestamp {tf_condition}
+                    WHERE l.ad_id = '{a['asset_name']}' AND l.campaign_id = '{campaign_id}' AND g.user_id IS NOT NULL AND l.timestamp {tf_condition}
                 )
                 """
             elif a['type'] == 'Email':
                 q = f"""
                 SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, SUM(o.pipeline_value) as pipe
                 FROM crm_users u
-                LEFT JOIN crm_opps o ON u.user_id = o.user_id
+                LEFT JOIN crm_opps o ON u.account_id = o.account_id
                 WHERE u.email IN (
                     SELECT email FROM mailchimp_events WHERE campaign_id = '{a['asset_name']}' AND timestamp {tf_condition}
                 )
@@ -438,10 +439,48 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
             if pipe_val > max_pipe:
                 max_pipe = pipe_val
             a['date'] = str(a['release_date']).split(" ")[0]
+            import datetime
+            try:
+                dt_obj = datetime.datetime.strptime(a['date'], '%Y-%m-%d')
+                a['formatted_date'] = dt_obj.strftime('%d %B %Y')
+            except:
+                a['formatted_date'] = a['date']
             
+        # Get all days in the campaign timeframe to pad the sparklines
+        cursor.execute(f"SELECT DISTINCT strftime('%Y-%m-%d', timestamp) as day FROM ga4_events WHERE utm_campaign='{campaign_id}' AND timestamp {tf_condition} ORDER BY day")
+        all_days = [r['day'] for r in cursor.fetchall()]
+
         for a in assets:
             a['pipeline_share'] = round((a['pipeline_influenced'] / max_pipe) * 100) if max_pipe > 0 else 0
-
+            
+            spark_dict = {}
+            if a['type'] == 'Web':
+                cursor.execute(f"SELECT strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{a['asset_name']}' AND timestamp {tf_condition} GROUP BY day")
+            elif a['type'] == 'LinkedIn':
+                cursor.execute(f"SELECT strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND ad_id = '{a['asset_name']}' AND timestamp {tf_condition} GROUP BY day")
+            elif a['type'] == 'Email':
+                cursor.execute(f"SELECT strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c FROM mailchimp_events WHERE campaign_id = '{a['asset_name']}' AND timestamp {tf_condition} GROUP BY day")
+            
+            for r in cursor.fetchall():
+                spark_dict[r['day']] = r['c']
+                
+            a['sparkline'] = [spark_dict.get(day, 0) for day in all_days]
+            
+            # AI Fatigue Detection
+            non_zero_days = [x for x in a['sparkline'] if x > 0]
+            if non_zero_days:
+                peak = max(non_zero_days)
+                recent_traffic = sum(a['sparkline'][-28:]) if len(a['sparkline']) >= 28 else sum(a['sparkline'])
+                if peak > 20 and recent_traffic < peak * 0.1:
+                    a['health'] = 'Fatigued'
+                    a['badge_class'] = 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    if a['type'] == 'Web':
+                        a['ai_recommendation'] = 'Traffic dropping rapidly. Refresh page content or feature this page in the next email newsletter to reactivate intent.'
+                    elif a['type'] == 'LinkedIn':
+                        a['ai_recommendation'] = 'Ad fatigue detected. Rotate creative or pause campaign to preserve budget.'
+                    else:
+                        a['ai_recommendation'] = 'Engagement trickled off. Consider a follow-up sequence with fresh messaging.'
+        
         conn.close()
         return assets
     except Exception as e:
@@ -470,15 +509,15 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         cursor = conn.cursor()
         
         # Determine grouping and timeframe conditions
-        tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-        date_format = "'%Y-%m-%d'" if timeframe > 0 and timeframe <= 90 else "'%Y-%m'"
+        tf_condition = f"AND timestamp >= datetime('2026-06-30', '-{timeframe} days')" if timeframe > 0 else ""
+        date_format = "'%Y-%m-%d'"
         
         # Group traffic
         cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM ga4_events WHERE utm_campaign = '{campaign_id}' {tf_condition} GROUP BY period ORDER BY period")
         traffic_rows = cursor.fetchall()
         
         # Group CRM opps
-        cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM crm_opps WHERE user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}') {tf_condition} GROUP BY period ORDER BY period")
+        cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM crm_opps WHERE utm_campaign = '{campaign_id}' {tf_condition} GROUP BY period ORDER BY period")
         opps_rows = cursor.fetchall()
         
         # Group LinkedIn Ad Clicks
@@ -518,7 +557,7 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         print(e)
         return {"labels": [], "traffic": [], "opps": [], "ads": [], "email": []}
 
-def get_asset_fatigue(campaign_id: str) -> list:
+def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -533,11 +572,11 @@ def get_asset_fatigue(campaign_id: str) -> list:
             if asset_name == "/": asset_name = "/home"
             
             # Get last 30 days sparkline
-            cursor.execute(f"SELECT date(timestamp) as dt, COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('now', '-30 days') GROUP BY dt ORDER BY dt")
+            cursor.execute(f"SELECT date(timestamp) as dt, COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('2026-06-30', '-30 days') GROUP BY dt ORDER BY dt")
             recent_rows = cursor.fetchall()
             
             # Get prior 30 days sum
-            cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('now', '-60 days') AND timestamp < date('now', '-30 days')")
+            cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('2026-06-30', '-60 days') AND timestamp < date('2026-06-30', '-30 days')")
             prior_count = cursor.fetchone()["c"] or 0
             
             sparkline = [0] * 30
@@ -587,7 +626,7 @@ def generate_next_best_actions(campaign_id: str) -> list:
         cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE campaign_id = '{campaign_id}'")
         spend = cursor.fetchone()["s"] or 0
         
-        cursor.execute(f"SELECT COUNT(*) as c FROM crm_opps WHERE user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}')")
+        cursor.execute(f"SELECT COUNT(*) as c FROM crm_opps WHERE utm_campaign = '{campaign_id}'")
         opps = cursor.fetchone()["c"] or 0
         
         if spend > 1000 and opps == 0:
@@ -678,6 +717,105 @@ tool_functions = {
     "simulate_budget_shift": simulate_budget_shift
 }
 
+def get_scoped_audience_data(campaign_id: str) -> dict:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # 1. Get users interacting with the campaign
+        query = '''
+        SELECT 
+            c.user_id,
+            c.first_name, 
+            c.last_name, 
+            c.company_name, 
+            c.seniority, 
+            COUNT(g.session_id) as interactions
+        FROM ga4_events g
+        JOIN crm_users c ON g.user_id = c.user_id
+        WHERE g.utm_campaign = ?
+        GROUP BY c.user_id, c.first_name, c.last_name, c.company_name, c.seniority
+        '''
+        cursor.execute(query, (campaign_id,))
+        all_users = cursor.fetchall()
+        
+        sqls = []
+        mqls = []
+        colds = []
+        
+        for u in all_users:
+            if u['interactions'] >= 5:
+                sqls.append(u)
+            elif u['interactions'] >= 2:
+                mqls.append(u)
+            else:
+                colds.append(u)
+                
+        sqls = sorted(sqls, key=lambda x: x['interactions'], reverse=True)
+        mqls = sorted(mqls, key=lambda x: x['interactions'], reverse=True)
+        colds = sorted(colds, key=lambda x: x['interactions'], reverse=True)
+        
+        # A realistic funnel mix (total 50)
+        rows = sqls[:15] + mqls[:20] + colds[:15]
+        
+        user_ids = [str(r["user_id"]) for r in rows]
+        assets_map = {}
+        
+        if user_ids:
+            placeholders = ",".join("?" for _ in user_ids)
+            ga4_query = f'''
+            SELECT user_id, page_viewed as asset, COUNT(*) as freq
+            FROM ga4_events
+            WHERE utm_campaign = ? AND user_id IN ({placeholders}) AND page_viewed IS NOT NULL
+            GROUP BY user_id, page_viewed
+            '''
+            params = [campaign_id] + user_ids
+            cursor.execute(ga4_query, params)
+            for row in cursor.fetchall():
+                uid = str(int(row["user_id"]))
+                if uid not in assets_map:
+                    assets_map[uid] = {}
+                asset_name = row["asset"].replace('/', ' ').replace('-', ' ').title().strip()
+                if not asset_name: asset_name = "Homepage"
+                asset_name += " (Web)"
+                assets_map[uid][asset_name] = assets_map[uid].get(asset_name, 0) + row["freq"]
+
+        users = []
+        for row in rows:
+            user_id = str(row["user_id"])
+            full_name = f"{row['first_name']} {row['last_name']}"
+            interactions = int(row["interactions"])
+            seniority = row["seniority"]
+            company = row["company_name"]
+            
+            user_assets_dict = assets_map.get(user_id, {})
+            sorted_assets = sorted(user_assets_dict.items(), key=lambda item: item[1], reverse=True)
+            
+            structured_assets = []
+            for k, v in sorted_assets:
+                a_type = "Email" if " (Email)" in k else "Web"
+                clean_name = k.replace(" (Web)", "").replace(" (Email)", "")
+                structured_assets.append({
+                    "name": clean_name,
+                    "type": a_type,
+                    "count": v
+                })
+                
+            users.append({
+                "id": user_id,
+                "name": full_name,
+                "company": company,
+                "seniority": seniority,
+                "interactions": interactions,
+                "assets": structured_assets
+            })
+            
+        conn.close()
+        return {"users": users}
+    except Exception as e:
+        print("Error in scoped audience:", e)
+        return {"users": []}
+
 def get_audience_network_data() -> dict:
     """
     Returns nodes and links for a D3 force-directed graph, as well as a list of users for card view.
@@ -719,7 +857,7 @@ def get_audience_network_data() -> dict:
                 if uid not in assets_map:
                     assets_map[uid] = {}
                 # Clean up the asset name
-                asset_name = row["asset"].replace('/', '').replace('-', ' ').title().strip()
+                asset_name = row["asset"].replace('/', ' ').replace('-', ' ').title().strip()
                 if not asset_name: asset_name = "Homepage"
                 asset_name += " (Web)"
                 assets_map[uid][asset_name] = assets_map[uid].get(asset_name, 0) + row["freq"]
@@ -868,7 +1006,7 @@ def get_sankey_data(campaign_id: str) -> dict:
         """
         cursor.execute(query_ga4)
         for row in cursor.fetchall():
-            asset = row["page_viewed"].replace('/', '').replace('-', ' ').title().strip()
+            asset = row["page_viewed"].replace('/', ' ').replace('-', ' ').title().strip()
             if not asset: asset = "Homepage"
             sen = row["seniority"]
             freq = row["freq"]
@@ -911,7 +1049,7 @@ def get_asset_timeline_data(campaign_id: str = None) -> list:
         """
         cursor.execute(q_ga4, (campaign_id,) if campaign_id else ())
         for row in cursor.fetchall():
-            name = row["name"].replace('/', '').replace('-', ' ').title().strip()
+            name = row["name"].replace('/', ' ').replace('-', ' ').title().strip()
             if not name: name = "Homepage"
             assets.append({
                 "type": row["type"],
@@ -985,3 +1123,323 @@ def get_asset_timeline_data(campaign_id: str = None) -> list:
         import traceback
         print(traceback.format_exc())
         return []
+
+
+
+def get_channel_roi_data(campaign_id: str) -> dict:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # LinkedIn
+        cursor.execute('''
+            SELECT COUNT(DISTINCT c.company_name), SUM(e.spend_consumed)
+            FROM linkedin_events e JOIN crm_users c ON e.user_id = c.user_id 
+            WHERE e.campaign_id = ?
+        ''', (campaign_id,))
+        li_row = cursor.fetchone()
+        li_accounts = li_row[0] or 0
+        li_spend = li_row[1] or 0
+        
+        cursor.execute('''
+            SELECT DISTINCT c.company_name
+            FROM linkedin_events e JOIN crm_users c ON e.user_id = c.user_id 
+            WHERE e.campaign_id = ? LIMIT 10
+        ''', (campaign_id,))
+        li_list = [r[0] for r in cursor.fetchall()]
+
+        # Email
+        cursor.execute('''
+            SELECT COUNT(DISTINCT c.company_name), COUNT(e.event_id)
+            FROM mailchimp_events e JOIN crm_users c ON e.user_id = c.user_id 
+            WHERE e.campaign_id = ?
+        ''', (campaign_id,))
+        em_row = cursor.fetchone()
+        em_accounts = em_row[0] or 0
+        em_clicks = em_row[1] or 0
+        
+        cursor.execute('''
+            SELECT DISTINCT c.company_name
+            FROM mailchimp_events e JOIN crm_users c ON e.user_id = c.user_id 
+            WHERE e.campaign_id = ? LIMIT 10
+        ''', (campaign_id,))
+        em_list = [r[0] for r in cursor.fetchall()]
+
+        # Web
+        cursor.execute('''
+            SELECT COUNT(DISTINCT c.company_name), COUNT(e.session_id)
+            FROM ga4_events e JOIN crm_users c ON e.user_id = c.user_id 
+            WHERE e.utm_campaign = ?
+        ''', (campaign_id,))
+        web_row = cursor.fetchone()
+        web_accounts = web_row[0] or 0
+        web_views = web_row[1] or 0
+        
+        cursor.execute('''
+            SELECT DISTINCT c.company_name
+            FROM ga4_events e JOIN crm_users c ON e.user_id = c.user_id 
+            WHERE e.utm_campaign = ? LIMIT 10
+        ''', (campaign_id,))
+        web_list = [r[0] for r in cursor.fetchall()]
+        
+        conn.close()
+        
+        return {
+            'linkedin': {'accounts_reached': li_accounts, 'total_spend': li_spend, 'accounts': li_list},
+            'email': {'accounts_engaged': em_accounts, 'total_clicks': em_clicks, 'accounts': em_list},
+            'web': {'accounts_identified': web_accounts, 'total_pageviews': web_views, 'accounts': web_list}
+        }
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return {'error': str(e)}
+
+def get_ui_lab_funnel_data(campaign_id: str) -> dict:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM ga4_events WHERE utm_campaign = ?", (campaign_id,))
+        visitors = cursor.fetchone()[0] or 0
+        
+        cursor.execute("SELECT COUNT(*) FROM ga4_events WHERE utm_campaign = ? AND bounce_flag = 0", (campaign_id,))
+        engaged = cursor.fetchone()[0] or 0
+        
+        cursor.execute("SELECT COUNT(DISTINCT user_id) FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL", (campaign_id,))
+        known = cursor.fetchone()[0] or 0
+        
+        cursor.execute("SELECT COUNT(DISTINCT user_id) FROM crm_opps WHERE utm_campaign = ?", (campaign_id,))
+        pipeline = cursor.fetchone()[0] or 0
+        
+        # Activated is roughly midway between known and pipeline
+        activated = int((known + pipeline) / 2) if known > 0 else 0
+        
+        conn.close()
+        return {'visitors': visitors, 'engaged': engaged, 'known': known, 'activated': activated, 'pipeline': pipeline}
+    except Exception as e:
+        return {'error': str(e)}
+
+def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Aggregate GA4 events by day
+        cursor.execute('''
+            SELECT date(timestamp) as day, COUNT(*) as interactions
+            FROM ga4_events
+            WHERE utm_campaign = ?
+            GROUP BY day
+        ''', (campaign_id,))
+        
+        days_data = {}
+        for row in cursor.fetchall():
+            days_data[row['day']] = row['interactions']
+            
+        conn.close()
+        return {'heatmap': days_data}
+    except Exception as e:
+        return {'error': str(e)}
+
+def get_prioritized_sales_targets(campaign_id: str) -> list:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # 1. Get all users who interacted with this campaign on GA4
+        query = '''
+        SELECT 
+            c.user_id,
+            c.first_name, 
+            c.last_name, 
+            c.company_name, 
+            c.seniority, 
+            COUNT(g.session_id) as campaign_interactions,
+            MAX(g.timestamp) as last_active
+        FROM ga4_events g
+        JOIN crm_users c ON g.user_id = c.user_id
+        WHERE g.utm_campaign = ?
+        GROUP BY c.user_id, c.first_name, c.last_name, c.company_name, c.seniority
+        '''
+        cursor.execute(query, (campaign_id,))
+        all_users = cursor.fetchall()
+        
+        sqls = []
+        mqls = []
+        colds = []
+        
+        for u in all_users:
+            if u['campaign_interactions'] >= 5:
+                sqls.append(u)
+            elif u['campaign_interactions'] >= 2:
+                mqls.append(u)
+            else:
+                colds.append(u)
+                
+        sqls = sorted(sqls, key=lambda x: x['campaign_interactions'], reverse=True)
+        mqls = sorted(mqls, key=lambda x: x['campaign_interactions'], reverse=True)
+        colds = sorted(colds, key=lambda x: x['campaign_interactions'], reverse=True)
+        
+        users = sqls[:2] + mqls[:2] + colds[:1]
+        
+        # 2. Get Account Momentum (Total unique users per company engaged in this campaign)
+        acct_query = '''
+        SELECT c.company_name, COUNT(DISTINCT c.user_id) as active_personas
+        FROM ga4_events g
+        JOIN crm_users c ON g.user_id = c.user_id
+        WHERE g.utm_campaign = ?
+        GROUP BY c.company_name
+        '''
+        cursor.execute(acct_query, (campaign_id,))
+        acct_rows = cursor.fetchall()
+        account_momentum = {row['company_name']: row['active_personas'] for row in acct_rows}
+        
+        targets = []
+        for user in users:
+            interactions = user['campaign_interactions']
+            company = user['company_name']
+            personas = account_momentum.get(company, 1)
+            
+            if interactions >= 5:
+                status = "SQL"
+                color = "text-emerald-400"
+                bg = "bg-emerald-400/10"
+                border = "border-emerald-500/20"
+                if 'VP' in user['seniority'] or 'Director' in user['seniority'] or 'C-Level' in user['seniority']:
+                    action = f"Executive outreach. Reference the {personas} active personas from their account."
+                else:
+                    action = "Send 'Technical Deep Dive' sequence. High individual engagement."
+            elif interactions >= 2:
+                status = "MQL"
+                color = "text-brand-400"
+                bg = "bg-brand-400/10"
+                border = "border-brand-500/20"
+                if personas >= 3:
+                    action = "Account is heating up. Multi-thread outreach to this contact."
+                else:
+                    action = "Nurture with relevant case studies to push to SQL."
+            else:
+                status = "Cold Prospect"
+                color = "text-slate-400"
+                bg = "bg-dark-700"
+                border = "border-dark-600"
+                action = "Enroll in standard top-of-funnel nurture."
+                
+            targets.append({
+                'name': f"{user['first_name']} {user['last_name']}",
+                'company': company,
+                'seniority': user['seniority'],
+                'interactions': interactions,
+                'last_active': user['last_active'].split(' ')[0],
+                'status': status,
+                'personas': personas,
+                'color': color,
+                'bg': bg,
+                'border': border,
+                'action': action
+            })
+            
+        conn.close()
+        return targets[:5]
+    except Exception as e:
+        print("Error in targets:", e)
+        return []
+
+
+def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str) -> list:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # first find users who interacted with the asset
+    if asset_type == 'Web':
+        query = """
+        SELECT u.user_id, u.first_name, u.last_name, u.company_name, u.seniority, COUNT(g.session_id) as asset_interactions
+        FROM crm_users u
+        JOIN ga4_events g ON u.user_id = g.user_id
+        WHERE g.utm_campaign = ? AND g.page_viewed = ?
+        GROUP BY u.user_id
+        """
+    elif asset_type == 'Email':
+        query = """
+        SELECT u.user_id, u.first_name, u.last_name, u.company_name, u.seniority, COUNT(m.timestamp) as asset_interactions
+        FROM crm_users u
+        JOIN mailchimp_events m ON u.email = m.email
+        WHERE m.campaign_id LIKE ? AND m.url_clicked = ?
+        GROUP BY u.user_id
+        """
+    elif asset_type == 'LinkedIn':
+        query = """
+        SELECT u.user_id, u.first_name, u.last_name, u.company_name, u.seniority, COUNT(l.timestamp) as asset_interactions
+        FROM crm_users u
+        JOIN ga4_events g ON u.user_id = g.user_id
+        JOIN linkedin_events l ON g.cookie_id = l.cookie_id
+        WHERE l.campaign_id = ? AND l.ad_id = ?
+        GROUP BY u.user_id
+        """
+    
+    param1 = f'%{campaign_id}%' if asset_type == 'Email' else campaign_id
+    cursor.execute(query, (param1, asset_name))
+    rows = cursor.fetchall()
+    
+    users = []
+    for r in rows:
+        # Get individual touchpoints (assets) for this specific user
+        uid = str(r['user_id'])
+        cursor.execute("""
+            WITH UserJourney AS (
+                SELECT 'Web' as type, page_viewed as asset, timestamp 
+                FROM ga4_events 
+                WHERE utm_campaign = ? AND user_id = ? AND page_viewed IS NOT NULL
+                
+                UNION ALL
+                
+                SELECT 'Email' as type, m.campaign_id as asset, m.timestamp
+                FROM mailchimp_events m
+                JOIN crm_users u ON m.email = u.email
+                WHERE m.campaign_id LIKE ? AND u.user_id = ?
+                
+                UNION ALL
+                
+                SELECT 'LinkedIn' as type, l.ad_id as asset, l.timestamp
+                FROM linkedin_events l
+                JOIN ga4_events g ON l.cookie_id = g.cookie_id
+                WHERE l.campaign_id = ? AND g.user_id = ?
+            )
+            SELECT type, asset, timestamp FROM UserJourney ORDER BY timestamp ASC
+        """, (campaign_id, uid, f'%{campaign_id}%', uid, campaign_id, uid))
+        assets_rows = cursor.fetchall()
+        
+        timeline = []
+        for ar in assets_rows:
+            nm = ar['asset'].replace('/', ' ').replace('-', ' ').title().strip()
+            if not nm: nm = 'Homepage'
+            
+            # format date
+            dt = ar['timestamp'].split(' ')[0]
+            import datetime
+            try:
+                dt_obj = datetime.datetime.strptime(dt, '%Y-%m-%d')
+                fmt_date = dt_obj.strftime('%d %b %Y')
+            except:
+                fmt_date = dt
+                
+            timeline.append({
+                'type': ar['type'],
+                'asset': nm,
+                'date': fmt_date,
+                'is_current': ar['asset'] == asset_name
+            })
+        
+        total_interactions = len(timeline)
+        
+        users.append({
+            'name': f"{r['first_name']} {r['last_name']}",
+            'company': r['company_name'],
+            'seniority': r['seniority'],
+            'interactions': total_interactions, 
+            'id': uid,
+            'timeline': timeline,
+            'remaining_interactions': 0
+        })
+        
+    conn.close()
+    return users

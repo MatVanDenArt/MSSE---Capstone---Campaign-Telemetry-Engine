@@ -1,0 +1,340 @@
+            <div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{ 
+                viewMode: 'network', 
+                loading: true, 
+                users: [], 
+                graphData: null, 
+                networkInitialized: false,
+                selectedUser: null,
+                init() {
+                    fetch('/api/dashboard/audience-data')
+                        .then(res => res.json())
+                        .then(data => {
+                            this.users = data.users || [];
+                            this.graphData = { nodes: data.nodes || [], links: data.links || [] };
+                            this.loading = false;
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            this.loading = false;
+                        });
+                },
+                initNetwork() {
+                    if(this.networkInitialized || !this.graphData || this.graphData.nodes.length === 0) return;
+                    this.networkInitialized = true;
+                    if (!window.d3) {
+                        const script = document.createElement('script');
+                        script.src = 'https://d3js.org/d3.v7.min.js';
+                        script.onload = () => setTimeout(() => window.renderAudienceD3(this.graphData), 100);
+                        document.head.appendChild(script);
+                    } else {
+                        setTimeout(() => window.renderAudienceD3(this.graphData), 100);
+                    }
+                }
+            }">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-100">Module D3: Audience User Journey (Legacy)</h3>
+                        <p class="text-sm text-slate-400 max-w-2xl mt-1">Mapping individual user touchpoints and aggregating interaction density.</p>
+                    </div>
+                    
+                    </div>
+                
+                <div class="w-full min-h-[600px] relative bg-[#f5f5f5] rounded-xl border border-slate-200 overflow-hidden" >
+                    
+                    <!-- Loading state -->
+                    <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-[#f5f5f5]/80 z-50">
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+                    </div>
+
+                    <!-- Cards View (Light Mode style like the reference image) -->
+                    <div x-show="viewMode === 'cards'" class="p-8 h-full overflow-y-auto custom-scrollbar text-slate-900 relative" style="height: 600px;">
+                        <h4 class="text-[10px] font-bold tracking-widest text-slate-500 mb-6 uppercase">Add / Edit Actors</h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                            <template x-for="user in users" :key="user.id">
+                                <div @click="selectedUser = user" class="bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center relative hover:shadow-lg transition-shadow cursor-pointer min-h-[220px]">
+                                    <!-- Badge corner -->
+                                    <div class="absolute top-0 left-0 w-4 h-4 rounded-br-[4px]" :class="user.interactions > 8 ? 'bg-rose-500' : (user.interactions > 3 ? 'bg-amber-400' : 'bg-slate-300')"></div>
+                                    
+                                    <div class="text-[8px] font-bold uppercase tracking-widest mt-2 mb-3" 
+                                         :class="user.interactions > 8 ? 'text-rose-500' : (user.interactions > 3 ? 'text-amber-500' : 'text-slate-400')"
+                                         x-text="user.interactions > 8 ? 'Sales Qualified (SQL)' : (user.interactions > 3 ? 'Marketing Qualified (MQL)' : 'Cold Lead')"></div>
+                                    
+                                    <div class="text-xl font-bold uppercase text-slate-900 leading-[0.9] mb-4" style="font-family: 'Oswald', Impact, sans-serif; letter-spacing: 1px;" x-html="user.name.replace(' ', '<br>')"></div>
+                                    
+                                    <div class="text-[9px] text-slate-400 mt-auto uppercase" x-text="user.company"></div>
+                                    <div class="text-[9px] text-slate-400 font-bold mt-1 uppercase" x-text="user.seniority"></div>
+                                    
+                                    <div class="mt-4 pt-3 border-t border-slate-100 w-full flex flex-col items-start text-left opacity-0 group-hover:opacity-100 transition-opacity min-h-[80px]">
+                                        <div class="flex justify-between items-center w-full mb-2">
+                                            <span class="text-[10px] font-bold text-slate-400 uppercase">Total Score</span>
+                                            <span class="text-sm font-bold text-sky-600" x-text="user.interactions"></span>
+                                        </div>
+                                        <div class="w-full" x-show="user.assets && user.assets.length > 0">
+                                            <div class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-1">Top Touchpoints:</div>
+                                            <template x-for="(asset, idx) in user.assets.slice(0, 3)" :key="idx">
+                                                <div class="text-[9px] text-slate-500 truncate w-full" x-text="'- ' + asset.name + ' (' + asset.count + 'x)'"></div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- User Detail Modal Overlay -->
+                    <div x-show="selectedUser" class="absolute inset-0 bg-[#f5f5f5]/95 z-40 flex justify-center items-start overflow-y-auto p-8" style="display: none;" x-transition.opacity>
+                        <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-2xl relative" @click.away="selectedUser = null">
+                            <button @click="selectedUser = null" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-xmark text-xl"></i>
+                            </button>
+                            
+                            <div class="p-8 border-b border-slate-100 flex items-start gap-6">
+                                <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-inner" 
+                                     :class="selectedUser?.interactions > 8 ? 'bg-rose-500' : (selectedUser?.interactions > 3 ? 'bg-amber-400' : 'bg-slate-300')"
+                                     x-text="selectedUser?.name.charAt(0)"></div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-slate-900" x-text="selectedUser?.name"></h3>
+                                    <div class="text-sm font-semibold text-slate-500 uppercase tracking-wide mt-1" x-text="selectedUser?.seniority + ' @ ' + selectedUser?.company"></div>
+                                    
+                                    <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-3"
+                                         :class="selectedUser?.interactions > 8 ? 'bg-rose-100 text-rose-800' : (selectedUser?.interactions > 3 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')"
+                                         x-text="selectedUser?.interactions > 8 ? 'Sales Qualified Lead (SQL)' : (selectedUser?.interactions > 3 ? 'Marketing Qualified Lead (MQL)' : 'Cold Prospect')">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-8 bg-slate-50">
+                                <div class="flex justify-between items-end mb-6">
+                                    <h4 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Asset Engagements</h4>
+                                    <div class="text-xs font-bold text-slate-500 uppercase">Total Touches: <span class="text-sky-600 text-base" x-text="selectedUser?.interactions"></span></div>
+                                </div>
+                                
+                                <div class="space-y-3">
+                                    <template x-for="(asset, index) in selectedUser?.assets" :key="index">
+                                        <div class="flex justify-between items-center p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded bg-sky-50 flex items-center justify-center text-sky-500">
+                                                    <i class="fa-regular fa-file-lines" x-show="asset.type === 'Web'"></i>
+                                                    <i class="fa-regular fa-envelope" x-show="asset.type === 'Email'"></i>
+                                                </div>
+                                                <span class="text-sm font-medium text-slate-700" x-text="asset.name"></span>
+                                            </div>
+                                            <div class="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-600 rounded">
+                                                <span x-text="asset.count"></span> interactions
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <div x-show="!selectedUser?.assets || selectedUser.assets.length === 0" class="text-center py-6 text-slate-400 text-sm">
+                                        No granular asset tracking available for this user.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network View (Dark Mode style like reference image) -->
+                    <div  class="absolute inset-0 bg-black" style="display: none;">
+                        <div id="d3-container" class="w-full h-full relative">
+                            <!-- D3 will render here -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <script>
+                window.renderAudienceD3 = function(graphData) {
+                    const container = d3.select('#d3-container');
+                    container.html(''); // clear previous
+                    const width = container.node().clientWidth;
+                    const height = container.node().clientHeight || 600;
+                    
+                    // Add tooltip div
+                    const tooltip = d3.select("body").append("div")
+                        .attr("class", "absolute hidden bg-dark-900 border border-dark-600 rounded-lg p-3 text-white text-xs shadow-2xl pointer-events-none z-50")
+                        .style("opacity", 0)
+                        .style("transition", "opacity 0.2s")
+                        .attr("id", "d3-tooltip");
+                        
+                    // Cleanup old tooltips if present
+                    d3.selectAll("#d3-tooltip").filter((d, i, nodes) => i < nodes.length - 1).remove();
+                    
+                    const nodes = graphData.nodes.map(d => Object.create(d));
+                    const links = graphData.links.map(d => Object.create(d));
+                    
+                    const simulation = d3.forceSimulation(nodes)
+                        .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.value === 5 ? 200 : 90))
+                        .force("charge", d3.forceManyBody().strength(-400))
+                        .force("center", d3.forceCenter(width / 2, height / 2))
+                        .force("collide", d3.forceCollide().radius(d => d.radius + 20));
+                        
+                    const svg = container.append("svg")
+                        .attr("width", width)
+                        .attr("height", height)
+                        .attr("viewBox", [0, 0, width, height])
+                        .style("cursor", "grab");
+                        
+                    // Define Glow Filter
+                    const defs = svg.append("defs");
+                    const filter = defs.append("filter")
+                        .attr("id", "glow")
+                        .attr("x", "-20%")
+                        .attr("y", "-20%")
+                        .attr("width", "140%")
+                        .attr("height", "140%");
+                    filter.append("feGaussianBlur")
+                        .attr("stdDeviation", "8")
+                        .attr("result", "blur");
+                    filter.append("feComposite")
+                        .attr("in", "SourceGraphic")
+                        .attr("in2", "blur")
+                        .attr("operator", "over");
+                        
+                    // Zoom Wrapper
+                    const g = svg.append("g");
+                    
+                    svg.call(d3.zoom()
+                        .extent([[0, 0], [width, height]])
+                        .scaleExtent([0.2, 5])
+                        .on("zoom", (event) => {
+                            g.attr("transform", event.transform);
+                        }));
+                        
+                    // Draw Links
+                    const link = g.append("g")
+                        .attr("stroke", "#475569")
+                        .attr("stroke-opacity", 0.4)
+                        .selectAll("line")
+                        .data(links)
+                        .join("line")
+                        .attr("stroke-width", d => Math.sqrt(d.value) * 1.5);
+                        
+                    // Node styling logic
+                    function getNodeColor(d) {
+                        if(d.group === 0) return "#ffffff"; // Campaign
+                        if(d.group === 1) return "#334155"; // Company
+                        
+                        if(d.seniority === 'C-Suite') return "#fbbf24"; // gold
+                        if(d.seniority === 'VP/Director') return "#a855f7"; // purple
+                        if(d.seniority === 'Manager') return "#3b82f6"; // blue
+                        return "#94a3b8"; // slate for IC
+                    }
+                        
+                    // Draw Nodes
+                    const node = g.append("g")
+                        .selectAll("g")
+                        .data(nodes)
+                        .join("g")
+                        .style("cursor", "pointer")
+                        .call(d3.drag()
+                            .on("start", dragstarted)
+                            .on("drag", dragged)
+                            .on("end", dragended))
+                        .on("mouseover", function(event, d) {
+                            d3.select(this).select("circle").attr("stroke", "#ffffff").attr("stroke-width", 3);
+                            tooltip.transition().duration(200).style("opacity", 1);
+                            tooltip.classed("hidden", false);
+                            
+                            let html = `<div class="font-bold text-sm mb-1">${d.name}</div>`;
+                            if(d.group === 2) {
+                                let rankIcon = '👤';
+                                if(d.seniority === 'C-Suite') rankIcon = '⭐';
+                                else if(d.seniority === 'VP / Director') rankIcon = '🔷';
+                                else if(d.seniority === 'Manager') rankIcon = '🔺';
+                                
+                                html += `<div class="text-slate-400 mb-2">${rankIcon} ${d.seniority} &nbsp;&bull;&nbsp; Score: <span class="text-sky-400 font-bold">${Math.floor(d.radius/2)}</span></div>`;
+                                
+                                if(d.assets && d.assets.length > 0) {
+                                    html += `<div class="text-[10px] text-slate-500 font-semibold mb-1 uppercase">Top Assets Engaged</div>`;
+                                    html += `<ul class="list-disc pl-4 text-xs text-slate-300">`;
+                                    d.assets.forEach(a => html += `<li>${a.name} (${a.count}x)</li>`);
+                                    html += `</ul>`;
+                                }
+                            } else if(d.group === 1) {
+                                html += `<div class="text-slate-400">Company Target</div>`;
+                            } else {
+                                html += `<div class="text-slate-400">Global Campaign Base</div>`;
+                            }
+                            tooltip.html(html)
+                                .style("left", (event.pageX + 15) + "px")
+                                .style("top", (event.pageY - 15) + "px");
+                        })
+                        .on("mousemove", function(event) {
+                            tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 15) + "px");
+                        })
+                        .on("mouseout", function(event, d) {
+                            d3.select(this).select("circle").attr("stroke", null).attr("stroke-width", 0);
+                            tooltip.transition().duration(500).style("opacity", 0).on("end", () => tooltip.classed("hidden", true));
+                        });
+                            
+                    // Node shapes
+                    node.append("circle")
+                        .attr("r", d => d.radius)
+                        .attr("fill", d => getNodeColor(d))
+                        .style("filter", d => d.group === 0 ? "url(#glow)" : "");
+                        
+                    // Campaign label
+                    node.filter(d => d.group === 0).append("text")
+                        .text(d => d.name)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "#0f172a")
+                        .attr("font-size", "14px")
+                        .attr("font-family", "Inter, sans-serif")
+                        .attr("font-weight", "800")
+                        .attr("dy", 5);
+                        
+                    // Company labels
+                    node.filter(d => d.group === 1).append("text")
+                        .text(d => d.name)
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "#cbd5e1")
+                        .attr("font-size", "11px")
+                        .attr("font-weight", "600")
+                        .attr("dy", -15)
+                        .style("pointer-events", "none");
+                        
+                    // User Initials for Seniority
+                    node.filter(d => d.group === 2 && d.radius > 6 && d.seniority !== 'IC' && d.seniority !== 'Individual Contributor').append("text")
+                        .text(d => {
+                            if(d.seniority === 'C-Suite') return "C";
+                            if(d.seniority === 'VP/Director') return "VP";
+                            if(d.seniority === 'Manager') return "M";
+                            return "";
+                        })
+                        .attr("text-anchor", "middle")
+                        .attr("fill", "#0f172a")
+                        .attr("font-size", d => Math.max(7, d.radius/1.4) + "px")
+                        .attr("font-weight", "800")
+                        .attr("dy", d => d.radius/3.5 + "px")
+                        .style("pointer-events", "none");
+                        
+                    simulation.on("tick", () => {
+                        link.attr("x1", d => d.source.x)
+                            .attr("y1", d => d.source.y)
+                            .attr("x2", d => d.target.x)
+                            .attr("y2", d => d.target.y);
+                            
+                        node.attr("transform", d => `translate(${d.x},${d.y})`);
+                    });
+                    
+                    function dragstarted(event) {
+                      if (!event.active) simulation.alphaTarget(0.3).restart();
+                      event.subject.fx = event.subject.x;
+                      event.subject.fy = event.subject.y;
+                      d3.select(this).style("cursor", "grabbing");
+                    }
+                    
+                    function dragged(event) {
+                      event.subject.fx = event.x;
+                      event.subject.fy = event.y;
+                    }
+                    
+                    function dragended(event) {
+                      if (!event.active) simulation.alphaTarget(0);
+                      event.subject.fx = null;
+                      event.subject.fy = null;
+                      d3.select(this).style("cursor", "pointer");
+                    }
+                }
+            </script>

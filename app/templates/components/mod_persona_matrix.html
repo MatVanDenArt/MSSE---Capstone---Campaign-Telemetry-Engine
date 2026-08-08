@@ -1,0 +1,342 @@
+<div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{ 
+    loading: true, 
+    activeTab: 'matrix',
+    matrix: {}, 
+    companies: [],
+    users: [],
+    sqls: [],
+    mqls: [],
+    coldLeads: [],
+    selectedCellUsers: [],
+    modalOpen: false,
+    modalTitle: '',
+    modalSubtitle: '',
+    modalAiInsight: '',
+    init() {
+        const campaignId = '{{ campaign_id }}';
+        fetch(`/api/dashboard/audience-data-scoped${campaignId ? '?campaign_id='+campaignId : ''}`)
+            .then(res => res.json())
+            .then(data => {
+                const fetchedUsers = data.users || [];
+                this.users = fetchedUsers;
+                const m = {};
+                
+                const s = [];
+                const mq = [];
+                const c = [];
+
+                fetchedUsers.forEach(u => {
+                    // Matrix Logic
+                    if(!m[u.company]) {
+                        m[u.company] = {'C-Suite': [], 'VP/Director': [], 'Manager': [], 'IC': []};
+                    }
+                    let sen = u.seniority;
+                    if(sen === 'VP / Director') sen = 'VP/Director';
+                    if(sen === 'Individual Contributor') sen = 'IC';
+                    
+                    if(m[u.company][sen]) {
+                        m[u.company][sen].push(u);
+                    }
+                    
+                    // Pipeline Logic
+                    if (u.interactions > 5) s.push(u);
+                    else if (u.interactions > 2) mq.push(u);
+                    else c.push(u);
+                });
+                this.matrix = m;
+                this.sqls = s.sort((a,b) => b.interactions - a.interactions);
+                this.mqls = mq.sort((a,b) => b.interactions - a.interactions);
+                this.coldLeads = c.sort((a,b) => b.interactions - a.interactions);
+                
+                // Sort companies by total engagement roughly (number of people)
+                this.companies = Object.keys(m).sort((a,b) => {
+                    const countA = m[a]['C-Suite'].length + m[a]['VP/Director'].length + m[a]['Manager'].length + m[a]['IC'].length;
+                    const countB = m[b]['C-Suite'].length + m[b]['VP/Director'].length + m[b]['Manager'].length + m[b]['IC'].length;
+                    return countB - countA;
+                });
+                this.loading = false;
+            })
+            .catch(err => {
+                console.error(err);
+                this.loading = false;
+            });
+    },
+    openModal(usersArray, title, subtitle) {
+        if(!usersArray || usersArray.length === 0) return;
+        this.selectedCellUsers = usersArray;
+        this.modalTitle = title || 'Target Personas';
+        this.modalSubtitle = subtitle || (usersArray[0]?.company + ' • ' + usersArray[0]?.seniority);
+        
+        // Pillar 2 & 3: Context-Aware AI Insight
+        const sqCount = usersArray.filter(u => u.interactions > 5).length;
+        const cSuiteCount = usersArray.filter(u => u.seniority === 'C-Suite').length;
+        
+        if (usersArray.length === 1) {
+            const u = usersArray[0];
+            if (u.interactions > 5) this.modalAiInsight = `${u.name} is a highly engaged SQL. Excellent candidate for direct sales outreach.`;
+            else if (u.interactions > 2) this.modalAiInsight = `${u.name} is showing consistent interest. Transition to high-value nurture track.`;
+            else this.modalAiInsight = `${u.name} has low engagement. Keep in standard awareness drip.`;
+        } else {
+            if (sqCount > 0) {
+                this.modalAiInsight = `You have ${sqCount} highly engaged SQLs in this segment showing strong purchase intent. Ready for sales handoff.`;
+            } else if (cSuiteCount > 0) {
+                this.modalAiInsight = `Executive engagement detected, but requires further nurturing to qualify as SQLs. Deploy executive summary assets.`;
+            } else {
+                this.modalAiInsight = `Standard engagement activity. Consider targeted outreach to increase interaction depth and find champions.`;
+            }
+        }
+        
+        this.modalOpen = true;
+    }
+}">
+    <!-- Header & Tabs -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+        <div>
+            <h3 class="text-lg font-bold text-slate-100">Module 4: Audience Penetration Engine</h3>
+            <p class="text-sm text-slate-400 max-w-2xl mt-1">Unified view of account structures and lead qualification pipelines.</p>
+        </div>
+        
+        <div class="flex items-center bg-dark-800 p-1 rounded-lg border border-dark-700 shadow-inner">
+            <button @click="activeTab = 'matrix'" :class="activeTab === 'matrix' ? 'bg-dark-600 text-white shadow ring-1 ring-dark-500' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all">Target Accounts</button>
+            <button @click="activeTab = 'pipeline'" :class="activeTab === 'pipeline' ? 'bg-dark-600 text-white shadow ring-1 ring-dark-500' : 'text-slate-400 hover:text-slate-200'" class="px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ml-1">Lead Pipeline</button>
+        </div>
+    </div>
+    
+    <div class="w-full relative bg-dark-900 rounded-xl border border-dark-700 overflow-hidden min-h-[500px]">
+        <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+        </div>
+        
+        <!-- TAB A: MATRIX -->
+        <div x-show="activeTab === 'matrix'" class="overflow-x-auto max-h-[600px] custom-scrollbar" style="display: none;">
+            <table class="w-full text-left text-sm text-slate-400 relative">
+                <thead class="bg-dark-800 text-xs uppercase font-semibold text-slate-300 sticky top-0 z-10 shadow-md">
+                    <tr>
+                        <th scope="col" class="px-6 py-4">Target Account</th>
+                        <th scope="col" class="px-6 py-4 text-center">C-Suite</th>
+                        <th scope="col" class="px-6 py-4 text-center">VP / Director</th>
+                        <th scope="col" class="px-6 py-4 text-center">Manager</th>
+                        <th scope="col" class="px-6 py-4 text-center">IC</th>
+                        <th scope="col" class="px-6 py-4 text-center text-sky-400">Total Targets</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="company in companies" :key="company">
+                        <tr class="border-b border-dark-700/50 hover:bg-dark-800/50 transition-colors">
+                            <td class="px-6 py-4 font-bold text-slate-200" x-text="company"></td>
+                            
+                            <!-- C-Suite -->
+                            <td class="px-6 py-4 text-center">
+                                <button @click="openModal(matrix[company]['C-Suite'])" 
+                                        :class="matrix[company]['C-Suite'].length > 0 ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 shadow-[0_0_10px_rgba(251,191,36,0.1)]' : 'text-slate-600'"
+                                        class="w-10 h-10 rounded-md font-bold transition-all hover:scale-105">
+                                    <span x-text="matrix[company]['C-Suite'].length || '-'"></span>
+                                </button>
+                            </td>
+                            <!-- VP/Director -->
+                            <td class="px-6 py-4 text-center">
+                                <button @click="openModal(matrix[company]['VP/Director'])" 
+                                        :class="matrix[company]['VP/Director'].length > 0 ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.1)]' : 'text-slate-600'"
+                                        class="w-10 h-10 rounded-md font-bold transition-all hover:scale-105">
+                                    <span x-text="matrix[company]['VP/Director'].length || '-'"></span>
+                                </button>
+                            </td>
+                            <!-- Manager -->
+                            <td class="px-6 py-4 text-center">
+                                <button @click="openModal(matrix[company]['Manager'])" 
+                                        :class="matrix[company]['Manager'].length > 0 ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 border border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.1)]' : 'text-slate-600'"
+                                        class="w-10 h-10 rounded-md font-bold transition-all hover:scale-105">
+                                    <span x-text="matrix[company]['Manager'].length || '-'"></span>
+                                </button>
+                            </td>
+                            <!-- IC -->
+                            <td class="px-6 py-4 text-center">
+                                <button @click="openModal(matrix[company]['IC'])" 
+                                        :class="matrix[company]['IC'].length > 0 ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 border border-slate-600' : 'text-slate-600'"
+                                        class="w-10 h-10 rounded-md font-bold transition-all hover:scale-105">
+                                    <span x-text="matrix[company]['IC'].length || '-'"></span>
+                                </button>
+                            </td>
+                            
+                            <!-- Total -->
+                            <td class="px-6 py-4 text-center font-bold text-slate-300 bg-dark-800/30">
+                                <span x-text="matrix[company]['C-Suite'].length + matrix[company]['VP/Director'].length + matrix[company]['Manager'].length + matrix[company]['IC'].length"></span>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB B: PIPELINE (KANBAN) -->
+        <div x-show="activeTab === 'pipeline'" class="p-6 h-[600px] overflow-y-auto custom-scrollbar bg-dark-900" style="display: none;">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
+                
+                <!-- Cold Leads -->
+                <div class="flex flex-col bg-dark-800/50 rounded-xl border border-dark-700 overflow-hidden">
+                    <div class="p-4 border-b border-dark-700 bg-dark-800 flex justify-between items-center">
+                        <h4 class="font-bold text-slate-300 text-sm uppercase tracking-wider">Cold Leads</h4>
+                        <span class="bg-dark-700 text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full" x-text="coldLeads.length"></span>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                        <template x-for="user in coldLeads" :key="user.id">
+                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-dark-800 border border-dark-600 p-4 rounded-lg shadow-sm hover:border-slate-500 cursor-pointer transition-colors relative group">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-slate-600 rounded-l-lg opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                                <div class="flex justify-between items-start mb-2 pl-2">
+                                    <div>
+                                        <div class="font-bold text-slate-200 text-sm" x-text="user.name"></div>
+                                        <div class="text-[10px] text-slate-400 font-medium" x-text="user.title"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pl-2">
+                                    <div class="text-xs font-medium text-slate-500" x-text="user.company"></div>
+                                    <div class="text-[10px] font-bold text-slate-400 bg-dark-900 px-1.5 py-0.5 rounded border border-dark-700">
+                                        <span x-text="user.interactions"></span> ints
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- MQLs -->
+                <div class="flex flex-col bg-amber-900/10 rounded-xl border border-amber-900/30 overflow-hidden shadow-[0_0_15px_rgba(251,191,36,0.02)]">
+                    <div class="p-4 border-b border-amber-900/50 bg-amber-900/20 flex justify-between items-center">
+                        <h4 class="font-bold text-amber-400 text-sm uppercase tracking-wider">Marketing Qualified</h4>
+                        <span class="bg-amber-900/50 text-amber-300 text-xs font-bold px-2 py-0.5 rounded-full" x-text="mqls.length"></span>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                        <template x-for="user in mqls" :key="user.id">
+                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-dark-800 border border-dark-600 p-4 rounded-lg shadow-sm hover:border-amber-500/50 cursor-pointer transition-colors relative group">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-amber-500 rounded-l-lg opacity-70 group-hover:opacity-100 transition-opacity shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
+                                <div class="flex justify-between items-start mb-2 pl-2">
+                                    <div>
+                                        <div class="font-bold text-slate-200 text-sm" x-text="user.name"></div>
+                                        <div class="text-[10px] text-slate-400 font-medium" x-text="user.title"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pl-2">
+                                    <div class="text-xs font-medium text-slate-500" x-text="user.company"></div>
+                                    <div class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                        <span x-text="user.interactions"></span> ints
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- SQLs -->
+                <div class="flex flex-col bg-emerald-900/10 rounded-xl border border-emerald-900/30 overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.03)]">
+                    <div class="p-4 border-b border-emerald-900/50 bg-emerald-900/20 flex justify-between items-center">
+                        <h4 class="font-bold text-emerald-400 text-sm uppercase tracking-wider">Sales Qualified</h4>
+                        <span class="bg-emerald-900/50 text-emerald-300 text-xs font-bold px-2 py-0.5 rounded-full" x-text="sqls.length"></span>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                        <template x-for="user in sqls" :key="user.id">
+                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-dark-800 border border-emerald-900/50 p-4 rounded-lg shadow-sm hover:border-emerald-500/50 cursor-pointer transition-colors relative group">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-lg shadow-[0_0_12px_rgba(16,185,129,0.8)]"></div>
+                                <div class="flex justify-between items-start mb-2 pl-2">
+                                    <div>
+                                        <div class="font-bold text-white text-sm" x-text="user.name"></div>
+                                        <div class="text-[10px] text-slate-300 font-medium" x-text="user.title"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pl-2">
+                                    <div class="text-xs font-medium text-slate-400" x-text="user.company"></div>
+                                    <div class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_5px_rgba(16,185,129,0.2)]">
+                                        <i class="fa-solid fa-fire mr-1 text-[8px]"></i><span x-text="user.interactions"></span> ints
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <!-- Modal Slide-over Backdrop -->
+        <div x-show="modalOpen" class="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" @click="modalOpen = false" style="display: none;" x-transition.opacity></div>
+        
+        <!-- Modal Slide-over for Cell/Card Drilldown -->
+        <div x-show="modalOpen" class="fixed inset-y-0 right-0 w-[500px] bg-dark-800 border-l border-dark-600 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col transform transition-transform z-50"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="translate-x-full" style="display: none;">
+             
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-6 border-b border-dark-700 bg-dark-900/50">
+                <div>
+                    <h4 class="text-xl font-bold text-white" x-text="modalTitle"></h4>
+                    <div class="text-sm text-sky-400 font-medium mt-1" x-text="modalSubtitle"></div>
+                </div>
+                <button @click="modalOpen = false" class="text-slate-400 hover:text-white transition-colors bg-dark-700 hover:bg-dark-600 w-8 h-8 rounded-full flex items-center justify-center border border-dark-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Pillar 2: AI Insight & Action Panel -->
+            <div class="p-6 border-b border-dark-700 bg-gradient-to-br from-indigo-900/20 to-brand-900/10">
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-brand-500/20 border border-brand-500/30 flex items-center justify-center shrink-0 mt-0.5 shadow-[0_0_10px_rgba(56,189,248,0.2)]">
+                        <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-xs font-bold text-brand-300 uppercase tracking-widest mb-1">AI Context Analysis</h5>
+                        <p class="text-sm text-slate-300 leading-relaxed font-medium" x-text="modalAiInsight"></p>
+                        
+                        <div class="mt-4 flex gap-3">
+                            <button class="bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded shadow-lg shadow-brand-500/20 transition-all border border-brand-400/50">
+                                <i class="fa-solid fa-bolt mr-1.5"></i> Take Action
+                            </button>
+                            <button class="bg-dark-700 hover:bg-dark-600 text-slate-300 text-[11px] font-bold uppercase tracking-wider px-4 py-2 rounded transition-all border border-dark-500">
+                                Sync to CRM
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Timelines -->
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Individual Touchpoints</div>
+                <template x-for="user in selectedCellUsers" :key="user.id">
+                    <div class="bg-dark-900 border border-dark-700 rounded-lg p-5 shadow-sm hover:border-dark-500 transition-colors">
+                        <div class="flex justify-between items-start mb-4 border-b border-dark-700 pb-3">
+                            <div>
+                                <div class="font-bold text-slate-200 text-base" x-text="user.name"></div>
+                                <div class="text-xs text-sky-400 font-medium mt-0.5" x-text="user.title"></div>
+                            </div>
+                            <div class="bg-dark-800 px-2 py-1 rounded text-[11px] font-bold text-slate-400 border border-dark-600 flex items-center">
+                                <i class="fa-solid fa-chart-line text-slate-500 mr-1.5"></i> <span class="text-white" x-text="user.interactions"></span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <ul class="space-y-3">
+                                <template x-for="asset in user.assets" :key="asset.name">
+                                    <li class="flex justify-between items-center text-sm">
+                                        <div class="flex items-center text-slate-300 truncate pr-4">
+                                            <span class="w-6 h-6 rounded flex items-center justify-center bg-dark-800 mr-3 text-xs border border-dark-600 shrink-0">
+                                                <i class="fa-brands fa-linkedin text-sky-500" x-show="asset.type === 'LinkedIn'"></i>
+                                                <i class="fa-regular fa-file-lines text-emerald-400" x-show="asset.type === 'Web'"></i>
+                                                <i class="fa-regular fa-envelope text-amber-400" x-show="asset.type === 'Email'"></i>
+                                            </span>
+                                            <span x-text="asset.name" class="truncate" :title="asset.name"></span>
+                                        </div>
+                                        <span class="text-[11px] font-bold text-slate-400 bg-dark-800 px-2 py-0.5 rounded border border-dark-700 shrink-0" x-text="asset.count + ' interactions'"></span>
+                                    </li>
+                                </template>
+                                <li x-show="!user.assets || user.assets.length === 0" class="text-sm text-slate-500 italic">No specific assets recorded.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>

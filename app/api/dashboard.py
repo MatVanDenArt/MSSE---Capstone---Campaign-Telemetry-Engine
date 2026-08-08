@@ -26,13 +26,13 @@ async def get_sidebar(request: Request):
     return templates.TemplateResponse(request=request, name="components/sidebar.html", context={"campaigns": campaigns})
 
 @router.get("/dashboard/overview", response_class=HTMLResponse)
-async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_GASTECH_2026", timeframe: int = 90):
+async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
-    assets = get_asset_fatigue(campaign_id)
+    assets = get_asset_fatigue(campaign_id, timeframe)
     
     return templates.TemplateResponse(request=request, name="components/overview.html", context={
         "campaign_id": campaign_id,
@@ -45,13 +45,13 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_GASTECH_20
     })
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
-async def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_GASTECH_2026", timeframe: int = 90):
+async def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     tldr = generate_strategic_tldr(benchmarks)
     return HTMLResponse(content=tldr)
 
 @router.get("/dashboard/account-penetration", response_class=HTMLResponse)
-async def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_GASTECH_2026"):
+async def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
     return templates.TemplateResponse(request=request, name="components/account_penetration.html", context={
@@ -92,7 +92,7 @@ async def get_penetration_details(request: Request, campaign_id: str, company: s
     """)
 
 @router.get("/dashboard/timeline", response_class=HTMLResponse)
-async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_GASTECH_2026", timeframe: int = 90):
+async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/timeline.html", context={
@@ -102,7 +102,7 @@ async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_GASTE
     })
 
 @router.get("/dashboard/asset-fatigue", response_class=HTMLResponse)
-async def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_GASTECH_2026"):
+async def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     assets = get_asset_fatigue(campaign_id)
     return templates.TemplateResponse(request=request, name="components/asset_fatigue.html", context={
         "campaign_id": campaign_id,
@@ -123,11 +123,20 @@ async def execute_action(request: Request, type: str, campaign_id: str):
     # Mock execution endpoint
     return HTMLResponse(content=f"<span class='text-emerald-400 font-bold'><i class='fa-solid fa-check mr-2'></i>Action Executed</span>")
 
-@router.get("/dashboard/data-model", response_class=HTMLResponse)
+@router.get("/dashboard/data-model")
 async def get_data_model_view(request: Request, campaign_id: str):
+    from app.services.analytics import get_asset_fatigue
+    assets = get_asset_fatigue(campaign_id, 90)
     return templates.TemplateResponse(request=request, name="components/data_model.html", context={
-        "campaign_id": campaign_id
+        "campaign_id": campaign_id,
+        "assets": assets
     })
+
+@router.get("/dashboard/audience-data-scoped")
+async def get_audience_data_scoped(campaign_id: str):
+    from app.services.analytics import get_scoped_audience_data
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=get_scoped_audience_data(campaign_id))
 
 @router.get("/dashboard/audience-data")
 async def get_audience_data(campaign_id: str = None):
@@ -140,6 +149,38 @@ async def get_sankey_data_route(campaign_id: str):
     return JSONResponse(content=data)
 
 @router.get("/dashboard/asset-timeline")
-async def get_asset_timeline_data_route(campaign_id: str):
-    data = get_asset_timeline_data(campaign_id)
+async def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
+    data = get_asset_timeline_data(campaign_id, timeframe)
     return JSONResponse(content=data)
+
+
+@router.get('/dashboard/ui-lab/channel-roi')
+async def ui_lab_channel_roi(campaign_id: str):
+    from app.services.analytics import get_channel_roi_data
+    return JSONResponse(content=get_channel_roi_data(campaign_id))
+
+@router.get('/dashboard/ui-lab/funnel')
+async def ui_lab_funnel(campaign_id: str):
+    from app.services.analytics import get_ui_lab_funnel_data
+    return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
+
+@router.get('/dashboard/ui-lab/heatmap')
+async def ui_lab_heatmap(campaign_id: str):
+    from app.services.analytics import get_ui_lab_heatmap_data
+    return JSONResponse(content=get_ui_lab_heatmap_data(campaign_id))
+
+
+@router.get('/dashboard/sales-alerts')
+async def get_sales_alerts(campaign_id: str):
+    from app.services.analytics import get_prioritized_sales_targets
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=get_prioritized_sales_targets(campaign_id))
+
+
+from app.services.analytics import get_asset_personas
+
+@router.get("/asset-personas")
+async def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str):
+    users = get_asset_personas(campaign_id, asset_name, type)
+    return JSONResponse(content=users)
+
