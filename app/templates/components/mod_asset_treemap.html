@@ -273,11 +273,11 @@
                                                          :class="asset.is_current ? 'text-brand-300 bg-brand-900/10' : 'text-slate-300'"
                                                          :title="asset.asset">
                                                          <i class="mr-2 text-xs" :class="{
-                                                             'text-brand-500': asset.is_current,
-                                                             'text-slate-600': !asset.is_current,
-                                                             'fa-solid fa-globe': asset.type === 'Web',
-                                                             'fa-solid fa-envelope': asset.type === 'Email',
-                                                             'fa-brands fa-linkedin': asset.type === 'LinkedIn'
+                                                             'opacity-100 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]': asset.is_current,
+                                                             'opacity-70': !asset.is_current,
+                                                             'fa-solid fa-globe text-emerald-500': asset.type === 'Web',
+                                                             'fa-solid fa-envelope text-amber-500': asset.type === 'Email',
+                                                             'fa-brands fa-linkedin text-sky-500': asset.type === 'LinkedIn'
                                                          }"></i>
                                                          <span class="truncate" x-text="asset.asset"></span>
                                                     </div>
