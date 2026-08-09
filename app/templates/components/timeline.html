@@ -266,7 +266,7 @@
                 
                 <div class="space-y-4">
                                                 {% for m in matrix %}
-                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-dark-800/40 border-l-4 border-l-dark-700 rounded-xl p-5 hover:bg-dark-800/60 transition shadow-[0_4px_20px_rgba(0,0,0,0.2)] overflow-hidden group flex flex-col justify-between"
+                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-dark-800/40 border-l-4 border-l-dark-700 rounded-xl p-5 hover:bg-dark-800/60 transition shadow-[0_4px_20px_rgba(0,0,0,0.2)] overflow-hidden group flex flex-col justify-between cursor-pointer" @click="$dispatch('open-asset-modal', { asset_name: '{{ m.asset_name }}', type: '{{ m.type }}' })"
                      x-data="{
                         sparkline: {{ m.sparkline | default([]) | tojson | safe }},
                         chartInstance: null,
@@ -364,10 +364,10 @@
                             </div>
                             <div class="w-px h-8 bg-dark-700/50"></div>
                             
-                            <!-- Pipeline Influenced -->
+                            <!-- Impact Score -->
                             <div class="text-right min-w-[100px]">
-                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Pipeline</div>
-                                <div class="text-2xl font-black text-white">{{ m.pipeline_formatted }}</div>
+                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Impact Score</div>
+                                <div class="text-2xl font-black text-white">{{ m.impact_formatted }}</div>
                             </div>
 
                         </div>

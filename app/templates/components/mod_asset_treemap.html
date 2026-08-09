@@ -105,17 +105,9 @@
                     const item = tree.find(d => d.asset_name === assetName);
                     
                     if (item) {
-                        this.selectedAsset = item;
-                        
-                        // Show loading state while fetching detailed persona data
-                        this.selectedCellUsers = null;
-                        this.showAccountsModal = true;
-                        
-                        fetch(`/api/asset-personas?campaign_id=CMP_LIVE_DECARBONIZATION_25_26&asset_name=${encodeURIComponent(item.asset_name)}&type=${encodeURIComponent(item.type)}`)
-                            .then(r => r.json())
-                            .then(users => {
-                                this.selectedCellUsers = users;
-                            });
+                        window.dispatchEvent(new CustomEvent('open-asset-modal', {
+                            detail: { asset_name: item.asset_name, type: item.type }
+                        }));
                     }
                 },
                 plugins: {
@@ -149,7 +141,7 @@
                                     return [
                                         `Target Accounts: ${item.accounts_activated}`,
                                         `Total Engagement: ${item.engagement}`,
-                                        `Pipeline Influenced: ${item.pipeline_formatted}`
+                                        `Asset Impact Score: ${item.impact_formatted}`
                                     ];
                                 }
                                 return `Impact Score: ${Math.round(ctx.raw.v)}`;
@@ -190,111 +182,4 @@
         <canvas x-ref="treemapCanvas"></canvas>
     </div>
 
-    <template x-teleport="body">
-    <div>
-        <!-- Modal Slide-over Backdrop -->
-        <div x-show="showAccountsModal" class="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" @click="showAccountsModal = false" style="display: none;" x-transition.opacity></div>
-        
-        <!-- Modal Slide-over for Asset Personas -->
-        <div x-show="showAccountsModal" class="fixed inset-y-0 right-0 w-[500px] bg-dark-800 border-l border-dark-600 shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col transform transition-transform z-50"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="translate-x-full"
-             x-transition:enter-end="translate-x-0"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="translate-x-0"
-             x-transition:leave-end="translate-x-full" style="display: none;">
-             
-            <!-- Modal Header -->
-            <div class="flex justify-between items-center p-6 border-b border-dark-700 bg-dark-900/50">
-                <div>
-                    <h4 class="text-xl font-bold text-white">Target Personas</h4>
-                    <div class="text-sm text-sky-400 font-medium mt-1" x-text="selectedAsset?.asset_name"></div>
-                </div>
-                <button @click="showAccountsModal = false" class="text-slate-400 hover:text-white transition-colors bg-dark-700 hover:bg-dark-600 w-8 h-8 rounded-full flex items-center justify-center border border-dark-600">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <template x-if="!selectedCellUsers">
-                <div class="p-10 flex justify-center items-center h-full">
-                    <i class="fa-solid fa-circle-notch fa-spin text-brand-500 text-3xl"></i>
-                </div>
-            </template>
-            
-            <template x-if="selectedCellUsers && selectedCellUsers.length === 0">
-                <div class="p-10 flex flex-col justify-center items-center h-full text-slate-500">
-                    <i class="fa-regular fa-folder-open text-4xl mb-3 opacity-50"></i>
-                    <p>No target accounts have interacted with this asset.</p>
-                </div>
-            </template>
-            
-            <template x-if="selectedCellUsers && selectedCellUsers.length > 0">
-                <div class="flex-1 flex flex-col overflow-hidden">
-                    <!-- AI Insight Section Removed as Requested -->
-                    
-                    <!-- User Timelines -->
-                    <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-3">
-                        <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Accounts Engaged</div>
-                        <template x-for="user in selectedCellUsers" :key="user.id">
-                            <div x-data="{ expanded: false }" class="bg-dark-900 border border-dark-700 rounded-lg p-4 shadow-sm hover:border-dark-500 transition-colors cursor-pointer" @click="expanded = !expanded">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <div class="font-bold text-slate-200 text-[15px]" x-text="user.name"></div>
-                                        <div class="text-xs text-sky-400 font-medium mt-0.5" x-text="(user.company + ' &bull; ' + user.seniority)"></div>
-                                    </div>
-                                    <div class="bg-dark-800 border border-dark-600 px-3 py-1.5 rounded text-xs text-slate-300 font-bold flex items-center gap-2 shadow-inner" title="Interactions with this asset">
-                                        <i class="fa-solid fa-bullseye text-brand-500"></i> <span x-text="user.interactions + ' interactions'"></span>
-                                        <i class="fa-solid fa-chevron-down text-slate-500 ml-2 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''"></i>
-                                    </div>
-                                </div>
-                                
-                                <div x-show="expanded" x-collapse class="mt-4 pt-4 border-t border-dark-700">
-                                    <div class="flex justify-between items-center mb-4">
-                                        <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Engagement Journey</div>
-                                        <div x-show="user.remaining_interactions > 0" class="text-[10px] text-slate-500 font-medium bg-dark-800 px-2 py-1 rounded border border-dark-600">
-                                            + <span x-text="user.remaining_interactions"></span> earlier touchpoints
-                                        </div>
-                                    </div>
-                                    
-                                    <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
-                                        <template x-for="(asset, index) in user.timeline" :key="index">
-                                            <li class="relative pl-5">
-                                                <!-- Node dot -->
-                                                <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors"
-                                                     :class="asset.is_current ? 'bg-brand-500 shadow-[0_0_8px_rgba(56,189,248,0.6)]' : 'bg-dark-600'">
-                                                </div>
-                                                
-                                                <div class="flex flex-col">
-                                                    <!-- Date -->
-                                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
-                                                    
-                                                    <!-- Asset name inside a badge-like card for efficiency -->
-                                                    <div class="flex items-center text-sm font-medium w-full rounded pr-2 py-0.5" 
-                                                         :class="asset.is_current ? 'text-brand-300 bg-brand-900/10' : 'text-slate-300'"
-                                                         :title="asset.asset">
-                                                         <i class="mr-2 text-xs" :class="{
-                                                             'opacity-100 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]': asset.is_current,
-                                                             'opacity-70': !asset.is_current,
-                                                             'fa-solid fa-globe text-emerald-500': asset.type === 'Web',
-                                                             'fa-solid fa-envelope text-amber-500': asset.type === 'Email',
-                                                             'fa-brands fa-linkedin text-sky-500': asset.type === 'LinkedIn'
-                                                         }"></i>
-                                                         <span class="truncate" x-text="asset.asset"></span>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </template>
-                                        <li x-show="!user.timeline || user.timeline.length === 0" class="text-sm text-slate-500 italic pl-5">
-                                            No specific assets recorded.
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </template>
-        </div>
-    </div>
-</template>
 </div>

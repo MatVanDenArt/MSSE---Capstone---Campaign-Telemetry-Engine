@@ -395,24 +395,34 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         cursor.execute(query)
         assets = [dict(row) for row in cursor.fetchall()]
         
-        # Find the max pipeline to calculate share % later
-        max_pipe = 0
+        # Find the max score to calculate share % later
+        max_score = 0
         
         for a in assets:
             if a['type'] == 'Web':
                 q = f"""
-                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, SUM(o.pipeline_value) as pipe
+                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, 
+                       SUM(CASE 
+                           WHEN u.seniority = 'C-Suite' THEN 20 
+                           WHEN u.seniority = 'VP/Director' THEN 10 
+                           WHEN u.seniority = 'Manager' THEN 5 
+                           ELSE 1 
+                       END) as score
                 FROM crm_users u
-                LEFT JOIN crm_opps o ON u.account_id = o.account_id
                 WHERE u.user_id IN (
                     SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{a['asset_name']}' AND user_id IS NOT NULL AND timestamp {tf_condition}
                 )
                 """
             elif a['type'] == 'LinkedIn':
                 q = f"""
-                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, SUM(o.pipeline_value) as pipe
+                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, 
+                       SUM(CASE 
+                           WHEN u.seniority = 'C-Suite' THEN 20 
+                           WHEN u.seniority = 'VP/Director' THEN 10 
+                           WHEN u.seniority = 'Manager' THEN 5 
+                           ELSE 1 
+                       END) as score
                 FROM crm_users u
-                LEFT JOIN crm_opps o ON u.account_id = o.account_id
                 WHERE u.user_id IN (
                     SELECT g.user_id FROM ga4_events g
                     JOIN linkedin_events l ON g.cookie_id = l.cookie_id
@@ -421,9 +431,14 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
                 """
             elif a['type'] == 'Email':
                 q = f"""
-                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, SUM(o.pipeline_value) as pipe
+                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, 
+                       SUM(CASE 
+                           WHEN u.seniority = 'C-Suite' THEN 20 
+                           WHEN u.seniority = 'VP/Director' THEN 10 
+                           WHEN u.seniority = 'Manager' THEN 5 
+                           ELSE 1 
+                       END) as score
                 FROM crm_users u
-                LEFT JOIN crm_opps o ON u.account_id = o.account_id
                 WHERE u.email IN (
                     SELECT email FROM mailchimp_events WHERE campaign_id = '{a['asset_name']}' AND timestamp {tf_condition}
                 )
@@ -431,13 +446,19 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
             
             cursor.execute(q)
             res = cursor.fetchone()
-            a['accounts_activated'] = res['accts'] or 0
-            a['individuals_engaged'] = res['inds'] or 0
-            pipe_val = res['pipe'] or 0.0
-            a['pipeline_influenced'] = pipe_val
-            a['pipeline_formatted'] = format_pipeline(pipe_val)
-            if pipe_val > max_pipe:
-                max_pipe = pipe_val
+            accts = res['accts'] or 0
+            inds = res['inds'] or 0
+            base_score = res['score'] or 0
+            
+            a['accounts_activated'] = accts
+            a['individuals_engaged'] = inds
+            
+            # Account breadth multiplier
+            final_score = int(base_score * (1 + (accts * 0.1)))
+            a['impact_score'] = final_score
+            a['impact_formatted'] = f"{final_score:,} pts"
+            if final_score > max_score:
+                max_score = final_score
             a['date'] = str(a['release_date']).split(" ")[0]
             import datetime
             try:
@@ -451,7 +472,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         all_days = [r['day'] for r in cursor.fetchall()]
 
         for a in assets:
-            a['pipeline_share'] = round((a['pipeline_influenced'] / max_pipe) * 100) if max_pipe > 0 else 0
+            a['pipeline_share'] = round((a['impact_score'] / max_score) * 100) if max_score > 0 else 0
             
             spark_dict = {}
             if a['type'] == 'Web':
