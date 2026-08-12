@@ -1,0 +1,43 @@
+<!-- OOB Swap for Copilot Action Chips -->
+<div id="copilot-action-chips" hx-swap-oob="true" class="px-4 pb-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
+    {% for action in copilot_actions %}
+    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "{{ action.command }}"}' class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">{{ action.label }}</button>
+    {% endfor %}
+</div>
+
+<!-- OOB Swap for Copilot Context Update Message -->
+<div id="chat-history" hx-swap-oob="beforeend">
+    <!-- Removed context switch message to keep chat clean -->
+</div>
+
+<!-- OOB Swap for Proactive Tasks Container -->
+<div id="copilot-tasks-container" hx-swap-oob="true">
+    {% if copilot_tasks %}
+    <div class="bg-black border-b border-dark-800 flex flex-col">
+        <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
+            <span class="text-[10px] font-bold text-fuchsia-500 uppercase tracking-widest">Priority Actions</span>
+            <span class="text-[10px] text-slate-500 font-mono">[{{ copilot_tasks|length }}]</span>
+        </div>
+        <div class="flex flex-col divide-y divide-dark-800">
+            {% for task in copilot_tasks %}
+                {% if task.is_programmatic %}
+                <button @click="$dispatch('open-chat')" hx-get="{{ task.action_command }}" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="group px-4 py-3 text-left hover:bg-dark-900 transition-colors flex items-center justify-between w-full">
+                {% else %}
+                <button @click="$dispatch('open-chat')" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "{{ task.action_command }}"}' class="group px-4 py-3 text-left hover:bg-dark-900 transition-colors flex items-center justify-between w-full">
+                {% endif %}
+                <div class="flex items-center gap-3">
+                    <div class="w-6 h-6 rounded flex items-center justify-center border border-dark-700 bg-dark-800 shrink-0">
+                        <i class="fa-solid {{ task.icon }} text-[10px] {{ task.icon_color }}"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-300">{{ task.title }}</div>
+                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">{{ task.subtitle }}</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-[10px] text-dark-600 group-hover:text-fuchsia-500 transition-colors"></i>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>

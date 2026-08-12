@@ -39,7 +39,7 @@
                 <div class="flex justify-between items-center p-6 border-b border-dark-700 bg-dark-900/50">
                     <div>
                         <h4 class="text-xl font-bold text-white">Target Personas</h4>
-                        <div class="text-sm text-sky-400 font-medium mt-1" x-text="selectedAsset?.asset_name"></div>
+                        <div class="text-sm text-blue-400 font-medium mt-1" x-text="selectedAsset?.asset_name"></div>
                     </div>
                     <button @click="showAccountsModal = false" class="text-slate-400 hover:text-white transition-colors bg-dark-700 hover:bg-dark-600 w-8 h-8 rounded-full flex items-center justify-center border border-dark-600">
                         <i class="fa-solid fa-xmark"></i>
@@ -69,7 +69,7 @@
                                     <div class="flex justify-between items-center">
                                         <div>
                                             <div class="font-bold text-slate-200 text-[15px]" x-text="user.name"></div>
-                                            <div class="text-xs text-sky-400 font-medium mt-0.5" x-text="(user.company + ' &bull; ' + user.seniority)"></div>
+                                            <div class="text-xs text-blue-400 font-medium mt-0.5" x-text="(user.company + ' &bull; ' + user.seniority)"></div>
                                         </div>
                                         <div class="bg-dark-800 border border-dark-600 px-3 py-1.5 rounded text-xs text-slate-300 font-bold flex items-center gap-2 shadow-inner" title="Interactions with this asset">
                                             <i class="fa-solid fa-bullseye text-brand-500"></i> <span x-text="user.interactions + ' interactions'"></span>
@@ -104,9 +104,9 @@
                                                              <i class="mr-2 text-xs" :class="{
                                                                  'opacity-100 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]': asset.is_current,
                                                                  'opacity-70': !asset.is_current,
-                                                                 'fa-solid fa-globe text-emerald-500': asset.type === 'Web',
-                                                                 'fa-solid fa-envelope text-amber-500': asset.type === 'Email',
-                                                                 'fa-brands fa-linkedin text-sky-500': asset.type === 'LinkedIn'
+                                                                 'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
+                                                                 'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
+                                                                 'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
                                                              }"></i>
                                                              <span class="truncate" x-text="asset.asset"></span>
                                                         </div>

@@ -1,4 +1,4 @@
-<div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{ 
+<div class="mt-0" x-data="{ 
     loading: true, 
     activeTab: 'matrix',
     matrix: {}, 
@@ -90,11 +90,7 @@
     }
 }">
     <!-- Header & Tabs -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
-        <div>
-            <h3 class="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Module 4: Audience Penetration Engine</h3>
-            <p class="text-[10px] uppercase tracking-wider text-slate-400 max-w-2xl mt-1">Unified view of account structures and lead qualification pipelines.</p>
-        </div>
+    <div class="flex justify-end mb-3">
         
         <div class="flex items-center bg-black p-1 border border-dark-800">
             <button @click="activeTab = 'matrix'" :class="activeTab === 'matrix' ? 'bg-brand-900 border border-brand-500/50 text-brand-400' : 'text-slate-500 hover:text-slate-300 border border-transparent'" class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors">Target Accounts</button>
@@ -104,7 +100,7 @@
     
     <div class="w-full relative bg-black border border-dark-800 overflow-hidden min-h-[500px]">
         <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
-            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
         </div>
         
         <!-- TAB A: MATRIX -->
@@ -117,7 +113,7 @@
                         <th scope="col" class="px-6 py-4 text-center">VP / Director</th>
                         <th scope="col" class="px-6 py-4 text-center">Manager</th>
                         <th scope="col" class="px-6 py-4 text-center">IC</th>
-                        <th scope="col" class="px-6 py-4 text-center text-sky-400">Total Targets</th>
+                        <th scope="col" class="px-6 py-4 text-center text-blue-400">Total Targets</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -128,7 +124,7 @@
                             <!-- C-Suite -->
                             <td class="px-6 py-4 text-center">
                                 <button @click="openModal(matrix[company]['C-Suite'])" 
-                                        :class="matrix[company]['C-Suite'].length > 0 ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/50' : 'text-slate-700 bg-transparent'"
+                                        :class="matrix[company]['C-Suite'].length > 0 ? 'bg-sky-400 text-slate-900 hover:bg-sky-300 border border-sky-300' : 'text-slate-700 bg-transparent'"
                                         class="w-10 h-10 font-bold transition-colors">
                                     <span x-text="matrix[company]['C-Suite'].length || '-'"></span>
                                 </button>
@@ -136,7 +132,7 @@
                             <!-- VP/Director -->
                             <td class="px-6 py-4 text-center">
                                 <button @click="openModal(matrix[company]['VP/Director'])" 
-                                        :class="matrix[company]['VP/Director'].length > 0 ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border border-purple-500/50' : 'text-slate-700 bg-transparent'"
+                                        :class="matrix[company]['VP/Director'].length > 0 ? 'bg-sky-600/60 text-sky-50 hover:bg-sky-600/80 border border-sky-500' : 'text-slate-700 bg-transparent'"
                                         class="w-10 h-10 font-bold transition-colors">
                                     <span x-text="matrix[company]['VP/Director'].length || '-'"></span>
                                 </button>
@@ -144,7 +140,7 @@
                             <!-- Manager -->
                             <td class="px-6 py-4 text-center">
                                 <button @click="openModal(matrix[company]['Manager'])" 
-                                        :class="matrix[company]['Manager'].length > 0 ? 'bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/50' : 'text-slate-700 bg-transparent'"
+                                        :class="matrix[company]['Manager'].length > 0 ? 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/50' : 'text-slate-700 bg-transparent'"
                                         class="w-10 h-10 font-bold transition-colors">
                                     <span x-text="matrix[company]['Manager'].length || '-'"></span>
                                 </button>
@@ -152,7 +148,7 @@
                             <!-- IC -->
                             <td class="px-6 py-4 text-center">
                                 <button @click="openModal(matrix[company]['IC'])" 
-                                        :class="matrix[company]['IC'].length > 0 ? 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600' : 'text-slate-700 bg-transparent'"
+                                        :class="matrix[company]['IC'].length > 0 ? 'bg-transparent text-sky-600 hover:bg-sky-900/20 border border-sky-900' : 'text-slate-700 bg-transparent'"
                                         class="w-10 h-10 font-bold transition-colors">
                                     <span x-text="matrix[company]['IC'].length || '-'"></span>
                                 </button>
@@ -200,15 +196,15 @@
                 </div>
 
                 <!-- MQLs -->
-                <div class="flex flex-col bg-black border border-amber-900/30">
-                    <div class="p-4 border-b border-amber-900/50 bg-amber-900/10 flex justify-between items-center">
-                        <h4 class="font-bold text-amber-500 text-[10px] uppercase tracking-widest">Marketing Qualified</h4>
-                        <span class="bg-amber-900/30 text-amber-400 text-[10px] font-bold px-2 py-0.5 border border-amber-900/50" x-text="mqls.length"></span>
+                <div class="flex flex-col bg-black border border-sky-900/30">
+                    <div class="p-4 border-b border-sky-900/50 bg-sky-900/10 flex justify-between items-center">
+                        <h4 class="font-bold text-sky-400 text-[10px] uppercase tracking-widest">Marketing Qualified</h4>
+                        <span class="bg-sky-900/30 text-sky-400 text-[10px] font-bold px-2 py-0.5 border border-sky-900/50" x-text="mqls.length"></span>
                     </div>
                     <div class="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-black">
                         <template x-for="user in mqls" :key="user.id">
-                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-black border border-amber-900/30 p-4 hover:border-amber-500/50 cursor-pointer transition-colors relative group">
-                                <div class="absolute top-0 left-0 w-1 h-full bg-amber-600/50 group-hover:bg-amber-500 transition-colors"></div>
+                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-black border border-sky-900/30 p-4 hover:border-sky-500/50 cursor-pointer transition-colors relative group">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-sky-600/50 group-hover:bg-sky-500 transition-colors"></div>
                                 <div class="flex justify-between items-start mb-2 pl-2">
                                     <div>
                                         <div class="font-bold text-slate-200 text-sm" x-text="user.name"></div>
@@ -217,7 +213,7 @@
                                 </div>
                                 <div class="flex justify-between items-center mt-3 pl-2">
                                     <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500" x-text="user.company"></div>
-                                    <div class="text-[10px] font-bold text-amber-500 bg-amber-900/20 px-1.5 py-0.5 border border-amber-900/50">
+                                    <div class="text-[10px] font-bold text-sky-400 bg-sky-900/20 px-1.5 py-0.5 border border-sky-900/50">
                                         <span x-text="user.interactions"></span> ints
                                     </div>
                                 </div>
@@ -227,15 +223,15 @@
                 </div>
 
                 <!-- SQLs -->
-                <div class="flex flex-col bg-black border border-emerald-900/30">
-                    <div class="p-4 border-b border-emerald-900/50 bg-emerald-900/10 flex justify-between items-center">
-                        <h4 class="font-bold text-emerald-500 text-[10px] uppercase tracking-widest">Sales Qualified</h4>
-                        <span class="bg-emerald-900/30 text-emerald-400 text-[10px] font-bold px-2 py-0.5 border border-emerald-900/50" x-text="sqls.length"></span>
+                <div class="flex flex-col bg-black border border-sky-700/30">
+                    <div class="p-4 border-b border-sky-700/50 bg-sky-800/10 flex justify-between items-center">
+                        <h4 class="font-bold text-sky-300 text-[10px] uppercase tracking-widest">Sales Qualified</h4>
+                        <span class="bg-sky-800/30 text-sky-300 text-[10px] font-bold px-2 py-0.5 border border-sky-700/50" x-text="sqls.length"></span>
                     </div>
                     <div class="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3 bg-black">
                         <template x-for="user in sqls" :key="user.id">
-                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-black border border-emerald-900/30 p-4 hover:border-emerald-500/50 cursor-pointer transition-colors relative group">
-                                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-600/50 group-hover:bg-emerald-500 transition-colors"></div>
+                            <div @click="openModal([user], user.name, user.company + ' • ' + user.seniority)" class="bg-black border border-sky-700/30 p-4 hover:border-sky-400/50 cursor-pointer transition-colors relative group">
+                                <div class="absolute top-0 left-0 w-1 h-full bg-sky-500/50 group-hover:bg-sky-400 transition-colors"></div>
                                 <div class="flex justify-between items-start mb-2 pl-2">
                                     <div>
                                         <div class="font-bold text-white text-sm" x-text="user.name"></div>
@@ -244,7 +240,7 @@
                                 </div>
                                 <div class="flex justify-between items-center mt-3 pl-2">
                                     <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400" x-text="user.company"></div>
-                                    <div class="text-[10px] font-bold text-emerald-500 bg-emerald-900/20 px-1.5 py-0.5 border border-emerald-900/50">
+                                    <div class="text-[10px] font-bold text-sky-300 bg-sky-800/20 px-1.5 py-0.5 border border-sky-700/50">
                                         <i class="fa-solid fa-fire mr-1 text-[8px]"></i><span x-text="user.interactions"></span> ints
                                     </div>
                                 </div>
@@ -272,7 +268,7 @@
             <div class="flex justify-between items-center p-6 border-b border-dark-800 bg-black">
                 <div>
                     <h4 class="text-xl font-bold text-white" x-text="modalTitle"></h4>
-                    <div class="text-sm text-sky-500 font-medium mt-1" x-text="modalSubtitle"></div>
+                    <div class="text-sm text-blue-500 font-medium mt-1" x-text="modalSubtitle"></div>
                 </div>
                 <button @click="modalOpen = false" class="text-slate-500 hover:text-white transition-colors bg-dark-900 hover:bg-dark-800 w-8 h-8 flex items-center justify-center border border-dark-700">
                     <i class="fa-solid fa-xmark"></i>
@@ -309,7 +305,7 @@
                         <div class="flex justify-between items-start mb-4 border-b border-dark-800 pb-3">
                             <div>
                                 <div class="font-bold text-slate-200 text-base" x-text="user.name"></div>
-                                <div class="text-[10px] uppercase tracking-widest text-sky-500 font-medium mt-0.5" x-text="user.title"></div>
+                                <div class="text-[10px] uppercase tracking-widest text-blue-500 font-medium mt-0.5" x-text="user.title"></div>
                             </div>
                             <div class="bg-black px-2 py-1 text-[10px] uppercase tracking-widest font-bold text-slate-400 border border-dark-800 flex items-center">
                                 <i class="fa-solid fa-chart-line text-slate-600 mr-1.5"></i> <span class="text-white" x-text="user.interactions"></span>
@@ -322,7 +318,7 @@
                                     <li class="flex justify-between items-center text-sm">
                                         <div class="flex items-center text-slate-300 truncate pr-4">
                                             <span class="w-6 h-6 flex items-center justify-center bg-black mr-3 text-xs border border-dark-700 shrink-0">
-                                                <i class="fa-brands fa-linkedin text-sky-500" x-show="asset.type === 'LinkedIn'"></i>
+                                                <i class="fa-brands fa-linkedin text-blue-500" x-show="asset.type === 'LinkedIn'"></i>
                                                 <i class="fa-regular fa-file-lines text-emerald-500" x-show="asset.type === 'Web'"></i>
                                                 <i class="fa-regular fa-envelope text-amber-500" x-show="asset.type === 'Email'"></i>
                                             </span>

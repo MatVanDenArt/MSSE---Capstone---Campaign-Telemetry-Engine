@@ -1,13 +1,12 @@
-<div class="max-w-6xl mx-auto space-y-8 pb-48">
-    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
-    <div class="glass-panel p-8 rounded-xl border-t-4 border-t-fuchsia-500">
-        <h2 class="text-2xl font-bold text-slate-100 mb-2 flex items-center gap-3">
+<div class="max-w-6xl mx-auto pb-48">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    <div class="glass-panel p-6 rounded-xl border-t-4 border-t-fuchsia-500 mb-6">
+        <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
             <i class="fa-solid fa-network-wired text-fuchsia-400"></i> Omnichannel Data Model & Identity Resolution
         </h2>
-        <p class="text-slate-400 mb-8">
+        <p class="text-xs text-slate-400">
             This graph illustrates the underlying SQLite schema used in this application, mapping how anonymous top-of-funnel events (LinkedIn Ads) are eventually resolved to known identities (Mailchimp/CRM) via cookies and UTM tracking.
         </p>
-
         <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
             <div class="mermaid text-center">
                 erDiagram
@@ -70,9 +69,9 @@
         </div>
     </div>
     
-    <div class="glass-panel p-8 rounded-xl border-t-4 border-t-sky-500">
+    <div class="glass-panel p-8 rounded-xl border-t-4 border-t-blue-500">
         <h2 class="text-2xl font-bold text-slate-100 mb-2 flex items-center gap-3">
-            <i class="fa-solid fa-project-diagram text-sky-400"></i> Identity Resolution Data Flow
+            <i class="fa-solid fa-project-diagram text-blue-400"></i> Identity Resolution Data Flow
         </h2>
         <p class="text-slate-400 mb-8">
             This graph maps exactly how an anonymous Ad Click is stitched via cookie and UTM tracking to a known user session across GA4, Mailchimp, and the CRM.
@@ -127,23 +126,23 @@
             <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
                 <p>The backend simulation (<code>generator.py</code>) builds synthetic B2B buying journeys using a weighted Markov-style funnel approach.</p>
                 <ol class="list-decimal pl-5 space-y-2">
-                    <li><strong class="text-sky-400">Top of Funnel (Ad Spend)</strong>: A simulated user clicks a LinkedIn Ad. This generates a row in <code>linkedin_events</code> with a unique <code>click_id</code> (cookie) and burns ad spend.</li>
-                    <li><strong class="text-blue-400">Mid Funnel (Website)</strong>: Moments later, a <code>ga4_events</code> row is created using the exact same <code>cookie_id</code>. If they bounce, the journey ends. If they convert, they provide their email.</li>
-                    <li><strong class="text-indigo-400">Nurture (Email)</strong>: Over the next 15 days, they receive automated emails, generating <code>mailchimp_events</code> tied to their email address.</li>
-                    <li><strong class="text-emerald-400">Bottom Funnel (Revenue)</strong>: If engagement is high, they are resolved into <code>crm_users</code>. 30-90 days later, a massive pipeline event is pushed to <code>crm_opps</code>.</li>
+                    <li><strong class="text-blue-500/30">Top of Funnel (Ad Spend)</strong>: A simulated user clicks a LinkedIn Ad. This generates a row in <code>linkedin_events</code> with a unique <code>click_id</code> (cookie) and burns ad spend.</li>
+                    <li><strong class="text-blue-500/50">Mid Funnel (Website)</strong>: Moments later, a <code>ga4_events</code> row is created using the exact same <code>cookie_id</code>. If they bounce, the journey ends. If they convert, they provide their email.</li>
+                    <li><strong class="text-blue-500/80">Nurture (Email)</strong>: Over the next 15 days, they receive automated emails, generating <code>mailchimp_events</code> tied to their email address.</li>
+                    <li><strong class="text-blue-400">Bottom Funnel (Revenue)</strong>: If engagement is high, they are resolved into <code>crm_users</code>. 30-90 days later, a massive pipeline event is pushed to <code>crm_opps</code>.</li>
                 </ol>
             </div>
         </div>
         
         <div class="glass-panel p-6 rounded-xl">
-            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-fingerprint text-rose-400"></i> Identity Resolution</h3>
+            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-fingerprint text-brand-400"></i> Identity Resolution</h3>
             <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
                 <p>This application mimics a modern Customer Data Platform (CDP). The hardest problem in marketing telemetry is tying an anonymous click to a $20M closed deal.</p>
                 <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg">
                     <p class="font-mono text-xs text-brand-300 mb-2">// The Identity Chain</p>
-                    <p class="mb-2"><span class="text-sky-400 font-bold">1. Anonymous</span>: User has only a <code>cookie_id</code> (LinkedIn -> GA4).</p>
-                    <p class="mb-2"><span class="text-indigo-400 font-bold">2. Known</span>: User submits a form. GA4 updates with <code>user_id_captured</code>.</p>
-                    <p><span class="text-emerald-400 font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on the <code>user_id</code>, matching it to their Mailchimp <code>email</code>, allowing full attribution of the original ad spend.</p>
+                    <p class="mb-2"><span class="text-blue-500/40 font-bold">1. Anonymous</span>: User has only a <code>cookie_id</code> (LinkedIn -> GA4).</p>
+                    <p class="mb-2"><span class="text-blue-500/70 font-bold">2. Known</span>: User submits a form. GA4 updates with <code>user_id_captured</code>.</p>
+                    <p><span class="text-blue-400 font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on the <code>user_id</code>, matching it to their Mailchimp <code>email</code>, allowing full attribution of the original ad spend.</p>
                 </div>
             </div>
         </div>

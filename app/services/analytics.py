@@ -512,13 +512,25 @@ def generate_strategic_tldr(metrics: dict) -> str:
     from google import genai
     from google.genai import types
     try:
-        client = genai.Client()
+        from app.services.llm_rotator import get_genai_client
+        
         prompt = f"You are an AI Analyst. Review these campaign metrics: {metrics}. Write a strict 2-3 sentence executive summary. Highlight pipeline generated and CPA anomalies. Format it in plain text without markdown."
-        response = client.models.generate_content(
-            model='gemini-3.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(temperature=0.2)
-        )
+        response = None
+        last_err = None
+        for _ in range(3):
+            try:
+                client = get_genai_client()
+                response = client.models.generate_content(
+                    model='gemini-3.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=0.2)
+                )
+                break
+            except Exception as e:
+                last_err = e
+                
+        if not response:
+            raise last_err
         return response.text
     except Exception as e:
         return "AI Insight temporarily unavailable. Please verify API Key configuration."

@@ -1,19 +1,28 @@
-<div class="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-48 animate-[fadeIn_0.3s_ease-out]">
-    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+<div class="max-w-6xl mx-auto pb-48 animate-[fadeIn_0.3s_ease-out]">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
     
-    <div class="flex items-center gap-3 mb-6 border-b border-dark-800 pb-4">
-        <div class="w-10 h-10 bg-brand-900 border border-brand-500/50 flex items-center justify-center">
-            <i class="fa-solid fa-layer-group text-xl text-brand-500"></i>
+    <div class="flex items-center gap-3 mb-2">
+        <div class="w-6 h-6 bg-brand-900 border border-brand-500/50 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-layer-group text-[10px] text-brand-500"></i>
         </div>
         <div>
-            <h1 class="text-xl font-bold text-slate-100 uppercase tracking-widest">Asset Performance</h1>
-            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Analyze individual asset contribution and engagement timelines</p>
+            <h2 class="text-xs font-bold text-slate-100 uppercase tracking-widest">Asset Performance <span class="text-[10px] text-slate-500 font-normal ml-2 hidden sm:inline">| Analyze individual asset contribution and engagement timelines</span></h2>
         </div>
     </div>
 
     <!-- Interactive Timeline -->
-    {% include 'components/timeline.html' %}
+    <div class="mt-0 mb-6">
+        {% include 'components/timeline.html' %}
+    </div>
     
     <!-- Asset Contribution Treemap -->
-    {% include 'components/mod_asset_treemap.html' %}
+    <div class="mt-6 mb-6">
+        {% include 'components/mod_asset_treemap.html' %}
+    </div>
+
+    <!-- OOB Copilot Integration -->
+    {% include 'components/oob_copilot.html' %}
+    
+    <!-- Modals -->
+    {% include 'components/asset_personas_modal.html' %}
 </div>

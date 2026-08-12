@@ -1,5 +1,5 @@
 <!-- Module D5: Interactive Campaign Timeline (Legacy) -->
-<div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{
+<div class="mt-0" x-data="{
                 loading: true, 
                 timelineData: [], 
                 init() {
@@ -42,15 +42,15 @@
                     
                     <!-- Legend -->
                     <div class="flex items-center space-x-4 text-xs font-medium text-slate-400 bg-dark-900 py-1.5 px-3 rounded-lg border border-dark-700">
-                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-sky-500 mr-2"></span> Web</div>
-                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></span> Email</div>
-                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-amber-500 mr-2"></span> LinkedIn</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-cyan-500 mr-2"></span> Web</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-violet-500 mr-2"></span> Email</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 mr-2"></span> LinkedIn</div>
                     </div>
                 </div>
                 
                 <div class="w-full h-[550px] relative bg-dark-900 rounded-xl border border-dark-700 p-6 overflow-hidden">
                     <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
-                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
                     </div>
                     
                     <div id="d3-timeline-container" class="w-full h-full relative"></div>
@@ -113,9 +113,9 @@
                             
                         // Color mapping
                         const colorMap = {
-                            "Web": "#0ea5e9", // Sky blue
-                            "Email": "#10b981", // Emerald
-                            "LinkedIn": "#f59e0b" // Amber
+                            "Web": "#06b6d4", // Cyan
+                            "Email": "#8b5cf6", // Violet
+                            "LinkedIn": "#3b82f6" // Sky
                         };
                         
                         // Draw Lollipops
@@ -182,8 +182,8 @@
                                     interactionLabel = 'total engagements';
                                     extraHtml = `
                                         <div class="col-span-2 mt-2 pt-2 border-t border-dark-700/50 flex justify-between text-[10px]">
-                                            <span class="text-slate-400">Opens: <span class="text-emerald-400 font-bold">${d.opens || 0}</span></span>
-                                            <span class="text-slate-400">Clicks: <span class="text-emerald-400 font-bold">${d.clicks || 0}</span></span>
+                                            <span class="text-slate-400">Opens: <span class="text-violet-400 font-bold">${d.opens || 0}</span></span>
+                                            <span class="text-slate-400">Clicks: <span class="text-violet-400 font-bold">${d.clicks || 0}</span></span>
                                         </div>
                                     `;
                                 } else if (d.type === 'LinkedIn') {
@@ -200,7 +200,7 @@
                                         </div>
                                         <div>
                                             <div class="text-[10px] text-slate-500 mb-0.5">Impact</div>
-                                            <div class="font-bold text-sky-400">${d.interactions} ${interactionLabel}</div>
+                                            <div class="font-bold text-blue-400">${d.interactions} ${interactionLabel}</div>
                                         </div>
                                         ${extraHtml}
                                     </div>

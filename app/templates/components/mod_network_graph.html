@@ -1,4 +1,4 @@
-            <div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{ 
+            <div class="mt-0" x-data="{ 
                 viewMode: 'network', 
                 loading: true, 
                 users: [], 
@@ -43,7 +43,7 @@
                     
                     <!-- Loading state -->
                     <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-[#f5f5f5]/80 z-50">
-                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
                     </div>
 
                     <!-- Cards View (Light Mode style like the reference image) -->
@@ -114,7 +114,7 @@
                                     <template x-for="(asset, index) in selectedUser?.assets" :key="index">
                                         <div class="flex justify-between items-center p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
                                             <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded bg-sky-50 flex items-center justify-center text-sky-500">
+                                                <div class="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-500">
                                                     <i class="fa-regular fa-file-lines" x-show="asset.type === 'Web'"></i>
                                                     <i class="fa-regular fa-envelope" x-show="asset.type === 'Email'"></i>
                                                 </div>
@@ -243,7 +243,7 @@
                                 else if(d.seniority === 'VP / Director') rankIcon = '🔷';
                                 else if(d.seniority === 'Manager') rankIcon = '🔺';
                                 
-                                html += `<div class="text-slate-400 mb-2">${rankIcon} ${d.seniority} &nbsp;&bull;&nbsp; Score: <span class="text-sky-400 font-bold">${Math.floor(d.radius/2)}</span></div>`;
+                                html += `<div class="text-slate-400 mb-2">${rankIcon} ${d.seniority} &nbsp;&bull;&nbsp; Score: <span class="text-blue-400 font-bold">${Math.floor(d.radius/2)}</span></div>`;
                                 
                                 if(d.assets && d.assets.length > 0) {
                                     html += `<div class="text-[10px] text-slate-500 font-semibold mb-1 uppercase">Top Assets Engaged</div>`;

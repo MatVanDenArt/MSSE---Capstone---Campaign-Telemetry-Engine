@@ -1,4 +1,4 @@
-            <div class="mt-16 border-t border-dark-700/50 pt-16" x-data="{ 
+            <div class="mt-0" x-data="{ 
                 viewMode: 'cards', 
                 loading: true, 
                 users: [], 
@@ -31,18 +31,14 @@
                     }
                 }
             }">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-100">Module 4: Audience User Journey</h3>
-                        <p class="text-sm text-slate-400 max-w-2xl mt-1">Mapping individual user touchpoints and aggregating interaction density.</p>
-                    </div>
+                <div class="flex justify-end mb-6">
                     
                     <!-- Toggle Switch -->
                     <div class="flex bg-dark-900 rounded-lg p-1 border border-dark-700">
-                        <button @click="viewMode = 'cards'" :class="viewMode === 'cards' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:text-slate-300'" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
+                        <button @click="viewMode = 'cards'" :class="viewMode === 'cards' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-400 hover:text-slate-300'" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
                             <i class="fa-solid fa-address-card mr-2"></i> User Cards
                         </button>
-                        <button @click="viewMode = 'network'; initNetwork()" :class="viewMode === 'network' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:text-slate-300'" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
+                        <button @click="viewMode = 'network'; initNetwork()" :class="viewMode === 'network' ? 'bg-blue-500/20 text-blue-400' : 'text-slate-400 hover:text-slate-300'" class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
                             <i class="fa-solid fa-project-diagram mr-2"></i> Network Graph
                         </button>
                     </div>
@@ -52,7 +48,7 @@
                     
                     <!-- Loading state -->
                     <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-[#f5f5f5]/80 z-50">
-                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
                     </div>
 
                     <!-- Cards View (Light Mode style like the reference image) -->
@@ -123,7 +119,7 @@
                                     <template x-for="(asset, index) in selectedUser?.assets" :key="index">
                                         <div class="flex justify-between items-center p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
                                             <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded bg-sky-50 flex items-center justify-center text-sky-500">
+                                                <div class="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-500">
                                                     <i class="fa-regular fa-file-lines" x-show="asset.type === 'Web'"></i>
                                                     <i class="fa-regular fa-envelope" x-show="asset.type === 'Email'"></i>
                                                 </div>
@@ -252,7 +248,7 @@
                                 else if(d.seniority === 'VP / Director') rankIcon = '🔷';
                                 else if(d.seniority === 'Manager') rankIcon = '🔺';
                                 
-                                html += `<div class="text-slate-400 mb-2">${rankIcon} ${d.seniority} &nbsp;&bull;&nbsp; Score: <span class="text-sky-400 font-bold">${Math.floor(d.radius/2)}</span></div>`;
+                                html += `<div class="text-slate-400 mb-2">${rankIcon} ${d.seniority} &nbsp;&bull;&nbsp; Score: <span class="text-blue-400 font-bold">${Math.floor(d.radius/2)}</span></div>`;
                                 
                                 if(d.assets && d.assets.length > 0) {
                                     html += `<div class="text-[10px] text-slate-500 font-semibold mb-1 uppercase">Top Assets Engaged</div>`;

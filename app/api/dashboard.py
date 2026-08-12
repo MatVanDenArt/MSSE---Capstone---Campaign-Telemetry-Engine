@@ -38,9 +38,30 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
         "campaign_id": campaign_id,
         "timeframe": timeframe,
         "benchmarks": benchmarks,
-        "assets": assets
+        "assets": assets,
+        "copilot_context_name": "Executive Overview",
+        "copilot_actions": [
+            {"label": "Gen Report", "command": "Generate an executive summary report"},
+            {"label": "Analyze Funnel", "command": "Analyze funnel velocity"},
+            {"label": "Forecast EOM", "command": "Forecast end of month ROI"}
+        ],
+        "copilot_tasks": [
+            {
+                "icon": "fa-chart-line",
+                "icon_color": "text-rose-500",
+                "title": "Funnel Velocity Alert",
+                "subtitle": "CPA trending 12% higher than 30d avg",
+                "action_command": "Analyze funnel velocity to identify bottlenecks"
+            },
+            {
+                "icon": "fa-bullseye",
+                "icon_color": "text-brand-500",
+                "title": "Goal Tracking",
+                "subtitle": "MQL target at 85% for the month",
+                "action_command": "Forecast end of month ROI"
+            }
+        ]
     })
-
 @router.get("/dashboard/performance", response_class=HTMLResponse)
 async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
@@ -49,26 +70,227 @@ async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBO
         "campaign_id": campaign_id,
         "timeframe": timeframe,
         "chart_data": chart_data,
-        "matrix": matrix
+        "matrix": matrix,
+        "copilot_context_name": "Asset Performance",
+        "copilot_actions": [
+            {"label": "Check Fatigue", "command": "Check for asset fatigue"},
+            {"label": "Suggest Rotation", "command": "Suggest asset rotation"},
+            {"label": "Analyze Mix", "command": "Analyze channel mix"}
+        ],
+        "copilot_tasks": [
+            {
+                "icon": "fa-battery-quarter",
+                "icon_color": "text-amber-500",
+                "title": "Asset Fatigue Detected",
+                "subtitle": "Decarbonization Playbook down 35% WoW",
+                "action_command": "Suggest an asset rotation for the Decarbonization Playbook"
+            },
+            {
+                "icon": "fa-arrow-trend-up",
+                "icon_color": "text-emerald-500",
+                "title": "High Performing Asset",
+                "subtitle": "ESG Webinar driving 40% of conversions",
+                "action_command": "Analyze channel mix"
+            }
+        ]
     })
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
 async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+    from app.services.analytics import get_prioritized_sales_targets
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
+    
+    from datetime import datetime
+    
+    # Map prioritized sales targets to Copilot Priority Actions
+    raw_targets = get_prioritized_sales_targets(campaign_id)[:4] # Top 4 targets
+    copilot_tasks = []
+    for t in raw_targets:
+        icon_col = "text-sky-400" if t['status'] == 'SQL' else "text-fuchsia-500"
+        
+        # Calculate relative date
+        try:
+            last_active_date = datetime.strptime(t['last_active'], "%Y-%m-%d")
+            delta = datetime.now() - last_active_date
+            if delta.days == 0:
+                relative_date = "Today"
+            elif delta.days == 1:
+                relative_date = "Yesterday"
+            else:
+                relative_date = f"{delta.days} days ago"
+        except:
+            relative_date = t['last_active']
+            
+        subtitle = f"{t['interactions']} interactions | Last active {relative_date}"
+        
+        import urllib.parse
+        encoded_name = urllib.parse.quote(t['name'])
+        encoded_company = urllib.parse.quote(t['company'])
+        
+        copilot_tasks.append({
+            "icon": "fa-bullseye",
+            "icon_color": icon_col,
+            "title": f"Follow-up: {t['name']} ({t['company']})",
+            "subtitle": subtitle,
+            "is_programmatic": True,
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}"
+        })
+
     return templates.TemplateResponse(request=request, name="components/audience.html", context={
         "campaign_id": campaign_id,
         "timeframe": timeframe,
-        "penetration": penetration
+        "penetration": penetration,
+        "copilot_context_name": "Audience & Accounts",
+        "copilot_actions": [
+            {"label": "Sync SQLs to CRM", "command": "Sync SQLs to CRM"},
+            {"label": "Draft Outreach", "command": "Draft executive outreach"},
+            {"label": "Find Lookalikes", "command": "Find lookalike accounts"}
+        ],
+        "copilot_tasks": copilot_tasks
     })
+
+from functools import lru_cache
+
+@lru_cache(maxsize=32)
+def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
+    from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr
+    benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
+    return generate_strategic_tldr(benchmarks)
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
 async def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
-    benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
-    tldr = generate_strategic_tldr(benchmarks)
+    tldr = cached_generate_strategic_tldr(campaign_id, timeframe)
     return HTMLResponse(content=tldr)
 
-@router.get("/dashboard/account-penetration", response_class=HTMLResponse)
+@router.get("/dashboard/investigate-target", response_class=HTMLResponse)
+async def investigate_target(campaign_id: str, name: str, company: str):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    query = f"""
+        SELECT g.page_viewed, g.timestamp, g.utm_source, c.seniority
+        FROM ga4_events g
+        JOIN crm_users c ON g.user_id = c.user_id
+        WHERE g.utm_campaign = ? AND (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
+        ORDER BY g.timestamp DESC
+        LIMIT 10
+    """
+    cursor.execute(query, (campaign_id, name, company))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    if not rows:
+        history_items = "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"
+    else:
+        from datetime import datetime
+        history_items = '<ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">'
+        for idx, r in enumerate(rows):
+            src = r['utm_source'].lower() if r['utm_source'] else ''
+            if 'linkedin' in src or 'social' in src:
+                icon = 'fa-brands fa-linkedin text-sky-500'
+            elif 'email' in src:
+                icon = 'fa-solid fa-envelope text-amber-500'
+            else:
+                icon = 'fa-solid fa-globe text-emerald-500'
+                
+            try:
+                dt = datetime.strptime(r['timestamp'].split('.')[0], "%Y-%m-%d %H:%M:%S")
+                date_str = dt.strftime("%d %b %Y").upper()
+            except:
+                date_str = r['timestamp'].split(' ')[0] if r['timestamp'] else 'Unknown'
+                
+            page_clean = r['page_viewed'].strip('/').replace('/', ' ').replace('-', ' ').title()
+                
+            dot_class = 'bg-brand-500 shadow-[0_0_8px_rgba(56,189,248,0.6)]' if idx == 0 else 'bg-dark-600'
+            text_class = 'text-brand-300 bg-brand-900/10' if idx == 0 else 'text-slate-300'
+            icon_class = f"mr-2 text-xs {icon} {'opacity-100 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]' if idx == 0 else 'opacity-70'}"
+            
+            history_items += f"""
+            <li class="relative pl-5">
+                <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors {dot_class}"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{date_str}</span>
+                    <div class="flex items-center text-sm font-medium w-full rounded pr-2 py-0.5 {text_class}">
+                        <i class="{icon_class}"></i>
+                        <span class="truncate" title="{r['page_viewed']}">{page_clean}</span>
+                    </div>
+                </div>
+            </li>
+            """
+        history_items += '</ul>'
+
+    ai_summary_html = ""
+    try:
+        import os
+        from app.services.llm_rotator import get_legacy_generative_model
+        if ("GEMINI_API_KEY" in os.environ or "GEMINI_API_KEYS" in os.environ) and rows:
+            model = get_legacy_generative_model('gemini-3.5-flash')
+            context_str = f"Target: {name} at {company} (Seniority: {rows[0]['seniority'] if rows else 'Unknown'}).\nRecent 10 Interactions (Chronological):\n"
+            for r in rows:
+                context_str += f"- {r['timestamp']}: {r['page_viewed']} via {r['utm_source']}\n"
+                
+            prompt = f"Act as an expert B2B marketing AI. Review this chronological interaction data. Provide a brief 2-3 sentence summary justifying why this account is a priority Sales Qualified Lead (SQL). Mention their seniority and timeline of engagement (recency) if relevant. Keep it strategic and punchy. Data:\n{context_str}"
+            
+            response = None
+            last_err = None
+            for _ in range(3): # Try up to 3 times to get a working key
+                try:
+                    # Requesting a new model re-rolls the random API key
+                    model = get_legacy_generative_model('gemini-3.5-flash')
+                    response = model.generate_content(prompt)
+                    break
+                except Exception as e:
+                    last_err = e
+                    
+            if not response:
+                raise last_err
+                
+            ai_summary_html = f"""
+            <div class="mb-4 text-slate-300 text-sm leading-relaxed border-l-2 border-fuchsia-500 pl-3">
+                <span class="text-[10px] text-fuchsia-500 font-bold uppercase tracking-widest block mb-1">AI Context Analysis</span>
+                {response.text}
+            </div>
+            """
+    except Exception as e:
+        ai_summary_html = f"""
+        <div class="mb-4 text-rose-400 text-xs font-mono bg-rose-900/20 p-2 border border-rose-900/50">
+            AI Context Unavailable (Rate Limit Exceeded). Displaying raw interaction data below.
+        </div>
+        """
+
+    html_content = f"""
+    <div class="flex gap-3 my-4">
+        <div class="w-6 h-6 bg-slate-700 flex items-center justify-center shrink-0 border border-slate-600">
+            <i class="fa-solid fa-server text-[10px] text-slate-300"></i>
+        </div>
+        <div class="w-full">
+            <div class="bg-black border border-dark-700">
+                <div class="p-3 border-b border-dark-700 bg-dark-900 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-300 tracking-widest uppercase">Target Analysis: {name}</span>
+                    <span class="text-sky-400 text-[10px] font-bold"><i class="fa-solid fa-check-circle"></i> SQL</span>
+                </div>
+                <div class="p-4 flex flex-col">
+                    {ai_summary_html}
+                    <div class="mt-2 flex flex-col divide-y divide-dark-800">
+                        <div class="mb-2 text-xs text-brand-400 font-bold uppercase tracking-widest border-b border-dark-700 pb-2">Interaction History</div>
+                        {history_items}
+                    </div>
+                </div>
+                <div class="p-3 border-t border-dark-700 bg-dark-900 flex gap-2">
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Draft executive outreach for {name} at {company}"}}' class="flex-1 py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> Draft Outreach
+                    </button>
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Sync {name} to CRM"}}' class="flex-1 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-300 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                        Sync to CRM
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    return HTMLResponse(content=html_content)
 async def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})

@@ -1,13 +1,7 @@
 <div class="max-w-6xl mx-auto">
-    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
     
-    <div class="mb-6 flex justify-between items-center">
-        <h3 class="text-xl font-bold text-slate-100 flex items-center gap-3">
-            <i class="fa-solid fa-layer-group text-brand-500"></i> Module D4: Content Strategy Engine (Legacy)
-        </h3>
-        <p class="text-sm text-slate-400">Prescriptive next-best-asset recommendations based on fatigue signals.</p>
-    </div>
-    
+    <!-- Header removed -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for asset in assets %}
         <div class="glass-panel p-6 rounded-xl flex flex-col hover:border-brand-500/30 transition-colors {% if asset.health == 'Action Required' %}border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]{% endif %}">

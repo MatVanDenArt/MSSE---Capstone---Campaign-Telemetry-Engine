@@ -7,7 +7,7 @@
                     <div class="flex items-end h-full gap-1 min-w-[600px] relative">
                     
                     <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
-                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-sky-500"></i>
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
                     </div>
 
                     <div class="flex-1 h-full flex flex-col justify-between relative group">
@@ -16,7 +16,7 @@
                     </div>
                     <div class="flex-1 h-full flex flex-col justify-between relative group">
                         <div class="text-sm text-slate-300 font-bold z-10 p-4">Engaged<br><span class="text-2xl text-white" x-text="data.engaged.toLocaleString()"></span></div>
-                        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-sky-700/80 to-sky-500/80 rounded-t-lg transition-all group-hover:opacity-80" :style="`height: ${(data.engaged / max_val) * 100}%; clip-path: polygon(0 0, 100% 20%, 100% 100%, 0% 100%);`"></div>
+                        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-sky-700/80 to-blue-500/80 rounded-t-lg transition-all group-hover:opacity-80" :style="`height: ${(data.engaged / max_val) * 100}%; clip-path: polygon(0 0, 100% 20%, 100% 100%, 0% 100%);`"></div>
                     </div>
                     <div class="flex-1 h-full flex flex-col justify-between relative group">
                         <div class="text-sm text-slate-300 font-bold z-10 p-4">Known<br><span class="text-2xl text-white" x-text="data.known.toLocaleString()"></span></div>

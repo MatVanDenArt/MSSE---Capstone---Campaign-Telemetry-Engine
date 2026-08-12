@@ -80,9 +80,9 @@
                         const item = tree.find(d => d.asset_name === assetName);
                         
                         if (item) {
-                            if (item.type === 'Web') return '#10b981'; // Emerald
-                            if (item.type === 'Email') return '#f59e0b'; // Amber
-                            if (item.type === 'LinkedIn') return '#0ea5e9'; // Sky
+                            if (item.type === 'Web') return '#06b6d4'; // Cyan
+                            if (item.type === 'Email') return '#8b5cf6'; // Violet
+                            if (item.type === 'LinkedIn') return '#3b82f6'; // Sky
                         }
                         return '#64748b'; // Slate
                     },
@@ -158,11 +158,7 @@
     }
 }" x-init="initChart()" @resize.window="initChart()">
     
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <div>
-            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Module 3: Asset Contribution Breakdown</h3>
-            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">Scale represents a composite impact score prioritizing Target Account activations.</p>
-        </div>
+    <div class="flex justify-end mb-3">
         
         <!-- Tabs -->
         <div class="flex p-1 bg-black border border-dark-800 mt-4 sm:mt-0">

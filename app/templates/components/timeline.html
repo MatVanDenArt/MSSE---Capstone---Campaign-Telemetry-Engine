@@ -1,13 +1,12 @@
 <div class="w-full">
-    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
     
     <div class="bg-black border border-dark-800 p-6 md:p-8">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b border-dark-800 pb-2 gap-4">
-            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Module 2: Omnichannel Asset Impact Matrix</h3>
+        <div class="flex flex-col sm:flex-row sm:justify-end sm:items-center mb-6 border-b border-dark-800 pb-2 gap-4">
             <div class="text-[10px] font-bold text-slate-500 uppercase flex gap-4 bg-black px-3 py-1.5 border border-dark-800 tracking-wider">
-                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-emerald-500"></div> Web</span>
-                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-amber-500"></div> Email</span>
-                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-sky-500"></div> Social</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-cyan-500"></div> Web</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-violet-500"></div> Email</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-blue-500"></div> Social</span>
             </div>
         </div>
         
@@ -71,7 +70,7 @@
                                 {
                                     label: 'Email Opens (Mailchimp)',
                                     data: this.chartData.email,
-                                    borderColor: '#6366f1',
+                                    borderColor: '#8b5cf6',
                                     tension: 0.4,
                                     borderDash: [5, 5],
                                     pointRadius: 0,
@@ -82,7 +81,7 @@
                                 {
                                     label: 'Ad Clicks (LinkedIn)',
                                     data: this.chartData.ads,
-                                    borderColor: '#0ea5e9',
+                                    borderColor: '#3b82f6',
                                     tension: 0.4,
                                     pointRadius: 0,
                                     pointHoverRadius: 6,
@@ -92,8 +91,8 @@
                                 {
                                     label: 'Website Traffic (Visits)',
                                     data: this.chartData.traffic,
-                                    borderColor: '#3b82f6',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                    borderColor: '#06b6d4',
+                                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
                                     tension: 0.4,
                                     fill: true,
                                     pointRadius: 0,
@@ -162,17 +161,17 @@
                             datasets: [
                                 {
                                     label: 'Web Releases', data: webDrops, type: 'scatter',
-                                    pointBackgroundColor: '#10b981', pointBorderColor: '#10b981',
+                                    pointBackgroundColor: '#06b6d4', pointBorderColor: '#06b6d4',
                                     pointRadius: 6, pointHoverRadius: 10, pointStyle: 'circle'
                                 },
                                 {
                                     label: 'Social Ads', data: socialDrops, type: 'scatter',
-                                    pointBackgroundColor: '#0ea5e9', pointBorderColor: '#0ea5e9',
+                                    pointBackgroundColor: '#3b82f6', pointBorderColor: '#3b82f6',
                                     pointRadius: 6, pointHoverRadius: 10, pointStyle: 'circle'
                                 },
                                 {
                                     label: 'Email Drops', data: emailDrops, type: 'scatter',
-                                    pointBackgroundColor: '#f59e0b', pointBorderColor: '#f59e0b',
+                                    pointBackgroundColor: '#8b5cf6', pointBorderColor: '#8b5cf6',
                                     pointRadius: 6, pointHoverRadius: 10, pointStyle: 'circle'
                                 }
                             ]
@@ -264,9 +263,15 @@
                     </div>
                 </div>
                 
-                <div class="space-y-4">
+                <div class="space-y-2">
                                                 {% for m in matrix %}
-                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-black border border-dark-800 hover:border-dark-600 transition-colors p-5 overflow-hidden group flex flex-col justify-between cursor-pointer" @click="$dispatch('open-asset-modal', { asset_name: '{{ m.asset_name }}', type: '{{ m.type }}' })"
+                                                {% set health_border = 'border-l-4 border-l-emerald-500' %}
+                                                {% if m.health in ['Fatigued', 'Action Required'] %}
+                                                    {% set health_border = 'border-l-4 border-l-rose-500' %}
+                                                {% elif m.health in ['Warning', 'At Risk'] %}
+                                                    {% set health_border = 'border-l-4 border-l-amber-500' %}
+                                                {% endif %}
+                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-black border border-dark-800 {{ health_border }} hover:border-dark-600 transition-colors py-2 px-4 overflow-hidden group flex flex-col justify-between cursor-pointer" @click="$dispatch('open-asset-modal', { asset_name: '{{ m.asset_name }}', type: '{{ m.type }}' })"
                      x-data="{
                         sparkline: {{ m.sparkline | default([]) | tojson | safe }},
                         chartInstance: null,
@@ -291,9 +296,9 @@
                                     labels: Array.from({length: this.sparkline.length}, (_, i) => i + 1),
                                     datasets: [{
                                         data: this.sparkline,
-                                        borderColor: '#525252',
-                                        backgroundColor: 'rgba(82,82,82,0.1)',
-                                        borderWidth: 1,
+                                        borderColor: '#10b981',
+                                        backgroundColor: 'rgba(16,185,129,0.15)',
+                                        borderWidth: 2,
                                         tension: 0,
                                         fill: true,
                                         pointRadius: 0
@@ -319,74 +324,47 @@
                         <canvas x-ref="canvas"></canvas>
                     </div>
 
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 relative z-10">
                         
                         <!-- Left: Asset Info -->
-                        <div class="flex flex-col gap-1">
-                            <div class="flex items-center gap-3 mb-1">
-                                <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 border border-dark-700 bg-dark-900 {% if m.type == 'Web' %}text-fuchsia-400 border-fuchsia-500/30{% elif m.type == 'LinkedIn' %}text-brand-400 border-brand-500/30{% else %}text-indigo-400 border-indigo-500/30{% endif %}">
-                                    {{ m.subtype | default(m.type ~ ' ASSET') }}
-                                </span>
-                                {% if m.ai_recommendation %}
-                                <span class="text-[10px] px-2 py-0.5 font-bold border {{ m.badge_class | default('bg-black text-slate-400 border-dark-700') }}">
-                                    {{ m.health }}
-                                </span>
-                                {% endif %}
-                            </div>
-                            
-                            <h5 class="text-base font-bold text-slate-100">{{ m.asset_name }}</h5>
-                            <div class="flex items-center gap-3 mt-0.5 text-[10px] uppercase tracking-widest">
-                                <span class="text-slate-500 font-mono"><i class="fa-regular fa-calendar mr-1"></i>{{ m.formatted_date }}</span>
+                        <div class="flex flex-col gap-0.5">
+                            <div class="flex items-center gap-2">
+                                <h5 class="text-sm font-bold text-slate-100">{{ m.asset_name }}</h5>
+                                <span class="text-slate-500 font-mono text-[9px] uppercase tracking-widest"><i class="fa-regular fa-calendar mr-1"></i>{{ m.formatted_date }}</span>
                             </div>
                         </div>
 
                         <!-- Right: Performance Metrics -->
-                        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end bg-black px-4 py-2 border border-dark-800">
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end bg-black/20 backdrop-blur-[1px] px-3 py-1 border border-dark-800">
                             
                             <!-- Engagement -->
                             <div class="text-center">
-                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">{% if m.type == 'Web' %}Views{% elif m.type == 'LinkedIn' %}Clicks{% else %}Opens{% endif %}</div>
-                                <div class="text-xl font-bold text-slate-100">{{ "{:,}".format(m.engagement) }}</div>
+                                <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">{% if m.type == 'Web' %}Views{% elif m.type == 'LinkedIn' %}Clicks{% else %}Opens{% endif %}</div>
+                                <div class="text-lg font-bold text-slate-100">{{ "{:,}".format(m.engagement) }}</div>
                             </div>
-                            <div class="w-px h-8 bg-dark-700/50"></div>
+                            <div class="w-px h-6 bg-dark-700/50"></div>
                             
                             <!-- Individuals -->
                             <div class="text-center">
-                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
-                                <div class="text-xl font-bold text-slate-100">{{ m.individuals_engaged }}</div>
+                                <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
+                                <div class="text-lg font-bold text-slate-100">{{ m.individuals_engaged }}</div>
                             </div>
-                            <div class="w-px h-8 bg-dark-700/50"></div>
+                            <div class="w-px h-6 bg-dark-700/50"></div>
                             
                             <!-- Accounts -->
                             <div class="text-center">
-                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
-                                <div class="text-xl font-bold text-slate-100">{{ m.accounts_activated }}</div>
+                                <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
+                                <div class="text-lg font-bold text-slate-100">{{ m.accounts_activated }}</div>
                             </div>
-                            <div class="w-px h-8 bg-dark-700/50"></div>
+                            <div class="w-px h-6 bg-dark-700/50"></div>
                             
                             <!-- Impact Score -->
-                            <div class="text-right min-w-[100px]">
-                                <div class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Impact Score</div>
-                                <div class="text-2xl font-black text-white">{{ m.impact_formatted }}</div>
+                            <div class="text-right min-w-[80px]">
+                                <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Impact Score</div>
+                                <div class="text-xl font-black text-white">{{ m.impact_formatted }}</div>
                             </div>
-
                         </div>
                     </div>
-                    
-                    <!-- AI Recommendation (Pillar 3) -->
-                    {% if m.ai_recommendation %}
-                    <div class="relative z-10 mt-5 pt-3 border-t border-dark-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-6 h-6 bg-brand-900 border border-brand-500/50 flex items-center justify-center flex-shrink-0">
-                                <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-[10px]"></i>
-                            </div>
-                            <p class="text-[10px] font-mono text-slate-400">{{ m.ai_recommendation }}</p>
-                        </div>
-                        <button class="px-4 py-1.5 bg-black hover:bg-dark-900 text-[10px] font-bold tracking-widest text-brand-400 hover:text-brand-300 uppercase transition-colors border border-brand-500/30 hover:border-brand-500 whitespace-nowrap">
-                            Take Action <i class="fa-solid fa-arrow-right ml-1"></i>
-                        </button>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
                 

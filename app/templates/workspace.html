@@ -37,7 +37,7 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden antialiased bg-black text-slate-200">
+<body x-data="{ isChatOpen: false }" @open-chat.window="isChatOpen = true" @close-chat.window="isChatOpen = false" class="h-screen flex overflow-hidden antialiased bg-black text-slate-200">
 
     <!-- Global context state -->
     <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
@@ -71,11 +71,11 @@
     </nav>
 
     <!-- 2. Main Canvas (Middle Column) -->
-    <div class="flex-1 flex flex-col min-w-0 bg-black relative">
+    <div class="flex-1 flex flex-col min-w-0 bg-black relative transition-all duration-300">
         
         <!-- Context Bar -->
         <header class="h-16 border-b border-dark-800 flex items-center justify-between px-6 shrink-0 bg-black z-10">
-            <h1 class="text-lg font-bold text-white tracking-tight uppercase flex items-center gap-3">
+            <h1 class="text-xs font-semibold text-slate-400 tracking-widest uppercase flex items-center gap-3">
                 {% if 'LIVE' in campaign_id %}
                 <div class="w-2 h-2 bg-emerald-500"></div>
                 {% else %}
@@ -93,58 +93,29 @@
             </div>
         </header>
 
-        <main id="main-canvas" class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8" hx-get="/api/dashboard/overview?campaign_id={{ campaign_id }}" hx-trigger="load">
+        <main id="main-canvas" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6" hx-get="/api/dashboard/overview?campaign_id={{ campaign_id }}" hx-trigger="load">
             <div class="flex justify-center items-center h-full"><i class="fa-solid fa-spinner fa-spin text-brand-500 text-3xl"></i></div>
         </main>
     </div>
 
-    <!-- 3. AI Command Center (Right Column) -->
+    <!-- 3. Action Center (Middle Right Column) -->
     <aside class="w-[30%] min-w-[320px] max-w-[400px] border-l border-dark-800 flex flex-col bg-dark-900 shrink-0 relative z-20">
         <!-- Header -->
         <div class="h-16 border-b border-dark-800 flex items-center px-4 bg-dark-900 shrink-0">
-            <h2 class="text-xs font-bold text-fuchsia-500 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Copilot
+            <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Action Center
             </h2>
         </div>
         
-        <!-- Chat Feed / Proactive To-Dos -->
-        <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar pb-32">
-            
-            <div class="flex gap-3">
-                <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-robot text-[10px] text-black"></i>
-                </div>
-                <div class="text-slate-300 w-full space-y-2">
-                    <p class="font-mono text-xs">SYS_INIT_ANALYTICS: <strong>{{ campaign_id }}</strong></p>
-                    <p class="text-sm">I am actively monitoring campaign telemetry. I will push statistically significant insights and recommended actions to this feed.</p>
-                </div>
-            </div>
-            
-            <!-- Proactive To-Do Alert (Mockup) -->
-            <div class="flex gap-3">
-                <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-bolt text-[10px] text-black"></i>
-                </div>
-                <div class="w-full">
-                    <div class="bg-black border border-dark-700 p-4">
-                        <div class="flex justify-between items-start mb-3">
-                            <span class="text-[10px] font-bold text-fuchsia-500 uppercase tracking-wider">Automated Insight</span>
-                            <span class="text-[10px] text-slate-500 font-mono">1m ago</span>
-                        </div>
-                        <p class="text-slate-200 text-sm mb-4 leading-relaxed">Engagement velocity for <strong>Module 4 (Audience)</strong> has dropped below the 30-day moving average. C-Suite interaction is down 14%.</p>
-                        <button class="w-full py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-rotate"></i> Execute Asset Rotation
-                        </button>
-                    </div>
-                </div>
-            </div>
-
+        <!-- Proactive Tasks Container -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar pb-32">
+            <div id="copilot-tasks-container"></div>
         </div>
         
         <!-- Command Input Area -->
         <div class="absolute bottom-0 left-0 w-full bg-dark-900 pt-2">
             <!-- Action Chips -->
-            <div class="px-4 pb-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
+            <div id="copilot-action-chips" class="px-4 pb-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
                 <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Gen Report</button>
                 <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Analyze Funnel</button>
                 <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Check Fatigue</button>
@@ -155,7 +126,7 @@
             </div>
             
             <div class="p-4 border-t border-dark-800 bg-black">
-                <form hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="flex w-full relative group">
+                <form @submit="isChatOpen = true; setTimeout(() => $el.reset(), 10)" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="flex w-full relative group">
                     <div class="absolute left-3 top-3 text-fuchsia-500 font-mono text-sm">></div>
                     <input type="text" name="message" class="w-full bg-black border border-dark-700 text-fuchsia-400 text-sm focus:border-fuchsia-500 focus:outline-none placeholder-dark-600 py-3 pl-8 pr-12 transition-colors font-mono" placeholder="query telemetry..." required autocomplete="off">
                     <button type="submit" class="absolute right-2 top-2 w-8 h-8 flex items-center justify-center bg-fuchsia-600 hover:bg-fuchsia-500 text-black transition-colors">
@@ -163,6 +134,24 @@
                     </button>
                 </form>
             </div>
+        </div>
+    </aside>
+
+    <!-- 4. AI Chat Column (Far Right Shift) -->
+    <aside :class="isChatOpen ? 'w-[30%] min-w-[320px] max-w-[400px] border-l border-dark-800 opacity-100' : 'w-0 opacity-0 overflow-hidden'" class="flex flex-col bg-dark-900 shrink-0 relative z-10 transition-all duration-300 ease-in-out">
+        <!-- Header -->
+        <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 bg-dark-900 shrink-0">
+            <h2 class="text-xs font-bold text-fuchsia-500 uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot Chat
+            </h2>
+            <button @click="isChatOpen = false" class="text-slate-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <!-- Chat Feed -->
+        <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar">
+            
         </div>
     </aside>
 
