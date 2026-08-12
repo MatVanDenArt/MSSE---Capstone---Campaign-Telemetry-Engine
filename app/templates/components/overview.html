@@ -1,14 +1,15 @@
 <div class="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-48">
     <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
     <!-- Top-Line AI TL;DR -->
-    <div class="glass-panel p-4 md:p-6 rounded-xl border-l-4 border-l-brand-500 flex flex-col md:flex-row items-start gap-4">
-        <div class="mt-1 w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center shrink-0">
+    <div class="bg-black p-4 md:p-6 border border-dark-800 border-l-4 border-l-brand-500 flex flex-col md:flex-row items-start gap-4">
+        <div class="mt-1 w-8 h-8 bg-brand-900 border border-brand-500/50 flex items-center justify-center shrink-0">
             <i class="fa-solid fa-sparkles text-brand-400 text-sm"></i>
         </div>
         <div>
-            <h2 class="text-sm font-bold text-slate-400 mb-1">Strategic TL;DR (Story #2)</h2>
-            <p class="text-base md:text-lg text-slate-200 leading-relaxed font-medium" hx-get="/api/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
-                <i class="fa-solid fa-circle-notch fa-spin text-brand-500 mr-2"></i> Generating Strategic Insight...
+            <h2 class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
+            <p class="text-sm md:text-base text-slate-300 leading-relaxed font-mono" hx-get="/api/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
+                <i class="fa-solid fa-terminal fa-fade text-brand-500 mr-2"></i> Generating Strategic Insight...
             </p>
         </div>
     </div>
@@ -16,23 +17,23 @@
     <!-- Quant Core (Metrics) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Spend -->
-        <div class="glass-panel rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 lg:p-5 relative z-10 flex justify-between items-start">
+        <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-dark-600 transition-colors relative overflow-hidden h-32">
+            <div class="p-4 relative z-10 flex justify-between items-start">
                 <div>
-                    <div class="text-slate-400 text-sm font-medium mb-1">Total Spend</div>
-                    <div class="text-2xl lg:text-3xl font-bold text-slate-100">${{ "{:,.0f}".format(benchmarks.live.spend) }}</div>
+                    <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Total Spend</div>
+                    <div class="text-2xl font-bold text-slate-100">${{ "{:,.0f}".format(benchmarks.live.spend) }}</div>
                 </div>
-                <div class="text-xs font-medium {% if benchmarks.comparisons.spend.good %}text-emerald-400{% else %}text-slate-400{% endif %}">
+                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.spend.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
                     <i class="fa-solid {% if benchmarks.comparisons.spend.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.spend.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
                     {{ benchmarks.comparisons.spend.value | replace('-', '') }}% vs avg
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-40 z-0" x-data="{
+            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
                 spark: {{ benchmarks.sparklines.spend | tojson | safe }},
                 initChart() {
                     const ctx = this.$refs.canvas.getContext('2d');
                     new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#cbd5e1', backgroundColor: 'rgba(203,213,225,0.1)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#525252', backgroundColor: 'rgba(82,82,82,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
                     });
                 }
@@ -40,23 +41,23 @@
         </div>
         
         <!-- Accounts -->
-        <div class="glass-panel rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors relative overflow-hidden h-32 border border-brand-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-            <div class="p-4 lg:p-5 relative z-10 flex justify-between items-start">
+        <div class="bg-black border border-brand-500/50 flex flex-col justify-between hover:border-brand-500 transition-colors relative overflow-hidden h-32">
+            <div class="p-4 relative z-10 flex justify-between items-start">
                 <div>
-                    <div class="text-brand-400 text-sm font-medium mb-1">Engaged Target Accounts</div>
-                    <div class="text-2xl lg:text-3xl font-bold text-brand-100">{{ "{:,.0f}".format(benchmarks.live.accounts) }}</div>
+                    <div class="text-brand-500 text-[10px] uppercase font-bold tracking-widest mb-1">Engaged Target Accounts</div>
+                    <div class="text-2xl font-bold text-brand-400">{{ "{:,.0f}".format(benchmarks.live.accounts) }}</div>
                 </div>
-                <div class="text-xs font-medium {% if benchmarks.comparisons.accounts.good %}text-emerald-400{% else %}text-slate-400{% endif %}">
+                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.accounts.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
                     <i class="fa-solid {% if benchmarks.comparisons.accounts.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.accounts.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
                     {{ benchmarks.comparisons.accounts.value | replace('-', '') }}% vs avg
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-40 z-0" x-data="{
+            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
                 spark: {{ benchmarks.sparklines.accounts | tojson | safe }},
                 initChart() {
                     const ctx = this.$refs.canvas.getContext('2d');
                     new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.2)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
                     });
                 }
@@ -64,23 +65,23 @@
         </div>
 
         <!-- CPA -->
-        <div class="glass-panel rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 lg:p-5 relative z-10 flex justify-between items-start">
+        <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-dark-600 transition-colors relative overflow-hidden h-32">
+            <div class="p-4 relative z-10 flex justify-between items-start">
                 <div>
-                    <div class="text-slate-400 text-sm font-medium mb-1">Cost Per Engaged Account</div>
-                    <div class="text-2xl lg:text-3xl font-bold text-slate-100">${{ "{:,.0f}".format(benchmarks.live.cpa) }}</div>
+                    <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Cost Per Engaged Account</div>
+                    <div class="text-2xl font-bold text-slate-100">${{ "{:,.0f}".format(benchmarks.live.cpa) }}</div>
                 </div>
-                <div class="text-xs font-medium {% if benchmarks.comparisons.cpa.good %}text-emerald-400{% else %}text-slate-400{% endif %}">
+                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.cpa.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
                     <i class="fa-solid {% if benchmarks.comparisons.cpa.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.cpa.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
                     {{ benchmarks.comparisons.cpa.value | replace('-', '') }}% vs avg
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-40 z-0" x-data="{
+            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
                 spark: {{ benchmarks.sparklines.cpa | tojson | safe }},
                 initChart() {
                     const ctx = this.$refs.canvas.getContext('2d');
                     new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#cbd5e1', backgroundColor: 'rgba(203,213,225,0.1)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#525252', backgroundColor: 'rgba(82,82,82,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
                     });
                 }
@@ -88,23 +89,23 @@
         </div>
 
         <!-- Conversions -->
-        <div class="glass-panel rounded-xl flex flex-col justify-between hover:bg-dark-800/80 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 lg:p-5 relative z-10 flex justify-between items-start">
+        <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-emerald-500/50 transition-colors relative overflow-hidden h-32">
+            <div class="p-4 relative z-10 flex justify-between items-start">
                 <div>
-                    <div class="text-slate-400 text-sm font-medium mb-1">High-Intent Conversions</div>
-                    <div class="text-2xl lg:text-3xl font-bold text-emerald-400">{{ "{:,.0f}".format(benchmarks.live.conversions) }}</div>
+                    <div class="text-emerald-500/70 text-[10px] uppercase font-bold tracking-widest mb-1">High-Intent Conversions</div>
+                    <div class="text-2xl font-bold text-emerald-500">{{ "{:,.0f}".format(benchmarks.live.conversions) }}</div>
                 </div>
-                <div class="text-xs font-medium {% if benchmarks.comparisons.conversions.good %}text-emerald-400{% else %}text-slate-400{% endif %}">
+                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.conversions.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
                     <i class="fa-solid {% if benchmarks.comparisons.conversions.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.conversions.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
                     {{ benchmarks.comparisons.conversions.value | replace('-', '') }}% vs avg
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-40 z-0" x-data="{
+            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
                 spark: {{ benchmarks.sparklines.conversions | tojson | safe }},
                 initChart() {
                     const ctx = this.$refs.canvas.getContext('2d');
                     new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.2)', fill: true, tension: 0.4, pointRadius: 0 }] },
+                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
                     });
                 }
@@ -112,24 +113,9 @@
         </div>
     </div>
 
-    
+    <!-- Module 1: Channel ROI -->
     <div class="flex flex-col gap-6 mt-6">
         {% include 'components/mod_channel_roi.html' %}
     </div>
-
-    <!-- Interactive Timeline -->
-    {% include 'components/timeline.html' %}
-    
-    <!-- Asset Contribution Treemap -->
-    {% include 'components/mod_asset_treemap.html' %}
-    
-    <!-- Module 4: Audience Penetration Engine -->
-    {% include 'components/mod_persona_matrix.html' %}
-    
-    <!-- Module 5: Prioritized Target Actions -->
-    {% include 'components/account_penetration.html' %}
-    
-    <!-- Shared Asset Personas Modal -->
-    {% include 'components/asset_personas_modal.html' %}
 
 </div>

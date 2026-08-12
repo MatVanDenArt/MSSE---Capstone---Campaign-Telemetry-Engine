@@ -1,13 +1,13 @@
-<div class="max-w-6xl mx-auto">
+<div class="w-full">
     <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
     
-    <div class="glass-panel rounded-xl p-6 md:p-8">
-        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b border-dark-700 pb-2 gap-4">
-            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Module 2: Omnichannel Asset Impact Matrix</h3>
-            <div class="text-[10px] font-bold text-slate-500 uppercase flex gap-4 bg-dark-900/50 px-3 py-1.5 rounded-lg border border-dark-700 tracking-wider">
+    <div class="bg-black border border-dark-800 p-6 md:p-8">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 border-b border-dark-800 pb-2 gap-4">
+            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Module 2: Omnichannel Asset Impact Matrix</h3>
+            <div class="text-[10px] font-bold text-slate-500 uppercase flex gap-4 bg-black px-3 py-1.5 border border-dark-800 tracking-wider">
                 <span class="flex items-center gap-1"><div class="w-2 h-2 bg-emerald-500"></div> Web</span>
-                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-amber-500 rounded-full"></div> Email</span>
-                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-sky-500 rotate-45"></div> Social</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-amber-500"></div> Email</span>
+                <span class="flex items-center gap-1"><div class="w-2 h-2 bg-sky-500"></div> Social</span>
             </div>
         </div>
         
@@ -251,22 +251,22 @@
         </div>
         
         <!-- Omnichannel Asset Impact Matrix -->
-        <div class="mt-8 border-t border-dark-700 pt-8">
+        <div class="mt-8 border-t border-dark-800 pt-8">
             <div x-data="{ currentTab: 'Web' }">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-dark-700 pb-2">
-                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 md:mb-0">Omnichannel Asset Impact Matrix</h4>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-dark-800 pb-2">
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 md:mb-0">Omnichannel Asset Impact Matrix</h4>
                     
                     <!-- Tabs -->
                     <div class="flex gap-6">
-                        <button @click="currentTab = 'Web'" :class="currentTab === 'Web' ? 'border-slate-300 text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-400'" class="border-b-2 pb-1 text-sm font-bold uppercase tracking-wider transition">Web Pages</button>
-                        <button @click="currentTab = 'LinkedIn'" :class="currentTab === 'LinkedIn' ? 'border-slate-300 text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-400'" class="border-b-2 pb-1 text-sm font-bold uppercase tracking-wider transition">Social Ads</button>
-                        <button @click="currentTab = 'Email'" :class="currentTab === 'Email' ? 'border-slate-300 text-slate-200' : 'border-transparent text-slate-500 hover:text-slate-400'" class="border-b-2 pb-1 text-sm font-bold uppercase tracking-wider transition">Email</button>
+                        <button @click="currentTab = 'Web'" :class="currentTab === 'Web' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'" class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Web Pages</button>
+                        <button @click="currentTab = 'LinkedIn'" :class="currentTab === 'LinkedIn' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'" class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Social Ads</button>
+                        <button @click="currentTab = 'Email'" :class="currentTab === 'Email' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'" class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Email</button>
                     </div>
                 </div>
                 
                 <div class="space-y-4">
                                                 {% for m in matrix %}
-                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-dark-800/40 border-l-4 border-l-dark-700 rounded-xl p-5 hover:bg-dark-800/60 transition shadow-[0_4px_20px_rgba(0,0,0,0.2)] overflow-hidden group flex flex-col justify-between cursor-pointer" @click="$dispatch('open-asset-modal', { asset_name: '{{ m.asset_name }}', type: '{{ m.type }}' })"
+                <div x-show="currentTab === '{{ m.type }}'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;" class="relative bg-black border border-dark-800 hover:border-dark-600 transition-colors p-5 overflow-hidden group flex flex-col justify-between cursor-pointer" @click="$dispatch('open-asset-modal', { asset_name: '{{ m.asset_name }}', type: '{{ m.type }}' })"
                      x-data="{
                         sparkline: {{ m.sparkline | default([]) | tojson | safe }},
                         chartInstance: null,
@@ -291,10 +291,10 @@
                                     labels: Array.from({length: this.sparkline.length}, (_, i) => i + 1),
                                     datasets: [{
                                         data: this.sparkline,
-                                        borderColor: '#10b981',
-                                        backgroundColor: '#10b98133',
-                                        borderWidth: 3,
-                                        tension: 0.4,
+                                        borderColor: '#525252',
+                                        backgroundColor: 'rgba(82,82,82,0.1)',
+                                        borderWidth: 1,
+                                        tension: 0,
                                         fill: true,
                                         pointRadius: 0
                                     }]
@@ -315,7 +315,7 @@
                      }" x-init="initSparkline()">
                     
                     <!-- Background Sparkline Chart -->
-                    <div class="absolute inset-0 w-full h-full opacity-40 pointer-events-none z-0">
+                    <div class="absolute inset-0 w-full h-full opacity-30 pointer-events-none z-0">
                         <canvas x-ref="canvas"></canvas>
                     </div>
 
@@ -324,24 +324,24 @@
                         <!-- Left: Asset Info -->
                         <div class="flex flex-col gap-1">
                             <div class="flex items-center gap-3 mb-1">
-                                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full {% if m.type == 'Web' %}bg-fuchsia-500/20 text-fuchsia-300{% elif m.type == 'LinkedIn' %}bg-brand-500/20 text-brand-300{% else %}bg-indigo-500/20 text-indigo-300{% endif %}">
+                                <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 border border-dark-700 bg-dark-900 {% if m.type == 'Web' %}text-fuchsia-400 border-fuchsia-500/30{% elif m.type == 'LinkedIn' %}text-brand-400 border-brand-500/30{% else %}text-indigo-400 border-indigo-500/30{% endif %}">
                                     {{ m.subtype | default(m.type ~ ' ASSET') }}
                                 </span>
                                 {% if m.ai_recommendation %}
-                                <span class="text-[10px] px-2 py-0.5 font-bold rounded border {{ m.badge_class | default('bg-slate-800 text-slate-400 border-slate-700') }}">
+                                <span class="text-[10px] px-2 py-0.5 font-bold border {{ m.badge_class | default('bg-black text-slate-400 border-dark-700') }}">
                                     {{ m.health }}
                                 </span>
                                 {% endif %}
                             </div>
                             
                             <h5 class="text-base font-bold text-slate-100">{{ m.asset_name }}</h5>
-                            <div class="flex items-center gap-3 mt-0.5 text-xs">
+                            <div class="flex items-center gap-3 mt-0.5 text-[10px] uppercase tracking-widest">
                                 <span class="text-slate-500 font-mono"><i class="fa-regular fa-calendar mr-1"></i>{{ m.formatted_date }}</span>
                             </div>
                         </div>
 
                         <!-- Right: Performance Metrics -->
-                        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end bg-dark-900/40 px-4 py-2 rounded-lg backdrop-blur-sm border border-dark-700/50">
+                        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end bg-black px-4 py-2 border border-dark-800">
                             
                             <!-- Engagement -->
                             <div class="text-center">
@@ -375,14 +375,14 @@
                     
                     <!-- AI Recommendation (Pillar 3) -->
                     {% if m.ai_recommendation %}
-                    <div class="relative z-10 mt-5 pt-3 border-t border-dark-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="relative z-10 mt-5 pt-3 border-t border-dark-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-6 h-6 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                            <div class="w-6 h-6 bg-brand-900 border border-brand-500/50 flex items-center justify-center flex-shrink-0">
                                 <i class="fa-solid fa-wand-magic-sparkles text-brand-400 text-[10px]"></i>
                             </div>
-                            <p class="text-xs font-medium text-slate-400">{{ m.ai_recommendation }}</p>
+                            <p class="text-[10px] font-mono text-slate-400">{{ m.ai_recommendation }}</p>
                         </div>
-                        <button class="px-4 py-1.5 rounded-lg bg-dark-700 hover:bg-dark-600 text-[10px] font-bold tracking-wider text-slate-300 uppercase transition border border-dark-600 whitespace-nowrap">
+                        <button class="px-4 py-1.5 bg-black hover:bg-dark-900 text-[10px] font-bold tracking-widest text-brand-400 hover:text-brand-300 uppercase transition-colors border border-brand-500/30 hover:border-brand-500 whitespace-nowrap">
                             Take Action <i class="fa-solid fa-arrow-right ml-1"></i>
                         </button>
                     </div>

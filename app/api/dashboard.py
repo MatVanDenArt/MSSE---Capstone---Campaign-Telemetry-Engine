@@ -38,10 +38,28 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
         "campaign_id": campaign_id,
         "timeframe": timeframe,
         "benchmarks": benchmarks,
-        "chart_data": chart_data,
-        "matrix": matrix,
-        "penetration": penetration,
         "assets": assets
+    })
+
+@router.get("/dashboard/performance", response_class=HTMLResponse)
+async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+    chart_data = get_timeline_chart_data(campaign_id, timeframe)
+    matrix = get_asset_impact_matrix(campaign_id, timeframe)
+    return templates.TemplateResponse(request=request, name="components/performance.html", context={
+        "campaign_id": campaign_id,
+        "timeframe": timeframe,
+        "chart_data": chart_data,
+        "matrix": matrix
+    })
+
+@router.get("/dashboard/audience", response_class=HTMLResponse)
+async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+    data = get_account_penetration(campaign_id)
+    penetration = data.get("account_penetration", {})
+    return templates.TemplateResponse(request=request, name="components/audience.html", context={
+        "campaign_id": campaign_id,
+        "timeframe": timeframe,
+        "penetration": penetration
     })
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)

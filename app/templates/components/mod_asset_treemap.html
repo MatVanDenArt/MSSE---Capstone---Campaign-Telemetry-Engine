@@ -1,4 +1,4 @@
-<div class="glass-panel rounded-xl p-6 md:p-8" x-data="{
+<div class="bg-black border border-dark-800 p-6 md:p-8" x-data="{
     currentTab: 'All',
     showAccountsModal: false,
     selectedAsset: null,
@@ -37,7 +37,7 @@
                     groups: this.currentTab === 'All' ? ['type', 'asset_name'] : ['asset_name'],
                     spacing: 2,
                     borderWidth: 0,
-                    borderRadius: 4,
+                    borderRadius: 0,
                     labels: {
                         display: true,
                         align: 'left',
@@ -160,17 +160,17 @@
     
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
-            <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Module 3: Asset Contribution Breakdown</h3>
-            <p class="text-xs text-slate-500 mt-1">Scale represents a composite impact score prioritizing Target Account activations.</p>
+            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Module 3: Asset Contribution Breakdown</h3>
+            <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">Scale represents a composite impact score prioritizing Target Account activations.</p>
         </div>
         
         <!-- Tabs -->
-        <div class="flex p-1 bg-dark-900/50 rounded-lg border border-dark-700 mt-4 sm:mt-0">
+        <div class="flex p-1 bg-black border border-dark-800 mt-4 sm:mt-0">
             <template x-for="tab in ['All', 'Web', 'Email', 'Social']" :key="tab">
                 <button 
                     @click="currentTab = tab; $nextTick(() => updateChart())"
-                    class="px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all duration-200"
-                    :class="currentTab === tab ? 'bg-brand-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-300'"
+                    class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors border border-transparent"
+                    :class="currentTab === tab ? 'bg-brand-900 border-brand-500/50 text-brand-400' : 'text-slate-500 hover:text-slate-300'"
                     x-text="tab">
                 </button>
             </template>

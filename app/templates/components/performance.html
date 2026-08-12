@@ -1,0 +1,19 @@
+<div class="max-w-6xl mx-auto space-y-6 lg:space-y-8 pb-48 animate-[fadeIn_0.3s_ease-out]">
+    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <div class="flex items-center gap-3 mb-6 border-b border-dark-800 pb-4">
+        <div class="w-10 h-10 bg-brand-900 border border-brand-500/50 flex items-center justify-center">
+            <i class="fa-solid fa-layer-group text-xl text-brand-500"></i>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold text-slate-100 uppercase tracking-widest">Asset Performance</h1>
+            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Analyze individual asset contribution and engagement timelines</p>
+        </div>
+    </div>
+
+    <!-- Interactive Timeline -->
+    {% include 'components/timeline.html' %}
+    
+    <!-- Asset Contribution Treemap -->
+    {% include 'components/mod_asset_treemap.html' %}
+</div>
