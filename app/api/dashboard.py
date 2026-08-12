@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data
 import sqlite3
+import urllib.parse
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -66,6 +67,39 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
 async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
+    
+    dynamic_tasks = []
+    if matrix:
+        top_asset = max(matrix, key=lambda x: x.get('impact_score', 0))
+        if top_asset:
+            encoded_asset = urllib.parse.quote(top_asset.get('asset_name', 'Asset'))
+            dynamic_tasks.append({
+                "icon": "fa-arrow-trend-up",
+                "icon_color": "text-emerald-500",
+                "title": f"Top Asset: {top_asset.get('asset_name', 'Asset')}",
+                "subtitle": f"Driving high impact with {top_asset.get('engagement', 0)} interactions",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}",
+                "is_programmatic": True
+            })
+            
+        fatigued_assets = [m for m in matrix if m.get('health') == 'Fatigued' or m.get('ai_recommendation')]
+        for asset in fatigued_assets:
+            encoded_asset = urllib.parse.quote(asset.get('asset_name', 'Asset'))
+            # Simplify subtitle for the list view
+            health_status = asset.get('health', 'Fatigued')
+            short_subtitle = "Traffic dropping rapidly" if "Traffic dropping" in asset.get('ai_recommendation', '') else "Engagement trickling off"
+            if "Ad fatigue" in asset.get('ai_recommendation', ''):
+                short_subtitle = "Ad fatigue detected"
+                
+            dynamic_tasks.append({
+                "icon": "fa-battery-quarter",
+                "icon_color": "text-rose-500",
+                "title": f"Fatigue: {asset.get('asset_name', 'Asset')}",
+                "subtitle": short_subtitle,
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}",
+                "is_programmatic": True
+            })
+
     return templates.TemplateResponse(request=request, name="components/performance.html", context={
         "campaign_id": campaign_id,
         "timeframe": timeframe,
@@ -77,22 +111,7 @@ async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBO
             {"label": "Suggest Rotation", "command": "Suggest asset rotation"},
             {"label": "Analyze Mix", "command": "Analyze channel mix"}
         ],
-        "copilot_tasks": [
-            {
-                "icon": "fa-battery-quarter",
-                "icon_color": "text-amber-500",
-                "title": "Asset Fatigue Detected",
-                "subtitle": "Decarbonization Playbook down 35% WoW",
-                "action_command": "Suggest an asset rotation for the Decarbonization Playbook"
-            },
-            {
-                "icon": "fa-arrow-trend-up",
-                "icon_color": "text-emerald-500",
-                "title": "High Performing Asset",
-                "subtitle": "ESG Webinar driving 40% of conversions",
-                "action_command": "Analyze channel mix"
-            }
-        ]
+        "copilot_tasks": dynamic_tasks
     })
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
@@ -291,6 +310,59 @@ async def investigate_target(campaign_id: str, name: str, company: str):
     </div>
     """
     return HTMLResponse(content=html_content)
+
+@router.get("/dashboard/investigate-asset", response_class=HTMLResponse)
+async def investigate_asset(campaign_id: str, asset_name: str):
+    matrix = get_asset_impact_matrix(campaign_id, 0)
+    asset = next((m for m in matrix if m['asset_name'] == asset_name), None)
+    
+    if not asset:
+        return HTMLResponse(content=f"<div class='p-4 text-slate-400'>Asset {asset_name} not found.</div>")
+        
+    ai_rec = asset.get('ai_recommendation', 'No specific AI analysis available for this asset.')
+    health = asset.get('health', 'Unknown')
+    
+    if health == 'Fatigued':
+        status_color = 'rose'
+        icon = 'fa-battery-quarter'
+    elif health in ['Warning', 'At Risk']:
+        status_color = 'amber'
+        icon = 'fa-triangle-exclamation'
+    else:
+        status_color = 'emerald'
+        icon = 'fa-arrow-trend-up'
+    
+    html_content = f"""
+    <div class="flex gap-3 my-4">
+        <div class="w-6 h-6 bg-slate-700 flex items-center justify-center shrink-0 border border-slate-600">
+            <i class="fa-solid fa-server text-[10px] text-slate-300"></i>
+        </div>
+        <div class="w-full">
+            <div class="bg-black border border-dark-700">
+                <div class="p-3 border-b border-dark-700 bg-dark-900 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-300 tracking-widest uppercase">Asset Analysis: {asset_name}</span>
+                    <span class="text-{status_color}-500 text-[10px] font-bold"><i class="fa-solid {icon}"></i> {health}</span>
+                </div>
+                <div class="p-4 flex flex-col">
+                    <div class="mb-2 text-slate-300 text-sm leading-relaxed border-l-2 border-brand-500 pl-3">
+                        <span class="text-[10px] text-brand-400 font-bold uppercase tracking-widest block mb-1">AI Context Analysis</span>
+                        {ai_rec}
+                    </div>
+                </div>
+                <div class="p-3 border-t border-dark-700 bg-dark-900 flex gap-2">
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Suggest asset rotation for {asset_name}"}}' class="flex-1 py-2 bg-brand-900/20 hover:bg-brand-600/20 border border-brand-500/50 hover:border-brand-500 text-brand-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate"></i> Suggest Rotation
+                    </button>
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Draft newsletter mention for {asset_name}"}}' class="flex-1 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-300 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-envelope"></i> Draft Mention
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    return HTMLResponse(content=html_content)
+
 async def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})

@@ -340,21 +340,21 @@
                             <!-- Engagement -->
                             <div class="text-center">
                                 <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">{% if m.type == 'Web' %}Views{% elif m.type == 'LinkedIn' %}Clicks{% else %}Opens{% endif %}</div>
-                                <div class="text-lg font-bold text-slate-100">{{ "{:,}".format(m.engagement) }}</div>
+                                <div class="text-sm font-bold text-slate-100">{{ "{:,}".format(m.engagement) }}</div>
                             </div>
                             <div class="w-px h-6 bg-dark-700/50"></div>
                             
                             <!-- Individuals -->
                             <div class="text-center">
                                 <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
-                                <div class="text-lg font-bold text-slate-100">{{ m.individuals_engaged }}</div>
+                                <div class="text-sm font-bold text-slate-100">{{ m.individuals_engaged }}</div>
                             </div>
                             <div class="w-px h-6 bg-dark-700/50"></div>
                             
                             <!-- Accounts -->
                             <div class="text-center">
                                 <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
-                                <div class="text-lg font-bold text-slate-100">{{ m.accounts_activated }}</div>
+                                <div class="text-sm font-bold text-slate-100">{{ m.accounts_activated }}</div>
                             </div>
                             <div class="w-px h-6 bg-dark-700/50"></div>
                             
