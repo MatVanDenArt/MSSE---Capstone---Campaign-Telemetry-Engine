@@ -36,7 +36,20 @@ active_chat_tasks = {}
 def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None), reset_context: str = Form("false")):
     global chat_history
     
-    if reset_context.lower() == "true":
+    context_breakers = [
+        "review priority action:",
+        "investigate pipeline target:",
+        "draft outreach strategy for",
+        "generate campaign report",
+        "analyze funnel metrics",
+        "check asset fatigue",
+        "investigate target:",
+    ]
+    
+    msg_lower = message.strip().lower()
+    auto_reset = any(msg_lower.startswith(b) for b in context_breakers)
+    
+    if reset_context.lower() == "true" or auto_reset:
         chat_history = []
     
     # Prevent chat history from growing unbounded and hanging the API
