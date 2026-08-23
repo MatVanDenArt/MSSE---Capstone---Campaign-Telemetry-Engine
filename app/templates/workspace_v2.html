@@ -28,14 +28,23 @@
     <link rel="stylesheet" href="/static/css/v2.css">
     <style>
         body { background-color: #000; color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #000; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; }
-        .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator { display: inline-flex; }
-        .htmx-request.htmx-indicator { display: inline-flex; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        .htmx-indicator { display: none; opacity: 0; }
+        .htmx-request .htmx-indicator { display: flex; opacity: 1; }
+        .htmx-request.htmx-indicator { display: flex; opacity: 1; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        [x-cloak] { display: none !important; }
+        
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
     </style>
 </head>
 <body x-data="{ activeSidebarView: 'action_center', activeTimeframe: 30, activeTab: 'overview' }" @open-chat.window="activeSidebarView = 'chat'" @close-chat.window="activeSidebarView = 'action_center'" class="h-screen flex overflow-hidden antialiased bg-black text-slate-200">
@@ -148,8 +157,24 @@
                 </div>
                 
                 <!-- Chat Feed -->
-                <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar">
+                <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar pb-32">
                     
+                </div>
+                
+                <!-- Prominent Loading Indicator Overlay -->
+                <div id="loading-indicator" class="htmx-indicator absolute bottom-8 left-4 right-4 z-50 transition-opacity duration-300">
+                    <div class="flex gap-3 w-full bg-black/90 backdrop-blur-md p-4 rounded-xl border border-fuchsia-900 shadow-[0_0_30px_rgba(217,70,239,0.15)] overflow-hidden relative">
+                        <div class="absolute top-0 left-0 w-full h-0.5 bg-fuchsia-500 shadow-[0_0_10px_#d946ef] animate-[scan_2s_ease-in-out_infinite]"></div>
+                        <div class="w-8 h-8 bg-fuchsia-600/20 border border-fuchsia-500/50 rounded flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-robot text-xs text-fuchsia-400 animate-pulse"></i>
+                        </div>
+                        <div class="flex flex-col justify-center w-full min-w-0">
+                            <div class="text-fuchsia-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2 mb-1">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Copilot is Analyzing
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-mono truncate">Executing autonomous telemetry tools (10-20s)...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -165,9 +190,7 @@
                 </div>
             </div>
             
-            <div id="loading-indicator" class="htmx-indicator px-4 py-1.5 text-[10px] uppercase font-bold text-fuchsia-500 bg-black border-t border-dark-800 items-center gap-2 w-full">
-                <i class="fa-solid fa-terminal fa-fade"></i> Computing...
-            </div>
+
             
             <div class="p-4 border-t border-dark-800 bg-black">
                 <form @submit="activeSidebarView = 'chat'; setTimeout(() => $el.reset(), 10)" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="flex w-full relative group">
