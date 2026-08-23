@@ -38,9 +38,13 @@ When you draft an outreach sequence (using draft_outreach_sequence), present the
 chat_history = []
 
 @router.post("/chat", response_class=HTMLResponse)
-async def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None)):
+def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None)):
     global chat_history
     
+    # Prevent chat history from growing unbounded and hanging the API
+    if len(chat_history) > 12:
+        chat_history = chat_history[-12:]
+        
     user_html = f"""
     <div class="flex gap-3 my-4">
         <div class="w-6 h-6 bg-slate-700 flex items-center justify-center shrink-0 border border-slate-600">
@@ -52,13 +56,13 @@ async def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_c
     </div>
     """
     
-    import asyncio
+    import time
     
     chat_history.append({"role": "user", "parts": [types.Part.from_text(text=message)]})
     
     if intent == "automate" or (trigger_id and not intent and not message.lower().startswith("draft")):
         # Artificial execution simulation
-        await asyncio.sleep(1.5)
+        time.sleep(1.5)
         
         logo_icon = "fa-server"
         system_name = "Internal System"
