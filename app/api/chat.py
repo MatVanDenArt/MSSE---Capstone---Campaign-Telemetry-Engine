@@ -205,8 +205,8 @@ You MUST use this EXACT HTML structure for the buttons:
         <style>
         .copilot-markdown p {{ margin-bottom: 1em; }}
         .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3, .copilot-markdown h4 {{ font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #fdf4ff; }}
-        .copilot-markdown ul {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }}
-        .copilot-markdown ol {{ list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }}
+        .copilot-markdown ul:not(.list-none) {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }}
+        .copilot-markdown ol:not(.list-none) {{ list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }}
         .copilot-markdown li {{ margin-bottom: 0.5em; }}
         .copilot-markdown strong {{ font-weight: bold; color: #fdf4ff; }}
         </style>
@@ -214,9 +214,9 @@ You MUST use this EXACT HTML structure for the buttons:
             <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-robot text-[10px] text-black"></i>
             </div>
-            <div class="w-full">
-                <div class="bg-black border border-dark-700 p-4">
-                    <div class="text-slate-200 text-sm leading-relaxed copilot-markdown">{parsed_html}</div>
+            <div class="w-full min-w-0">
+                <div class="bg-black border border-dark-700 p-4 w-full">
+                    <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
                 </div>
             </div>
         </div>
