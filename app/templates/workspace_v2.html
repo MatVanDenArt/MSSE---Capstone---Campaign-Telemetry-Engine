@@ -38,7 +38,7 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body x-data="{ isChatOpen: false, activeTimeframe: 30, activeTab: 'overview' }" @open-chat.window="isChatOpen = true" @close-chat.window="isChatOpen = false" class="h-screen flex overflow-hidden antialiased bg-black text-slate-200">
+<body x-data="{ activeSidebarView: 'action_center', activeTimeframe: 30, activeTab: 'overview' }" @open-chat.window="activeSidebarView = 'chat'" @close-chat.window="activeSidebarView = 'action_center'" class="h-screen flex overflow-hidden antialiased bg-black text-slate-200">
 
     <!-- Global context state -->
     <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
@@ -101,22 +101,58 @@
         </main>
     </div>
 
-    <!-- 3. Action Center (Middle Right Column) -->
-    <aside class="w-[30%] min-w-[320px] max-w-[400px] border-l border-dark-800 flex flex-col bg-dark-900 shrink-0 relative z-20">
-        <!-- Header -->
-        <div class="h-16 border-b border-dark-800 flex items-center px-4 bg-dark-900 shrink-0">
-            <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-list-check"></i> Action Center
-            </h2>
-        </div>
+    <!-- 3. Dynamic Sidebar (Action Center & Copilot Chat) -->
+    <aside class="w-[38%] min-w-[380px] max-w-[500px] border-l border-dark-800 flex flex-col bg-dark-900 shrink-0 relative z-20 transition-all duration-300">
         
-        <!-- Proactive Tasks Container -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar pb-32">
-            <div id="copilot-tasks-container"></div>
+        <!-- === ACTION CENTER VIEW === -->
+        <div x-show="activeSidebarView === 'action_center'" class="flex flex-col h-full w-full absolute inset-0 bg-dark-900 z-10 transition-opacity duration-300 pb-32"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <!-- Header -->
+            <div class="h-16 border-b border-dark-800 flex items-center px-4 shrink-0 bg-dark-900">
+                <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                    <i class="fa-solid fa-list-check"></i> Action Center
+                </h2>
+            </div>
+            
+            <!-- Proactive Tasks Container -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div id="copilot-tasks-container"></div>
+            </div>
         </div>
-        
-        <!-- Command Input Area -->
-        <div class="absolute bottom-0 left-0 w-full bg-dark-900 pt-2">
+
+        <!-- === COPILOT CHAT VIEW === -->
+        <div x-cloak x-show="activeSidebarView === 'chat'" class="flex flex-col h-full w-full absolute inset-0 bg-dark-900 z-20 transition-opacity duration-300 pb-32"
+             x-transition:enter="transition ease-out duration-300 delay-100"
+             x-transition:enter-start="opacity-0 translate-x-4"
+             x-transition:enter-end="opacity-100 translate-x-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-x-0"
+             x-transition:leave-end="opacity-0 translate-x-4">
+            <!-- Header -->
+            <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
+                <div class="flex items-center gap-3">
+                    <button @click="activeSidebarView = 'action_center'" class="text-slate-500 hover:text-white transition w-6 h-6 flex items-center justify-center rounded bg-dark-800 hover:bg-dark-700">
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </button>
+                    <h2 class="text-xs font-bold text-fuchsia-500 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot Chat
+                    </h2>
+                </div>
+            </div>
+            
+            <!-- Chat Feed -->
+            <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar">
+                
+            </div>
+        </div>
+
+        <!-- === PERSISTENT INPUT AREA === -->
+        <div class="absolute bottom-0 left-0 w-full bg-dark-900 pt-2 z-30">
             <!-- Action Chips -->
             <div id="copilot-action-chips" class="px-4 pb-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
                 <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Gen Report</button>
@@ -129,7 +165,7 @@
             </div>
             
             <div class="p-4 border-t border-dark-800 bg-black">
-                <form @submit="isChatOpen = true; setTimeout(() => $el.reset(), 10)" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="flex w-full relative group">
+                <form @submit="activeSidebarView = 'chat'; setTimeout(() => $el.reset(), 10)" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="flex w-full relative group">
                     <input type="hidden" name="timeframe" :value="activeTimeframe">
                     <div class="absolute left-3 top-3 text-fuchsia-500 font-mono text-sm">></div>
                     <input type="text" name="message" class="w-full bg-black border border-dark-700 text-fuchsia-400 text-sm focus:border-fuchsia-500 focus:outline-none placeholder-dark-600 py-3 pl-8 pr-12 transition-colors font-mono" placeholder="query telemetry..." required autocomplete="off">
@@ -138,24 +174,6 @@
                     </button>
                 </form>
             </div>
-        </div>
-    </aside>
-
-    <!-- 4. AI Chat Column (Far Right Shift) -->
-    <aside :class="isChatOpen ? 'w-[30%] min-w-[320px] max-w-[400px] border-l border-dark-800 opacity-100' : 'w-0 opacity-0 overflow-hidden'" class="flex flex-col bg-dark-900 shrink-0 relative z-10 transition-all duration-300 ease-in-out">
-        <!-- Header -->
-        <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 bg-dark-900 shrink-0">
-            <h2 class="text-xs font-bold text-fuchsia-500 uppercase tracking-widest flex items-center gap-2">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot Chat
-            </h2>
-            <button @click="isChatOpen = false" class="text-slate-500 hover:text-white transition">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        
-        <!-- Chat Feed -->
-        <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar">
-            
         </div>
     </aside>
 
