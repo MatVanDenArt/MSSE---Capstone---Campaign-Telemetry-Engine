@@ -1,19 +1,62 @@
 import os
 import random
 
-def get_random_api_key() -> str:
-    """Returns a random API key from the GEMINI_API_KEYS environment variable."""
-    keys_str = os.environ.get("GEMINI_API_KEYS", "")
-    if not keys_str:
-        # Fallback to single key env var, which might also contain commas
-        keys_str = os.environ.get("GEMINI_API_KEY", "")
-    
-    # Split by comma and remove empty strings/whitespace
-    keys = [k.strip() for k in keys_str.split(",") if k.strip()]
-    if not keys:
-        return ""
+import time
+
+class KeyManager:
+    def __init__(self):
+        self.keys = []
+        self.cooldowns = {} # key -> timestamp when it was exhausted
+        self.current_index = 0
+        self.initialized = False
+        self.cooldown_period = 60 # 60 seconds penalty box
         
-    return random.choice(keys)
+    def _initialize(self):
+        if self.initialized: return
+        keys_str = os.environ.get("GEMINI_API_KEYS", "")
+        if not keys_str:
+            keys_str = os.environ.get("GEMINI_API_KEY", "")
+        self.keys = [k.strip() for k in keys_str.split(",") if k.strip()]
+        self.initialized = True
+        
+    def get_next_key(self) -> str:
+        self._initialize()
+        if not self.keys:
+            return ""
+            
+        now = time.time()
+        
+        # Try to find a key that is not in cooldown
+        for _ in range(len(self.keys)):
+            key = self.keys[self.current_index]
+            self.current_index = (self.current_index + 1) % len(self.keys)
+            
+            # Check cooldown
+            if key in self.cooldowns:
+                if now - self.cooldowns[key] < self.cooldown_period:
+                    continue # Still in cooldown, skip this key
+                else:
+                    del self.cooldowns[key] # Cooldown expired
+            
+            return key
+            
+        # If ALL keys are in cooldown, just return the one that will expire soonest
+        # or just fallback to the current index
+        return self.keys[self.current_index]
+        
+    def mark_exhausted(self, key: str):
+        if key:
+            self.cooldowns[key] = time.time()
+
+_key_manager = KeyManager()
+
+def get_random_api_key() -> str:
+    """Returns the next available API key using Round-Robin and Cooldowns."""
+    return _key_manager.get_next_key()
+
+def mark_key_exhausted(key: str):
+    """Places the key in a 60-second penalty box."""
+    _key_manager.mark_exhausted(key)
 
 import json
 import hashlib
@@ -101,18 +144,19 @@ class NewModelsWrapper:
         return resp
 
 class NewClientWrapper:
-    def __init__(self, client):
+    def __init__(self, client, api_key=None):
         self._client = client
+        self.api_key = api_key
         self.models = NewModelsWrapper(client.models)
 
 def get_genai_client():
-    """Returns a wrapped client for the new SDK (google-genai) using a random key."""
+    """Returns a wrapped client for the new SDK (google-genai) using a managed key."""
     from google import genai
     api_key = get_random_api_key()
     if not api_key:
         raise ValueError("No Gemini API key found. Please set GEMINI_API_KEYS.")
     client = genai.Client(api_key=api_key)
-    return NewClientWrapper(client)
+    return NewClientWrapper(client, api_key)
 
 def get_legacy_generative_model(model_name="gemini-3.5-flash"):
     """Returns a wrapped model for the old SDK (google.generativeai) using a random key."""

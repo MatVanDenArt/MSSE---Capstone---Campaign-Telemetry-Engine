@@ -137,6 +137,8 @@ You MUST use this EXACT HTML structure for the buttons:
         
         response = None
         last_err = None
+        from app.services.llm_rotator import get_genai_client, mark_key_exhausted
+        
         for _ in range(3):
             try:
                 local_client = get_genai_client()
@@ -152,6 +154,10 @@ You MUST use this EXACT HTML structure for the buttons:
                 break
             except Exception as e:
                 last_err = e
+                error_msg = str(e)
+                if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                    if hasattr(local_client, 'api_key'):
+                        mark_key_exhausted(local_client.api_key)
         
         if not response:
             raise last_err
@@ -204,6 +210,11 @@ You MUST use this EXACT HTML structure for the buttons:
                         break
                     except Exception as e:
                         last_err = e
+                        error_msg = str(e)
+                        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                            if hasattr(local_client, 'api_key'):
+                                mark_key_exhausted(local_client.api_key)
+                                
                         if attempt == 2:
                             raise e
             else:
