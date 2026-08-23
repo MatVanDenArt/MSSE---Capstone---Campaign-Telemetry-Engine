@@ -36,6 +36,7 @@ When you draft an outreach sequence (using draft_outreach_sequence), present the
 """
 
 chat_history = []
+active_chat_tasks = {}
 
 @router.post("/chat", response_class=HTMLResponse)
 def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None), reset_context: str = Form("false")):
@@ -114,183 +115,240 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
             return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
         return HTMLResponse(content=full_response)
     
-    try:
-        from app.services.llm_rotator import get_genai_client
-        
-        # Inject the UI state into the system prompt
-        if time_context:
-            context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\n{time_context}. You MUST scope your analysis to this specific timeframe anomaly and ignore the global timeframe."
-        else:
-            context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\nThe user currently has their dashboard timeframe filtered to: {timeframe} days (0 means All Time). If they ask for metrics without specifying a date, use this timeframe."
-            
-        if intent == "review" and trigger_id:
-            context_prompt += f"""\n\nCRITICAL INSTRUCTION FOR THIS PROMPT:
-The user is reviewing a Priority Action from the dashboard Action Center. 
-Act as a strategic advisor. Analyze the action details provided by the user. Explain why it is a priority and what the impact is based on your telemetry tools if needed.
-Then, you MUST append 2 action buttons at the very end of your response to let the user execute or dismiss the action.
-You MUST use this EXACT HTML structure for the buttons:
-<div class="flex gap-2 mt-4">
-    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute the recommended action", "intent": "automate", "trigger_id": "{trigger_id}"}}' class="px-3 py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> Execute Action</button>
-    <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" class="px-3 py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-times"></i> Dismiss</button>
-</div>
-"""
-        
-        response = None
-        last_err = None
-        from app.services.llm_rotator import get_genai_client, mark_key_exhausted
-        
-        for _ in range(5):
-            try:
-                local_client = get_genai_client()
-                response = local_client.models.generate_content(
-                    model='gemini-3.6-flash',
-                    contents=chat_history,
-                    config=types.GenerateContentConfig(
-                        system_instruction=context_prompt,
-                        tools=[types.Tool(function_declarations=mcp_tools)],
-                        temperature=0.2,
-                    )
-                )
-                break
-            except Exception as e:
-                last_err = e
-                error_msg = str(e)
-                if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                    if hasattr(local_client, 'api_key'):
-                        mark_key_exhausted(local_client.api_key)
-        
-        if not response:
-            raise last_err
-        
-        # Unified Tool Calling Loop
-        current_response = response
-        executed_tools = []
-        for _ in range(5):
-            if current_response.function_calls:
-                tool_responses = []
-                for function_call in current_response.function_calls:
-                    func_name = function_call.name
-                    executed_tools.append(func_name)
-                    args = {k: v for k, v in function_call.args.items()}
-                    
-                    if func_name in tool_functions:
-                        try:
-                            result = tool_functions[func_name](**args)
-                            if not isinstance(result, dict):
-                                result = {"data": result}
-                        except Exception as e:
-                            # Graceful Degradation
-                            result = {"error": "tool failed"}
-                    else:
-                        result = {"error": f"Unknown tool: {func_name}"}
-                    
-                    tool_responses.append(
-                        types.Part.from_function_response(
-                            name=func_name,
-                            response=result
-                        )
-                    )
-                
-                chat_history.append(current_response.candidates[0].content)
-                chat_history.append({"role": "user", "parts": tool_responses})
-                
-                from app.services.llm_rotator import get_genai_client
-                
-                last_err = None
-                for attempt in range(5):
-                    try:
-                        local_client = get_genai_client()
-                        current_response = local_client.models.generate_content(
-                            model='gemini-3.6-flash',
-                            contents=chat_history,
-                            config=types.GenerateContentConfig(
-                                system_instruction=context_prompt,
-                                tools=[types.Tool(function_declarations=mcp_tools)],
-                                temperature=0.2,
-                            )
-                        )
-                        break
-                    except Exception as e:
-                        last_err = e
-                        error_msg = str(e)
-                        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                            if hasattr(local_client, 'api_key'):
-                                mark_key_exhausted(local_client.api_key)
-                                
-                        if attempt == 4:
-                            raise e
-            else:
-                break
-                
-        text_response = current_response.text or "I have reviewed the information based on the available data."
-        chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
-        
-        if executed_tools:
-            # Create an accordion showing the tools used
-            tools_html = "".join([f"<div>> {t}()</div>" for t in executed_tools])
-            tool_count = len(executed_tools)
-            tool_ui = f"""<div x-data="{{ expanded: false }}" class="mb-4 bg-dark-900/50 rounded-lg p-3 border border-dark-800 w-full shadow-inner">
-<button @click="expanded = !expanded" type="button" class="text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-fuchsia-400 transition-colors flex items-center gap-2 w-full focus:outline-none">
-<i class="fa-solid fa-microchip"></i> 
-Executed {tool_count} Autonomous Tool{'s' if tool_count > 1 else ''}
-<i class="fa-solid fa-chevron-down ml-auto transition-transform duration-200" :class="expanded ? 'rotate-180' : ''"></i>
-</button>
-<div x-show="expanded" x-collapse class="mt-3 pt-3 border-t border-dark-800 text-[10px] text-fuchsia-400/80 font-mono space-y-1 overflow-x-auto">
-{tools_html}
-</div>
-</div>
-"""
-            text_response = tool_ui + "\n" + text_response
-            
-        import markdown
-        parsed_html = markdown.markdown(text_response)
-        
-        ai_html = f"""
-        <style>
-        .copilot-markdown p {{ margin-bottom: 1em; }}
-        .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3, .copilot-markdown h4 {{ font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #fdf4ff; }}
-        .copilot-markdown ul:not(.list-none) {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }}
-        .copilot-markdown ol:not(.list-none) {{ list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }}
-        .copilot-markdown li {{ margin-bottom: 0.5em; }}
-        .copilot-markdown strong {{ font-weight: bold; color: #fdf4ff; }}
-        </style>
+    import uuid
+    task_id = uuid.uuid4().hex
+    active_chat_tasks[task_id] = {
+        "message": message,
+        "timeframe": timeframe,
+        "time_context": time_context,
+        "trigger_id": trigger_id,
+        "intent": intent,
+        "reset_context": reset_context
+    }
+    
+    sse_html = f'''
+    <div id="agent-stream-{task_id}" hx-ext="sse" sse-connect="/api/chat/stream/{task_id}" sse-swap="message" hx-swap="innerHTML">
         <div class="flex gap-3 my-4">
-            <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
+            <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0 animate-pulse shadow-[0_0_10px_rgba(192,38,211,0.5)]">
                 <i class="fa-solid fa-robot text-[10px] text-black"></i>
             </div>
-            <div class="w-full min-w-0">
-                <div class="bg-black border border-dark-700 p-4 w-full">
-                    <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
-                </div>
+            <div class="w-full min-w-0 flex items-center text-xs font-mono text-fuchsia-400/80 mt-1">
+                <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Initializing Agent Workspace...
             </div>
         </div>
-        """
-        full_response = user_html + ai_html
-        if reset_context.lower() == "true":
-            return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
-        return HTMLResponse(content=full_response)
+    </div>
+    '''
+    
+    full_response = user_html + sse_html
+    if reset_context.lower() == "true":
+        return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
+    return HTMLResponse(content=full_response)
+
+from fastapi.responses import StreamingResponse
+
+@router.get("/chat/stream/{task_id}")
+def chat_stream(task_id: str):
+    task_data = active_chat_tasks.pop(task_id, None)
+    if not task_data:
+        return StreamingResponse(iter([]), media_type="text/event-stream")
         
-    except Exception as e:
-        chat_history.pop() # Remove the user's message if there was an error
-        error_msg = str(e)
-        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            friendly_error = "API Rate Limit Exceeded. You have made too many requests to the AI in a short period. Please wait a moment before trying again."
-        else:
-            friendly_error = f"Error processing request: {error_msg}"
+    def event_generator():
+        def yield_html(html):
+            clean_html = html.replace('\n', ' ')
+            return f"data: {clean_html}\n\n"
             
-        error_html = f"""
-        <div class="flex gap-3 my-4">
-            <div class="w-6 h-6 bg-rose-600 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-triangle-exclamation text-[10px] text-black"></i>
-            </div>
-            <div class="w-full">
-                <div class="bg-black border border-rose-900 p-4">
-                    <p class="text-rose-400 text-sm font-mono">{friendly_error}</p>
+        message = task_data["message"]
+        timeframe = task_data["timeframe"]
+        time_context = task_data["time_context"]
+        trigger_id = task_data["trigger_id"]
+        intent = task_data["intent"]
+        reset_context = task_data["reset_context"]
+        
+        try:
+            from app.services.llm_rotator import get_genai_client
+            
+            # Inject the UI state into the system prompt
+            if time_context:
+                context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\n{time_context}. You MUST scope your analysis to this specific timeframe anomaly and ignore the global timeframe."
+            else:
+                context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\nThe user currently has their dashboard timeframe filtered to: {timeframe} days (0 means All Time). If they ask for metrics without specifying a date, use this timeframe."
+                
+            if intent == "review" and trigger_id:
+                context_prompt += f"""\n\nCRITICAL INSTRUCTION FOR THIS PROMPT:
+    The user is reviewing a Priority Action from the dashboard Action Center. 
+    Act as a strategic advisor. Analyze the action details provided by the user. Explain why it is a priority and what the impact is based on your telemetry tools if needed.
+    Then, you MUST append 2 action buttons at the very end of your response to let the user execute or dismiss the action.
+    You MUST use this EXACT HTML structure for the buttons:
+    <div class="flex gap-2 mt-4">
+        <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute the recommended action", "intent": "automate", "trigger_id": "{trigger_id}"}}' class="px-3 py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> Execute Action</button>
+        <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" class="px-3 py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-times"></i> Dismiss</button>
+    </div>
+    """
+            
+            response = None
+            last_err = None
+            from app.services.llm_rotator import get_genai_client, mark_key_exhausted
+            
+            for _ in range(5):
+                try:
+                    local_client = get_genai_client()
+                    response = local_client.models.generate_content(
+                        model='gemini-3.6-flash',
+                        contents=chat_history,
+                        config=types.GenerateContentConfig(
+                            system_instruction=context_prompt,
+                            tools=[types.Tool(function_declarations=mcp_tools)],
+                            temperature=0.2,
+                        )
+                    )
+                    break
+                except Exception as e:
+                    last_err = e
+                    error_msg = str(e)
+                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                        if hasattr(local_client, 'api_key'):
+                            mark_key_exhausted(local_client.api_key)
+            
+            if not response:
+                raise last_err
+            
+            # Unified Tool Calling Loop
+            current_response = response
+            executed_tools = []
+            for _ in range(5):
+                if current_response.function_calls:
+                    tool_responses = []
+                    for function_call in current_response.function_calls:
+                        func_name = function_call.name
+                        executed_tools.append(func_name)
+                        yield yield_html(f'''
+                            <div class="flex gap-3 my-4">
+                                <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0 animate-pulse shadow-[0_0_10px_rgba(192,38,211,0.5)]">
+                                    <i class="fa-solid fa-robot text-[10px] text-black"></i>
+                                </div>
+                                <div class="w-full min-w-0 flex items-center text-xs font-mono text-fuchsia-400/80 mt-1">
+                                    <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Executing {func_name}()...
+                                </div>
+                            </div>
+                        ''')
+                        args = {k: v for k, v in function_call.args.items()}
+                        
+                        if func_name in tool_functions:
+                            try:
+                                result = tool_functions[func_name](**args)
+                                if not isinstance(result, dict):
+                                    result = {"data": result}
+                            except Exception as e:
+                                # Graceful Degradation
+                                result = {"error": "tool failed"}
+                        else:
+                            result = {"error": f"Unknown tool: {func_name}"}
+                        
+                        tool_responses.append(
+                            types.Part.from_function_response(
+                                name=func_name,
+                                response=result
+                            )
+                        )
+                    
+                    chat_history.append(current_response.candidates[0].content)
+                    chat_history.append({"role": "user", "parts": tool_responses})
+                    
+                    from app.services.llm_rotator import get_genai_client
+                    
+                    last_err = None
+                    for attempt in range(5):
+                        try:
+                            local_client = get_genai_client()
+                            current_response = local_client.models.generate_content(
+                                model='gemini-3.6-flash',
+                                contents=chat_history,
+                                config=types.GenerateContentConfig(
+                                    system_instruction=context_prompt,
+                                    tools=[types.Tool(function_declarations=mcp_tools)],
+                                    temperature=0.2,
+                                )
+                            )
+                            break
+                        except Exception as e:
+                            last_err = e
+                            error_msg = str(e)
+                            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                                if hasattr(local_client, 'api_key'):
+                                    mark_key_exhausted(local_client.api_key)
+                                    
+                            if attempt == 4:
+                                raise e
+                else:
+                    break
+                    
+            text_response = current_response.text or "I have reviewed the information based on the available data."
+            chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
+            
+            if executed_tools:
+                # Create an accordion showing the tools used
+                tools_html = "".join([f"<div>> {t}()</div>" for t in executed_tools])
+                tool_count = len(executed_tools)
+                tool_ui = f"""<div x-data="{{ expanded: false }}" class="mb-4 bg-dark-900/50 rounded-lg p-3 border border-dark-800 w-full shadow-inner">
+    <button @click="expanded = !expanded" type="button" class="text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-fuchsia-400 transition-colors flex items-center gap-2 w-full focus:outline-none">
+    <i class="fa-solid fa-microchip"></i> 
+    Executed {tool_count} Autonomous Tool{'s' if tool_count > 1 else ''}
+    <i class="fa-solid fa-chevron-down ml-auto transition-transform duration-200" :class="expanded ? 'rotate-180' : ''"></i>
+    </button>
+    <div x-show="expanded" x-collapse class="mt-3 pt-3 border-t border-dark-800 text-[10px] text-fuchsia-400/80 font-mono space-y-1 overflow-x-auto">
+    {tools_html}
+    </div>
+    </div>
+    """
+                text_response = tool_ui + "\n" + text_response
+                
+            import markdown
+            parsed_html = markdown.markdown(text_response)
+            
+            ai_html = f"""
+            <style>
+            .copilot-markdown p {{ margin-bottom: 1em; }}
+            .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3, .copilot-markdown h4 {{ font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #fdf4ff; }}
+            .copilot-markdown ul:not(.list-none) {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }}
+            .copilot-markdown ol:not(.list-none) {{ list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }}
+            .copilot-markdown li {{ margin-bottom: 0.5em; }}
+            .copilot-markdown strong {{ font-weight: bold; color: #fdf4ff; }}
+            </style>
+            <div class="flex gap-3 my-4">
+                <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-robot text-[10px] text-black"></i>
+                </div>
+                <div class="w-full min-w-0">
+                    <div class="bg-black border border-dark-700 p-4 w-full">
+                        <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        """
-        full_response = user_html + error_html
-        if reset_context.lower() == "true":
-            return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
-        return HTMLResponse(content=full_response)
+            """
+            
+            yield yield_html(f'<div id="agent-stream-{task_id}" hx-swap-oob="outerHTML">{ai_html}</div>')
+            
+        except Exception as e:
+            chat_history.pop() # Remove the user's message if there was an error
+            error_msg = str(e)
+            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                friendly_error = "API Rate Limit Exceeded. You have made too many requests to the AI in a short period. Please wait a moment before trying again."
+            else:
+                friendly_error = f"Error processing request: {error_msg}"
+                
+            error_html = f"""
+            <div class="flex gap-3 my-4">
+                <div class="w-6 h-6 bg-rose-600 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-[10px] text-black"></i>
+                </div>
+                <div class="w-full">
+                    <div class="bg-black border border-rose-900 p-4">
+                        <p class="text-rose-400 text-sm font-mono">{friendly_error}</p>
+                    </div>
+                </div>
+            </div>
+            """
+            
+            yield yield_html(f'<div id="agent-stream-{task_id}" hx-swap-oob="outerHTML">{error_html}</div>')
+    
+    return StreamingResponse(event_generator(), media_type='text/event-stream')
