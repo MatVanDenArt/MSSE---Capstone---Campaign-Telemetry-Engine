@@ -76,30 +76,42 @@ sequenceDiagram
     Backend-->>ActionCenter: HTMX swaps response into Chat Window
 ```
 
-### Accessible Python Functions
-The LLM does not have open-ended query access. It is anchored to the outputs of the following strict analytical functions:
-- `get_asset_impact_matrix(campaign_id)`: Calculates fatigue and ROI scores per asset.
+### Accessible Python Functions (MCP Toolset)
+The LLM does not have open-ended query access. It is anchored to the outputs of the following strict analytical functions. Recent optimizations have purged SQL anti-patterns (such as N+1 loops and wildcard full-table scans) from these tools to guarantee near-instantaneous execution:
+- `calculate_blended_cpa(campaign_id)`: Calculates the blended Cost Per Acquisition.
 - `get_account_penetration(campaign_id)`: Maps engagement to specific CRM target accounts.
-- `evaluate_trickle_threshold()`: Determines mathematical decay in traffic volume over time.
-- `get_kpi_benchmarks(campaign_id)`: Aggregates hard performance stats (CPA, Pipeline Velocity) for the Strategic TLDR.
+- `evaluate_trickle_threshold(campaign_id)`: Determines mathematical decay in traffic volume over time.
+- `simulate_budget_shift(channel, shift_amount)`: Simulates projected pipeline impact of budget reallocation.
+- `get_tam_penetration(industry, region)`: Calculates Total Addressable Market penetration.
+- `calculate_share_of_voice(competitors)`: Benchmarks campaign performance against competitors.
+- `get_executive_pipeline_kpis(campaign_id)`: Aggregates hard performance stats (CPA, Pipeline Velocity) for the Strategic TLDR.
+- `get_budget_pacing(campaign_id)`: Returns current vs. expected spend pacing.
+- `run_attribution_model(model_type, campaign_id)`: Executes specific multi-touch attribution models.
+- `compare_asset_baselines(asset_a, asset_b)`: Isolates performance gaps between two assets.
+- `map_buying_committee(account_identifier)`: Maps engaged personas within a specific account.
+- `get_intent_surge_signals(account_identifier)`: Identifies 48-hour velocity spikes for an account.
+- `get_asset_impact_matrix(campaign_id)`: Calculates fatigue and ROI scores per asset.
+- `get_user_journey(name, company)`: Traces the deterministic multi-channel touchpoints for a specific user.
+- `generate_ab_test_variants(asset_type, performance_data)`: Recommends data-backed A/B test variations.
+- `draft_outreach_sequence(persona, context)`: Generates personalized sales outreach based on intent data.
 
 ## 4. LLM Model Selection & Adaptability
 
-The intelligence layer of the Copilot is currently powered by Google Gemini models, specifically defaulting to **`gemini-3.5-flash`**. 
+The intelligence layer of the Copilot is currently powered by **gemini-3.6-flash**. 
 
-### Why `gemini-3.5-flash`?
-In an autonomous data agent, querying raw SQL tables and performing deep mathematical reasoning requires a heavy model (like `gemini-1.5-pro`). However, because of our **MCP architecture**, `flash` is actually the optimal model for this application:
-1. **Offloaded Cognitive Burden**: The Python backend (`analytics.py`) does all the mathematical heavy lifting. The LLM is handed a strictly formatted payload of established facts (e.g., "Asset X dropped 90% in traffic"). 
-2. **Linguistic Summarization**: The LLM only needs to interpret the pre-calculated data linguistically, format it into HTML/Markdown, and suggest standard B2B marketing pivots. `flash` is exceptionally capable at this specific task.
-3. **Ultra-Low Latency**: For an interactive Action Center UI, speed is paramount. `flash` returns responses in a fraction of a second, ensuring the UI feels like a reactive software application rather than a slow AI text generator.
+### Why gemini-3.6-flash?
+While our **MCP architecture** offloads the mathematical heavy lifting to deterministic Python functions, `gemini-3.6-flash` provides unparalleled strategic reasoning when synthesizing the massive array of data points returned by the 16 available MCP tools. 
+1. **Deep Synthesis**: The model can seamlessly cross-reference intent surge signals with asset fatigue to generate highly nuanced, board-ready strategic recommendations.
+2. **Context Window**: As the complexity of the data simulation grows (spanning web, email, LinkedIn, and CRM), the model effortlessly manages the large context payloads injected by the backend.
+3. **Structured Execution**: It strictly adheres to the requested JSON/Markdown formats necessary for the server-driven HTMX UI.
 
 ### The `llm_rotator.py` Abstraction Layer
 A critical architectural decision was to isolate all AI model interactions within a dedicated service layer (`app/services/llm_rotator.py`) rather than hardcoding SDK calls throughout the application routes. 
 
 This abstraction provides immense adaptability:
+- **Centralized Schema Management**: Recent structural updates (such as injecting `campaign_id` awareness into `evaluate_trickle_threshold`) demonstrated how seamlessly we can evolve the LLM's capabilities. By updating the JSON schema in one centralized location, the LLM instantly adapts to the new parameter requirements.
 - **Model Agnosticism**: The core telemetry application passes generic text prompts and data dictionaries to the rotator. The rotator handles the provider-specific SDK logic. 
-- **Cost/Performance Routing**: If a future feature requires intense strategic reasoning (e.g., rewriting an entire 10-touch email sequence in a specific brand voice), the `llm_rotator` can seamlessly route that specific endpoint to a heavier model like `gemini-pro`, while keeping `flash` for rapid, day-to-day dashboard queries.
-- **Future-Proofing & Swapping**: If a new, highly specialized marketing model is released, or if the team wishes to migrate to an open-source local model (e.g., via Ollama for extreme data privacy) or alternative providers (like Anthropic Claude or OpenAI), the developer only needs to update the adapter inside `llm_rotator.py`. The rest of the application (the UI, the analytics engine, the API routes) remains completely untouched.
+- **Future-Proofing & Swapping**: If a new, highly specialized marketing model is released, or if the team wishes to migrate to an open-source local model, the developer only needs to update the adapter inside `llm_rotator.py`. The rest of the application remains completely untouched.
 
 ## 5. Core Technology Stack
 
@@ -151,6 +163,12 @@ This is the core mathematical engine. Rather than generating random noise, this 
 
 #### 4. Identity Resolution & ETL (`04_etl_load.py`)
 The pipeline culminates in the ETL step, mimicking a modern Customer Data Platform (CDP) to tie anonymous ad clicks to closed CRM deals. It loads the simulation dataframes into the database and generates the `master_summary` table.
+
+#### 5. Post-ETL Optimization & Anti-Pattern Purge (`05_create_indices.py`)
+To ensure the analytical MCP functions can query the embedded database in milliseconds, a non-destructive indexing strategy was implemented.
+- **Drop-Load-Rebuild Pattern**: The ETL pipeline intentionally generates the database without indices (maximizing bulk insert speed). Immediately after the data is loaded, `05_create_indices.py` applies 11 highly targeted B-Tree indices to critical foreign keys and filter columns.
+- **Eradication of N+1 Queries**: The Python analytical layer relies on bulk SQL aggregations (`GROUP BY` and `LEFT JOIN`) instead of executing N+1 query loops.
+- **Index-Aware Filtering**: Queries explicitly use exact matches (`IN (?, ?)`) rather than wildcard full-table scans (`LIKE '%...%'`) to leverage the B-Tree indices fully.
 
 ```mermaid
 graph TD

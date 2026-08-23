@@ -71,7 +71,7 @@ def get_account_penetration(campaign_id: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-def evaluate_trickle_threshold() -> dict:
+def evaluate_trickle_threshold(campaign_id: str) -> dict:
     """
     Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days.
     """
@@ -82,10 +82,11 @@ def evaluate_trickle_threshold() -> dict:
         query = """
         SELECT date(timestamp) as day, COUNT(*) as daily_visits
         FROM ga4_events
+        WHERE utm_campaign = ?
         GROUP BY day
         ORDER BY day ASC
         """
-        cursor.execute(query)
+        cursor.execute(query, (campaign_id,))
         rows = cursor.fetchall()
         conn.close()
         
@@ -719,8 +720,13 @@ mcp_tools = [
         "description": "Evaluates if the campaign is currently active or past based on the Trickle Threshold Algorithm (95% drop sustained for 7 days).",
         "parameters": {
             "type": "object",
-            "properties": {},
-            "required": []
+            "properties": {
+                "campaign_id": {
+                    "type": "string",
+                    "description": "The ID of the campaign to evaluate."
+                }
+            },
+            "required": ["campaign_id"]
         }
     },
     {

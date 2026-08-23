@@ -72,7 +72,7 @@ def get_account_penetration(campaign_id: str) -> dict:
     except Exception as e:
         return {"error": str(e)}
 
-def evaluate_trickle_threshold() -> dict:
+def evaluate_trickle_threshold(campaign_id: str) -> dict:
     """
     Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days.
     """
@@ -83,10 +83,11 @@ def evaluate_trickle_threshold() -> dict:
         query = """
         SELECT date(timestamp) as day, COUNT(*) as daily_visits
         FROM ga4_events
+        WHERE utm_campaign = ?
         GROUP BY day
         ORDER BY day ASC
         """
-        cursor.execute(query)
+        cursor.execute(query, (campaign_id,))
         rows = cursor.fetchall()
         conn.close()
         
@@ -356,41 +357,23 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         query = f"""
         WITH AssetDrops AS (
             -- Web Assets
-            SELECT 
-                'Web' as type,
-                page_viewed as asset_name,
-                MIN(timestamp) as release_date,
-                COUNT(*) as engagement,
-                'ga4' as source
-            FROM ga4_events 
-            WHERE utm_campaign = '{campaign_id}' AND timestamp {tf_condition}
+            SELECT 'Web' as type, page_viewed as asset_name, MIN(timestamp) as release_date, COUNT(*) as engagement, 'ga4' as source
+            FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND timestamp {tf_condition}
             AND page_viewed NOT IN ('/services/consulting', '/solutions/asset-performance-optimization', '/contact-sales', '/about/sustainability')
             GROUP BY page_viewed
             
             UNION ALL
             
             -- LinkedIn Ads
-            SELECT 
-                'LinkedIn' as type,
-                ad_id as asset_name,
-                MIN(timestamp) as release_date,
-                COUNT(*) as engagement,
-                'linkedin' as source
-            FROM linkedin_events
-            WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition}
+            SELECT 'LinkedIn' as type, ad_id as asset_name, MIN(timestamp) as release_date, COUNT(*) as engagement, 'linkedin' as source
+            FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition}
             GROUP BY ad_id
             
             UNION ALL
             
             -- Mailchimp Emails
-            SELECT
-                'Email' as type,
-                campaign_id as asset_name,
-                MIN(timestamp) as release_date,
-                COUNT(*) as engagement,
-                'mailchimp' as source
-            FROM mailchimp_events
-            WHERE campaign_id LIKE '%{campaign_id}%' AND action = 'Open' AND timestamp {tf_condition}
+            SELECT 'Email' as type, campaign_id as asset_name, MIN(timestamp) as release_date, COUNT(*) as engagement, 'mailchimp' as source
+            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND action = 'Open' AND timestamp {tf_condition}
             GROUP BY campaign_id
         )
         SELECT * FROM AssetDrops ORDER BY release_date ASC
@@ -398,70 +381,74 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         cursor.execute(query)
         assets = [dict(row) for row in cursor.fetchall()]
         
-        # Find the max score to calculate share % later
-        max_score = 0
+        if not assets:
+            conn.close()
+            return []
+
+        # Fetch metrics grouped by asset
+        web_metrics_query = f"""
+            SELECT g.page_viewed as asset_name, COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds,
+                   SUM(CASE WHEN u.seniority = 'C-Suite' THEN 20 WHEN u.seniority = 'VP/Director' THEN 10 WHEN u.seniority = 'Manager' THEN 5 ELSE 1 END) as score
+            FROM ga4_events g JOIN crm_users u ON g.user_id = u.user_id
+            WHERE g.utm_campaign = '{campaign_id}' AND g.timestamp {tf_condition}
+            GROUP BY g.page_viewed
+        """
+        linkedin_metrics_query = f"""
+            SELECT l.ad_id as asset_name, COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds,
+                   SUM(CASE WHEN u.seniority = 'C-Suite' THEN 20 WHEN u.seniority = 'VP/Director' THEN 10 WHEN u.seniority = 'Manager' THEN 5 ELSE 1 END) as score
+            FROM linkedin_events l JOIN ga4_events g ON l.cookie_id = g.cookie_id JOIN crm_users u ON g.user_id = u.user_id
+            WHERE l.campaign_id = '{campaign_id}' AND l.timestamp {tf_condition}
+            GROUP BY l.ad_id
+        """
+        email_metrics_query = f"""
+            SELECT m.campaign_id as asset_name, COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds,
+                   SUM(CASE WHEN u.seniority = 'C-Suite' THEN 20 WHEN u.seniority = 'VP/Director' THEN 10 WHEN u.seniority = 'Manager' THEN 5 ELSE 1 END) as score
+            FROM mailchimp_events m JOIN crm_users u ON m.email = u.email
+            WHERE m.campaign_id = '{campaign_id}' AND m.timestamp {tf_condition}
+            GROUP BY m.campaign_id
+        """
         
-        for a in assets:
-            if a['type'] == 'Web':
-                q = f"""
-                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, 
-                       SUM(CASE 
-                           WHEN u.seniority = 'C-Suite' THEN 20 
-                           WHEN u.seniority = 'VP/Director' THEN 10 
-                           WHEN u.seniority = 'Manager' THEN 5 
-                           ELSE 1 
-                       END) as score
-                FROM crm_users u
-                WHERE u.user_id IN (
-                    SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{a['asset_name']}' AND user_id IS NOT NULL AND timestamp {tf_condition}
-                )
-                """
-            elif a['type'] == 'LinkedIn':
-                q = f"""
-                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, 
-                       SUM(CASE 
-                           WHEN u.seniority = 'C-Suite' THEN 20 
-                           WHEN u.seniority = 'VP/Director' THEN 10 
-                           WHEN u.seniority = 'Manager' THEN 5 
-                           ELSE 1 
-                       END) as score
-                FROM crm_users u
-                WHERE u.user_id IN (
-                    SELECT g.user_id FROM ga4_events g
-                    JOIN linkedin_events l ON g.cookie_id = l.cookie_id
-                    WHERE l.ad_id = '{a['asset_name']}' AND l.campaign_id = '{campaign_id}' AND g.user_id IS NOT NULL AND l.timestamp {tf_condition}
-                )
-                """
-            elif a['type'] == 'Email':
-                q = f"""
-                SELECT COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds, 
-                       SUM(CASE 
-                           WHEN u.seniority = 'C-Suite' THEN 20 
-                           WHEN u.seniority = 'VP/Director' THEN 10 
-                           WHEN u.seniority = 'Manager' THEN 5 
-                           ELSE 1 
-                       END) as score
-                FROM crm_users u
-                WHERE u.email IN (
-                    SELECT email FROM mailchimp_events WHERE campaign_id = '{a['asset_name']}' AND timestamp {tf_condition}
-                )
-                """
-            
+        metrics_map = {}
+        for q in [web_metrics_query, linkedin_metrics_query, email_metrics_query]:
             cursor.execute(q)
-            res = cursor.fetchone()
-            accts = res['accts'] or 0
-            inds = res['inds'] or 0
-            base_score = res['score'] or 0
+            for r in cursor.fetchall():
+                metrics_map[r['asset_name']] = {'accts': r['accts'] or 0, 'inds': r['inds'] or 0, 'score': r['score'] or 0}
+
+        # Fetch sparklines grouped by asset
+        spark_query = f"""
+            SELECT 'Web' as type, page_viewed as asset_name, strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c 
+            FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND timestamp {tf_condition} GROUP BY page_viewed, day
+            UNION ALL
+            SELECT 'LinkedIn' as type, ad_id as asset_name, strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c 
+            FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition} GROUP BY ad_id, day
+            UNION ALL
+            SELECT 'Email' as type, campaign_id as asset_name, strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c 
+            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition} GROUP BY campaign_id, day
+        """
+        cursor.execute(spark_query)
+        spark_map = {}
+        for r in cursor.fetchall():
+            key = f"{r['type']}_{r['asset_name']}"
+            if key not in spark_map:
+                spark_map[key] = {}
+            spark_map[key][r['day']] = r['c']
+
+        # Get all days in the campaign timeframe to pad the sparklines
+        cursor.execute(f"SELECT DISTINCT strftime('%Y-%m-%d', timestamp) as day FROM ga4_events WHERE utm_campaign='{campaign_id}' AND timestamp {tf_condition} ORDER BY day")
+        all_days = [r['day'] for r in cursor.fetchall()]
+
+        max_score = 0
+        for a in assets:
+            m = metrics_map.get(a['asset_name'], {'accts': 0, 'inds': 0, 'score': 0})
+            a['accounts_activated'] = m['accts']
+            a['individuals_engaged'] = m['inds']
             
-            a['accounts_activated'] = accts
-            a['individuals_engaged'] = inds
-            
-            # Account breadth multiplier
-            final_score = int(base_score * (1 + (accts * 0.1)))
+            final_score = int(m['score'] * (1 + (m['accts'] * 0.1)))
             a['impact_score'] = final_score
             a['impact_formatted'] = f"{final_score:,} pts"
             if final_score > max_score:
                 max_score = final_score
+                
             a['date'] = str(a['release_date']).split(" ")[0]
             import datetime
             try:
@@ -469,26 +456,12 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
                 a['formatted_date'] = dt_obj.strftime('%d %B %Y')
             except:
                 a['formatted_date'] = a['date']
-            
-        # Get all days in the campaign timeframe to pad the sparklines
-        cursor.execute(f"SELECT DISTINCT strftime('%Y-%m-%d', timestamp) as day FROM ga4_events WHERE utm_campaign='{campaign_id}' AND timestamp {tf_condition} ORDER BY day")
-        all_days = [r['day'] for r in cursor.fetchall()]
 
         for a in assets:
             a['pipeline_share'] = round((a['impact_score'] / max_score) * 100) if max_score > 0 else 0
             
-            spark_dict = {}
-            if a['type'] == 'Web':
-                cursor.execute(f"SELECT strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{a['asset_name']}' AND timestamp {tf_condition} GROUP BY day")
-            elif a['type'] == 'LinkedIn':
-                cursor.execute(f"SELECT strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND ad_id = '{a['asset_name']}' AND timestamp {tf_condition} GROUP BY day")
-            elif a['type'] == 'Email':
-                cursor.execute(f"SELECT strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c FROM mailchimp_events WHERE campaign_id = '{a['asset_name']}' AND timestamp {tf_condition} GROUP BY day")
-            
-            for r in cursor.fetchall():
-                spark_dict[r['day']] = r['c']
-                
-            a['sparkline'] = [spark_dict.get(day, 0) for day in all_days]
+            s_dict = spark_map.get(f"{a['type']}_{a['asset_name']}", {})
+            a['sparkline'] = [s_dict.get(day, 0) for day in all_days]
             
             # AI Fatigue Detection
             non_zero_days = [x for x in a['sparkline'] if x > 0]
@@ -504,7 +477,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
                         a['ai_recommendation'] = 'Ad fatigue detected. Rotate creative or pause campaign to preserve budget.'
                     else:
                         a['ai_recommendation'] = 'Engagement trickled off. Consider a follow-up sequence with fresh messaging.'
-        
+                        
         conn.close()
         return assets
     except Exception as e:
@@ -788,8 +761,13 @@ mcp_tools = [
         "description": "Evaluates if the campaign is currently active or past based on the Trickle Threshold Algorithm (95% drop sustained for 7 days).",
         "parameters": {
             "type": "object",
-            "properties": {},
-            "required": []
+            "properties": {
+                "campaign_id": {
+                    "type": "string",
+                    "description": "The ID of the campaign to evaluate."
+                }
+            },
+            "required": ["campaign_id"]
         }
     },
     {
@@ -1748,13 +1726,12 @@ def compare_asset_baselines(asset_a: str, asset_b: str) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT COUNT(*) as hits FROM ga4_events WHERE page_viewed LIKE ?", (f"%{asset_a}%",))
-        a_hits = cursor.fetchone()['hits']
-        
-        cursor.execute("SELECT COUNT(*) as hits FROM ga4_events WHERE page_viewed LIKE ?", (f"%{asset_b}%",))
-        b_hits = cursor.fetchone()['hits']
-        
+        cursor.execute("SELECT page_viewed, COUNT(*) as hits FROM ga4_events WHERE page_viewed IN (?, ?) GROUP BY page_viewed", (asset_a, asset_b))
+        results = {row['page_viewed']: row['hits'] for row in cursor.fetchall()}
         conn.close()
+        
+        a_hits = results.get(asset_a, 0)
+        b_hits = results.get(asset_b, 0)
         
         return {
             "asset_a": {"name": asset_a, "views": a_hits},
@@ -1770,22 +1747,25 @@ def map_buying_committee(account_identifier: str) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT DISTINCT account_id, company_name FROM crm_users WHERE company_name LIKE ?", (f"%{account_identifier}%",))
-        acct = cursor.fetchone()
+        query = """
+            SELECT 
+                u.company_name, u.first_name, u.last_name, u.seniority, 
+                COUNT(g.user_id) as hits 
+            FROM crm_users u
+            LEFT JOIN ga4_events g ON u.user_id = g.user_id
+            WHERE u.company_name = ?
+            GROUP BY u.user_id
+        """
+        cursor.execute(query, (account_identifier,))
+        users = cursor.fetchall()
+        conn.close()
         
-        if not acct:
+        if not users:
             return {"error": f"Account '{account_identifier}' not found."}
             
-        account_id = acct['account_id']
-        company_name = acct['company_name']
-        
-        cursor.execute("SELECT user_id, first_name, last_name, seniority FROM crm_users WHERE account_id = ?", (account_id,))
-        users = cursor.fetchall()
-        
         committee = []
         for u in users:
-            cursor.execute("SELECT COUNT(*) as hits FROM ga4_events WHERE user_id = ?", (u['user_id'],))
-            hits = cursor.fetchone()['hits']
+            hits = u['hits']
             committee.append({
                 "name": f"{u['first_name']} {u['last_name']}",
                 "seniority": u['seniority'],
@@ -1793,9 +1773,8 @@ def map_buying_committee(account_identifier: str) -> dict:
                 "interactions": hits
             })
             
-        conn.close()
         return {
-            "company_name": company_name,
+            "company_name": users[0]['company_name'],
             "committee_members": committee
         }
     except Exception as e:
@@ -1807,7 +1786,7 @@ def get_intent_surge_signals(account_identifier: str) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT DISTINCT account_id, company_name FROM crm_users WHERE company_name LIKE ?", (f"%{account_identifier}%",))
+        cursor.execute("SELECT DISTINCT account_id, company_name FROM crm_users WHERE company_name = ?", (account_identifier,))
         acct = cursor.fetchone()
         if not acct:
             return {"error": f"Account '{account_identifier}' not found."}
