@@ -102,7 +102,7 @@
     </div>
 
     <!-- 3. Dynamic Sidebar (Action Center & Copilot Chat) -->
-    <aside class="w-[38%] min-w-[450px] max-w-[800px] border-l border-dark-800 flex flex-col bg-dark-900 shrink-0 relative z-20 transition-all duration-300">
+    <aside :class="activeSidebarView === 'action_center' ? 'w-[30%] min-w-[320px] max-w-[400px]' : 'w-[40%] min-w-[450px] max-w-[800px]'" class="border-l border-dark-800 flex flex-col bg-dark-900 shrink-0 relative z-20 transition-all duration-300">
         
         <!-- MAIN CONTENT AREA (Flex-1, Relative) -->
         <div class="flex-1 relative overflow-hidden">
