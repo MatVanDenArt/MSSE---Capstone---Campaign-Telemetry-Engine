@@ -1827,31 +1827,39 @@ def get_user_journey(name: str, company: str) -> dict:
     conn = get_db_connection()
     conn.row_factory = __import__('sqlite3').Row
     cursor = conn.cursor()
-    query = '''
-        SELECT g.page_viewed as asset, g.timestamp, g.utm_source as source, 'Website' as channel
-        FROM ga4_events g
-        JOIN crm_users c ON g.user_id = c.user_id
-        WHERE (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
+    
+    # Step 1: Pre-fetch user identifiers to avoid massive joins
+    user_query = "SELECT user_id, email FROM crm_users WHERE (first_name || ' ' || last_name) = ? AND company_name = ?"
+    cursor.execute(user_query, (name, company))
+    user = cursor.fetchone()
+    
+    if not user:
+        conn.close()
+        return {"html_timeline": "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"}
+        
+    user_id = user['user_id']
+    email = user['email']
+    
+    # Step 2: Query events using pre-fetched identifiers
+    opt_query = '''
+        SELECT page_viewed as asset, timestamp, utm_source as source, 'Website' as channel
+        FROM ga4_events WHERE user_id = ?
         
         UNION ALL
         
-        SELECT m.campaign_id || ' (' || m.action || ')' as asset, m.timestamp, 'Email' as source, 'Email' as channel
-        FROM mailchimp_events m
-        JOIN crm_users c ON m.email = c.email
-        WHERE (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
+        SELECT campaign_id || ' (' || action || ')' as asset, timestamp, 'Email' as source, 'Email' as channel
+        FROM mailchimp_events WHERE email = ?
         
         UNION ALL
         
-        SELECT l.ad_id as asset, l.timestamp, 'LinkedIn' as source, 'LinkedIn' as channel
-        FROM linkedin_events l
-        JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id
-        JOIN crm_users c ON g.user_id = c.user_id
-        WHERE (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
+        SELECT ad_id as asset, timestamp, 'LinkedIn' as source, 'LinkedIn' as channel
+        FROM linkedin_events
+        WHERE cookie_id IN (SELECT DISTINCT cookie_id FROM ga4_events WHERE user_id = ?)
         
         ORDER BY timestamp DESC
         LIMIT 20
     '''
-    cursor.execute(query, (name, company, name, company, name, company))
+    cursor.execute(opt_query, (user_id, email, user_id))
     rows = cursor.fetchall()
     conn.close()
     
