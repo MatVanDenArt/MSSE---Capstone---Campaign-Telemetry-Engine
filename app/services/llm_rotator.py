@@ -158,7 +158,7 @@ def get_genai_client():
     client = genai.Client(api_key=api_key)
     return NewClientWrapper(client, api_key)
 
-def get_legacy_generative_model(model_name="gemini-3.5-flash"):
+def get_legacy_generative_model(model_name="gemini-3.6-flash"):
     """Returns a wrapped model for the old SDK (google.generativeai) using a random key."""
     import google.generativeai as genai
     api_key = get_random_api_key()
