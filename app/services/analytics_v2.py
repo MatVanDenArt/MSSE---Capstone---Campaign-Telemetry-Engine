@@ -1835,22 +1835,30 @@ def get_user_journey(name: str, company: str) -> dict:
         
         UNION ALL
         
-        SELECT m.action as asset, m.timestamp, 'Email' as source, 'Email' as channel
+        SELECT m.campaign_id || ' (' || m.action || ')' as asset, m.timestamp, 'Email' as source, 'Email' as channel
         FROM mailchimp_events m
         JOIN crm_users c ON m.email = c.email
+        WHERE (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
+        
+        UNION ALL
+        
+        SELECT l.ad_id as asset, l.timestamp, 'LinkedIn' as source, 'LinkedIn' as channel
+        FROM linkedin_events l
+        JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id
+        JOIN crm_users c ON g.user_id = c.user_id
         WHERE (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
         
         ORDER BY timestamp DESC
         LIMIT 20
     '''
-    cursor.execute(query, (name, company, name, company))
+    cursor.execute(query, (name, company, name, company, name, company))
     rows = cursor.fetchall()
     conn.close()
     
     if not rows:
         return {"html_timeline": "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"}
         
-    history_items = '<ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">'
+    history_items = '<ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2 list-none">'
     for idx, r in enumerate(rows):
         channel = r['channel'].lower()
         if 'linkedin' in channel:
