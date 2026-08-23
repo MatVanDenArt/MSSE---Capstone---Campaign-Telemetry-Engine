@@ -146,6 +146,18 @@
                 </div>
             </div>
         </div>
+        
+        <div class="glass-panel p-6 rounded-xl md:col-span-2">
+            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-brain text-fuchsia-400"></i> Copilot Context Heuristics</h3>
+            <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
+                <p>The AI Copilot maintains chat memory (context) during a session, but relies on a backend rule engine to automatically wipe its slate clean when the user shifts to a brand new investigation. This prevents cross-contamination of context between different targets or campaigns.</p>
+                <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg">
+                    <p class="font-mono text-xs text-brand-300 mb-2">// Context Breakers (app/api/chat.py)</p>
+                    <p class="mb-2"><span class="text-fuchsia-500/80 font-bold">WIPE CONTEXT:</span> If the prompt starts with major dashboard action triggers (e.g., <code>"review priority action:"</code>, <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).</p>
+                    <p><span class="text-emerald-500/80 font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up or a direct LLM execution command (e.g., <code>"Execute: /api/v2/draft..."</code>).</p>
+                </div>
+            </div>
+        </div>
     </div>
 
 <script type="module">
