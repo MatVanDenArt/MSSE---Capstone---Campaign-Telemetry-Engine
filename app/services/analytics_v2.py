@@ -1895,3 +1895,90 @@ def get_user_journey(name: str, company: str) -> dict:
     history_items += '</ul>'
     
     return {"html_timeline": history_items}
+
+
+def generate_ab_test_variants(asset_id: str, variable: str) -> dict:
+    asset_lower = asset_id.lower()
+    
+    # Infer theme from synthetic asset names
+    if 'twin' in asset_lower:
+        theme = 'Digital Twin Operations'
+        benefit = 'Optimize factory output by 20% with real-time digital twins'
+        pain = 'Stop losing margin to operational blind spots'
+    elif 'decarb' in asset_lower:
+        theme = 'Industrial Decarbonization'
+        benefit = 'Achieve Net-Zero goals 3 years ahead of schedule'
+        pain = 'Stay ahead of upcoming ESG compliance penalties'
+    elif 'asset' in asset_lower or 'performance' in asset_lower:
+        theme = 'Predictive Maintenance'
+        benefit = 'Reduce unplanned downtime by 40% with AI-driven insights'
+        pain = 'Equipment failure is costing you millions'
+    else:
+        theme = 'Enterprise Operations'
+        benefit = 'Transform your operational efficiency'
+        pain = 'Overcome legacy system bottlenecks'
+
+    if variable.lower() == 'subject line':
+        return {
+            "asset": asset_id,
+            "variable_tested": variable,
+            "control": f"[Whitepaper] New Insights on {theme}",
+            "variant_a": f"How to {benefit.lower()}",
+            "variant_b": f"{pain}? Read this.",
+            "rationale": "Testing a direct benefit statement (A) against a loss-aversion/pain-point statement (B) to see which drives higher open rates."
+        }
+    elif variable.lower() == 'hero copy':
+        return {
+            "asset": asset_id,
+            "variable_tested": variable,
+            "control": f"Unlock the Power of {theme}. Download our latest report.",
+            "variant_a": f"{benefit}. Start your transformation today.",
+            "variant_b": f"{pain}. Discover the solution in our comprehensive guide.",
+            "rationale": "Testing value-add messaging vs risk-mitigation messaging on the landing page."
+        }
+    else:
+        return {
+            "asset": asset_id,
+            "variable_tested": variable,
+            "control": f"Standard {variable} for {theme}",
+            "variant_a": f"Action-oriented {variable} for {theme}",
+            "variant_b": f"Urgency-driven {variable} for {theme}",
+            "rationale": "Testing different tones for the selected variable."
+        }
+
+def draft_outreach_sequence(persona: str, context_data: str) -> dict:
+    persona_lower = persona.lower()
+    
+    # Adjust tone based on persona
+    if 'executive' in persona_lower or 'c-suite' in persona_lower or 'vp' in persona_lower:
+        tone = 'strategic and concise, focusing on ROI and risk'
+        intro = 'As a leader driving operational strategy, I know your time is valuable.'
+    elif 'director' in persona_lower or 'manager' in persona_lower:
+        tone = 'pragmatic, focusing on efficiency and team enablement'
+        intro = 'I noticed your team is actively exploring new operational frameworks.'
+    else:
+        tone = 'direct and value-oriented'
+        intro = 'I saw your recent engagement with our content.'
+
+    return {
+        "persona": persona,
+        "context": context_data,
+        "sequence": [
+            {
+                "step": "Day 1: Contextual Intro",
+                "channel": "Email",
+                "content": f"{intro} Based on your recent interaction ({context_data}), I thought you might be interested in how we help similar companies achieve a 20% efficiency gain. Are you open to a brief chat next week?"
+            },
+            {
+                "step": "Day 3: Value Add",
+                "channel": "LinkedIn Message",
+                "content": f"Hi! Following up on my email. Here is a recent case study directly relevant to your interest in {context_data}. Let me know what you think!"
+            },
+            {
+                "step": "Day 7: The Breakup / Final Offer",
+                "channel": "Email",
+                "content": f"I don't want to flood your inbox. If {context_data} is still a priority, feel free to book a time on my calendar. Otherwise, I'll stop reaching out. Best of luck!"
+            }
+        ],
+        "strategic_note": f"This sequence uses a {tone} tone, specifically tailored for the {persona} persona."
+    }

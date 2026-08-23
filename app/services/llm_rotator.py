@@ -140,7 +140,9 @@ from app.services.analytics_v2 import (
     map_buying_committee,
     get_intent_surge_signals,
     get_asset_impact_matrix,
-    get_user_journey
+    get_user_journey,
+    generate_ab_test_variants,
+    draft_outreach_sequence
 )
 
 mcp_tools = [
@@ -349,6 +351,42 @@ mcp_tools = [
             },
             "required": ["name", "company"]
         }
+    },
+    {
+        "name": "generate_ab_test_variants",
+        "description": "Generate A/B test variations for a specific asset and variable.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "asset_id": {
+                    "type": "string",
+                    "description": "The name or ID of the asset."
+                },
+                "variable": {
+                    "type": "string",
+                    "description": "The variable to test, e.g., 'Subject Line', 'Hero Copy'."
+                }
+            },
+            "required": ["asset_id", "variable"]
+        }
+    },
+    {
+        "name": "draft_outreach_sequence",
+        "description": "Draft a multi-step outreach sequence tailored to a persona based on interaction context.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "persona": {
+                    "type": "string",
+                    "description": "The target persona (e.g., 'C-Suite Executive')."
+                },
+                "context_data": {
+                    "type": "string",
+                    "description": "The context or reason for outreach (e.g., 'High intent on Digital Twin Insights')."
+                }
+            },
+            "required": ["persona", "context_data"]
+        }
     }
 ]
 
@@ -366,5 +404,7 @@ tool_functions = {
     "map_buying_committee": map_buying_committee,
     "get_intent_surge_signals": get_intent_surge_signals,
     "get_asset_impact_matrix": get_asset_impact_matrix,
-    "get_user_journey": get_user_journey
+    "get_user_journey": get_user_journey,
+    "generate_ab_test_variants": generate_ab_test_variants,
+    "draft_outreach_sequence": draft_outreach_sequence
 }
