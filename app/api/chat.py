@@ -30,6 +30,9 @@ When you retrieve a user's interaction history (using get_user_journey), the too
         <!-- INJECT 'html_timeline' HERE -->
     </div>
 </details>
+
+When you generate A/B test variations (using generate_ab_test_variants), format the response clearly using markdown blockquotes for the copy and bold text for the Control/Variant A/Variant B labels. Include the strategic rationale.
+When you draft an outreach sequence (using draft_outreach_sequence), present the sequence clearly using markdown numbered lists or bold headers for each day/step, and italicize the actual email copy. Include the strategic note.
 """
 
 chat_history = []
