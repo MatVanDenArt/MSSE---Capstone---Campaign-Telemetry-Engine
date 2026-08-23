@@ -1822,7 +1822,8 @@ def get_intent_surge_signals(account_identifier: str) -> dict:
         return {"error": str(e)}
 
 
-def get_user_journey(name: str, company: str) -> list:
+def get_user_journey(name: str, company: str) -> dict:
+    from datetime import datetime
     conn = get_db_connection()
     conn.row_factory = __import__('sqlite3').Row
     cursor = conn.cursor()
@@ -1846,4 +1847,43 @@ def get_user_journey(name: str, company: str) -> list:
     rows = cursor.fetchall()
     conn.close()
     
-    return [dict(r) for r in rows]
+    if not rows:
+        return {"html_timeline": "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"}
+        
+    history_items = '<ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">'
+    for idx, r in enumerate(rows):
+        channel = r['channel'].lower()
+        if 'linkedin' in channel:
+            icon = 'fa-brands fa-linkedin text-sky-500'
+        elif 'email' in channel:
+            icon = 'fa-solid fa-envelope text-amber-500'
+        else:
+            icon = 'fa-solid fa-globe text-emerald-500'
+            
+        try:
+            dt = datetime.strptime(r['timestamp'].split('.')[0], "%Y-%m-%d %H:%M:%S")
+            date_str = dt.strftime("%d %b %Y").upper()
+        except:
+            date_str = r['timestamp'].split(' ')[0] if r['timestamp'] else 'Unknown'
+            
+        asset_clean = r['asset'].strip('/').replace('/', ' ').replace('-', ' ').title()
+            
+        dot_class = 'bg-brand-500 shadow-[0_0_8px_rgba(56,189,248,0.6)]' if idx == 0 else 'bg-dark-600'
+        text_class = 'text-brand-300 bg-brand-900/10' if idx == 0 else 'text-slate-300'
+        icon_class = f"mr-2 text-xs {icon} {'opacity-100 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]' if idx == 0 else 'opacity-70'}"
+        
+        history_items += f"""
+        <li class="relative pl-5">
+            <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors {dot_class}"></div>
+            <div class="flex flex-col">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">{date_str}</span>
+                <div class="flex items-center text-sm font-medium w-full rounded pr-2 py-0.5 {text_class}">
+                    <i class="{icon_class}"></i>
+                    <span class="truncate">{asset_clean}</span>
+                </div>
+            </div>
+        </li>
+        """
+    history_items += '</ul>'
+    
+    return {"html_timeline": history_items}

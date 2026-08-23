@@ -23,12 +23,11 @@ When a user asks you to **Investigate** a pipeline target (e.g., 'Investigate pi
 3. Append a special execute button at the very end of your response using this exact HTML structure, replacing [ACTION NAME] and [ACTION COMMAND] appropriately:
 <div class="mt-4"><button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "Execute: [ACTION COMMAND]"}' class="w-full py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button></div>
 
-When you retrieve a user's interaction history (using get_user_journey), you MUST append the raw chronological timeline at the end of your response inside an HTML accordion using the exact structure below. Do not summarize the timeline, just format the tool's raw data into this structure:
+When you retrieve a user's interaction history (using get_user_journey), the tool will return a JSON object with an 'html_timeline' field. You MUST append this exact HTML timeline at the end of your response inside an HTML accordion using the exact structure below. Do not summarize the timeline, just inject the tool's 'html_timeline' value directly:
 <details class="mt-4 border border-dark-600 bg-dark-900 text-slate-300">
     <summary class="p-3 text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-dark-800 transition">View Interaction History</summary>
-    <div class="p-4 text-xs font-mono space-y-2">
-        <!-- For each interaction, output a line like: -->
-        <div><span class="text-slate-500">[2026-08-23 14:00:00]</span> <span class="text-brand-400">[Website]</span> View: Decarbonization Whitepaper</div>
+    <div class="p-4">
+        <!-- INJECT 'html_timeline' HERE -->
     </div>
 </details>
 """
