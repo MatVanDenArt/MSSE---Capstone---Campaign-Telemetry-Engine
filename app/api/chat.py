@@ -56,13 +56,17 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
     if len(chat_history) > 12:
         chat_history = chat_history[-12:]
         
+    display_message = message
+    if ". Suggested Action: " in display_message:
+        display_message = display_message.split(". Suggested Action: ")[0]
+        
     user_html = f"""
     <div class="flex gap-3 my-4">
         <div class="w-6 h-6 bg-slate-700 flex items-center justify-center shrink-0 border border-slate-600">
             <i class="fa-solid fa-user text-[10px] text-slate-300"></i>
         </div>
         <div class="text-slate-400 w-full">
-            <p class="text-sm font-mono">> {message}</p>
+            <p class="text-sm font-mono">> {display_message}</p>
         </div>
     </div>
     """
@@ -229,13 +233,19 @@ def chat_stream(task_id: str):
                     for function_call in current_response.function_calls:
                         func_name = function_call.name
                         executed_tools.append(func_name)
+                        friendly_name = func_name.replace('_', ' ').title()
+                        if func_name == "get_user_journey": friendly_name = "Analyzing User Journey"
+                        elif func_name == "get_intent_surge_signals": friendly_name = "Detecting Intent Surge Signals"
+                        elif func_name == "map_buying_committee": friendly_name = "Mapping Buying Committee"
+                        elif func_name == "get_asset_impact_matrix": friendly_name = "Evaluating Asset Impact"
+                        
                         yield yield_html(f'''
                             <div class="flex gap-3 my-4">
                                 <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0 animate-pulse shadow-[0_0_10px_rgba(192,38,211,0.5)]">
                                     <i class="fa-solid fa-robot text-[10px] text-black"></i>
                                 </div>
                                 <div class="w-full min-w-0 flex items-center text-xs font-mono text-fuchsia-400/80 mt-1">
-                                    <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Executing {func_name}()...
+                                    <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> {friendly_name}...
                                 </div>
                             </div>
                         ''')
@@ -311,7 +321,20 @@ def chat_stream(task_id: str):
             
             if executed_tools:
                 # Create an accordion showing the tools used
-                tools_html = "".join([f"<div>> {t}()</div>" for t in executed_tools])
+                def get_friendly_name(t):
+                    mapping = {
+                        "get_user_journey": "Analyzed User Journey",
+                        "get_intent_surge_signals": "Detected Intent Surge Signals",
+                        "map_buying_committee": "Mapped Buying Committee",
+                        "get_asset_impact_matrix": "Evaluated Asset Impact",
+                        "compare_asset_baselines": "Compared Asset Baselines",
+                        "evaluate_trickle_threshold": "Evaluated Traffic Decay",
+                        "simulate_budget_shift": "Simulated Budget Shift",
+                        "get_executive_pipeline_kpis": "Fetched Executive KPIs"
+                    }
+                    return mapping.get(t, t.replace('_', ' ').title() + " Completed")
+                    
+                tools_html = "".join([f"<div>> {get_friendly_name(t)}</div>" for t in executed_tools])
                 tool_count = len(executed_tools)
                 tool_ui = f"""<div x-data="{{ expanded: false }}" class="mb-4 bg-dark-900/50 rounded-lg p-3 border border-dark-800 w-full shadow-inner">
     <button @click="expanded = !expanded" type="button" class="text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-fuchsia-400 transition-colors flex items-center gap-2 w-full focus:outline-none">

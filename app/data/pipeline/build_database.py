@@ -24,7 +24,8 @@ def main():
         "01_generate_crm.py",
         "02_generate_baseline_traffic.py",
         "03_simulate_abm_journeys.py",
-        "04_etl_load.py"
+        "04_etl_load.py",
+        "05_create_indices.py"
     ]
     
     for script in scripts:
