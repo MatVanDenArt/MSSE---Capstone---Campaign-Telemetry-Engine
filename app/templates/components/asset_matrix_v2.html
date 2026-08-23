@@ -1,0 +1,95 @@
+<div class="v2-card rounded-2xl p-6 mb-8 border-t border-t-white/10 v2-stagger-2">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h3 class="text-lg font-bold text-white tracking-wide">High-Density Asset Performance</h3>
+            <p class="text-xs text-slate-400">Firmographic engagement rates & health signals across Omnichannel Assets</p>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-3 py-1 text-xs rounded bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"><i class="fa-solid fa-filter text-slate-400 mr-1"></i> Filter</button>
+            <button class="px-3 py-1 text-xs rounded bg-brand-500/20 border border-brand-500/50 text-brand-400 hover:bg-brand-500/30 transition-colors"><i class="fa-solid fa-download mr-1"></i> Export</button>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto v2-scrollbar">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="text-xs uppercase tracking-widest text-slate-500 border-b border-white/5 pb-2">
+                    <th class="py-3 px-4 font-semibold w-1/3">Asset Name</th>
+                    <th class="py-3 px-4 font-semibold text-center">Health Status</th>
+                    <th class="py-3 px-4 font-semibold text-right">Engagement</th>
+                    <th class="py-3 px-4 font-semibold text-right">Target Account %</th>
+                    <th class="py-3 px-4 font-semibold text-right">Impact Score</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm divide-y divide-white/5">
+                {% for asset in matrix %}
+                <tr class="hover:bg-white/[0.02] transition-colors group">
+                    <!-- Asset Name -->
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-3">
+                            {% if 'video' in asset.type|lower or 'webinar' in asset.type|lower %}
+                                <div class="w-8 h-8 rounded bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20 shrink-0">
+                                    <i class="fa-solid fa-play text-fuchsia-400 text-xs"></i>
+                                </div>
+                            {% elif 'report' in asset.type|lower or 'whitepaper' in asset.type|lower %}
+                                <div class="w-8 h-8 rounded bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 shrink-0">
+                                    <i class="fa-solid fa-file-lines text-cyan-400 text-xs"></i>
+                                </div>
+                            {% else %}
+                                <div class="w-8 h-8 rounded bg-slate-500/10 flex items-center justify-center border border-slate-500/20 shrink-0">
+                                    <i class="fa-solid fa-link text-slate-400 text-xs"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div>
+                                <p class="font-medium text-slate-200 group-hover:text-white transition-colors truncate max-w-[200px]" title="{{ asset.asset_name }}">{{ asset.asset_name }}</p>
+                                <p class="text-[10px] text-slate-500 uppercase">{{ asset.type }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <!-- Health Status -->
+                    <td class="py-4 px-4 text-center">
+                        {% if asset.health == 'Healthy' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> HEALTHY
+                            </span>
+                        {% elif asset.health == 'Fatigued' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5"></span> FATIGUED
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5"></span> {{ asset.health|upper }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- Engagement -->
+                    <td class="py-4 px-4 text-right">
+                        <span class="text-slate-300 font-mono">{{ "{:,}".format(asset.engagement) }}</span>
+                    </td>
+                    
+                    <!-- HVA Engagement % (Simulated based on impact) -->
+                    <td class="py-4 px-4 text-right">
+                        {% set hva = (asset.impact_score / 100 * 80 + 10)|round|int %}
+                        <div class="flex items-center justify-end gap-2">
+                            <span class="text-slate-300 font-mono text-xs">{{ hva }}%</span>
+                            <div class="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 rounded-full" style="width: {{ hva }}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <!-- Impact Score -->
+                    <td class="py-4 px-4 text-right">
+                        <span class="font-bold font-mono {% if asset.impact_score >= 80 %}v2-text-gradient-emerald{% elif asset.impact_score >= 50 %}text-cyan-400{% else %}text-slate-400{% endif %}">
+                            {{ asset.impact_score|round|int }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

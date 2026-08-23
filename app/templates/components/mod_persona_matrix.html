@@ -14,7 +14,7 @@
     modalAiInsight: '',
     init() {
         const campaignId = '{{ campaign_id }}';
-        fetch(`/api/dashboard/audience-data-scoped${campaignId ? '?campaign_id='+campaignId : ''}`)
+        fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + `/dashboard/audience-data-scoped${campaignId ? '?campaign_id='+campaignId : ''}`)
             .then(res => res.json())
             .then(data => {
                 const fetchedUsers = data.users || [];
@@ -105,63 +105,72 @@
         
         <!-- TAB A: MATRIX -->
         <div x-show="activeTab === 'matrix'" class="overflow-x-auto max-h-[600px] custom-scrollbar" style="display: none;">
-            <table class="w-full text-left text-sm text-slate-400 relative">
-                <thead class="bg-dark-800 text-xs uppercase font-semibold text-slate-300 sticky top-0 z-10 shadow-md">
-                    <tr>
-                        <th scope="col" class="px-6 py-4">Target Account</th>
-                        <th scope="col" class="px-6 py-4 text-center">C-Suite</th>
-                        <th scope="col" class="px-6 py-4 text-center">VP / Director</th>
-                        <th scope="col" class="px-6 py-4 text-center">Manager</th>
-                        <th scope="col" class="px-6 py-4 text-center">IC</th>
-                        <th scope="col" class="px-6 py-4 text-center text-blue-400">Total Targets</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="company in companies" :key="company">
-                        <tr class="border-b border-dark-700/50 hover:bg-dark-800/50 transition-colors">
-                            <td class="px-6 py-4 font-bold text-slate-200" x-text="company"></td>
-                            
-                            <!-- C-Suite -->
-                            <td class="px-6 py-4 text-center">
-                                <button @click="openModal(matrix[company]['C-Suite'])" 
-                                        :class="matrix[company]['C-Suite'].length > 0 ? 'bg-sky-400 text-slate-900 hover:bg-sky-300 border border-sky-300' : 'text-slate-700 bg-transparent'"
-                                        class="w-10 h-10 font-bold transition-colors">
-                                    <span x-text="matrix[company]['C-Suite'].length || '-'"></span>
-                                </button>
-                            </td>
-                            <!-- VP/Director -->
-                            <td class="px-6 py-4 text-center">
-                                <button @click="openModal(matrix[company]['VP/Director'])" 
-                                        :class="matrix[company]['VP/Director'].length > 0 ? 'bg-sky-600/60 text-sky-50 hover:bg-sky-600/80 border border-sky-500' : 'text-slate-700 bg-transparent'"
-                                        class="w-10 h-10 font-bold transition-colors">
-                                    <span x-text="matrix[company]['VP/Director'].length || '-'"></span>
-                                </button>
-                            </td>
-                            <!-- Manager -->
-                            <td class="px-6 py-4 text-center">
-                                <button @click="openModal(matrix[company]['Manager'])" 
-                                        :class="matrix[company]['Manager'].length > 0 ? 'bg-sky-500/20 text-sky-300 hover:bg-sky-500/30 border border-sky-500/50' : 'text-slate-700 bg-transparent'"
-                                        class="w-10 h-10 font-bold transition-colors">
-                                    <span x-text="matrix[company]['Manager'].length || '-'"></span>
-                                </button>
-                            </td>
-                            <!-- IC -->
-                            <td class="px-6 py-4 text-center">
-                                <button @click="openModal(matrix[company]['IC'])" 
-                                        :class="matrix[company]['IC'].length > 0 ? 'bg-transparent text-sky-600 hover:bg-sky-900/20 border border-sky-900' : 'text-slate-700 bg-transparent'"
-                                        class="w-10 h-10 font-bold transition-colors">
-                                    <span x-text="matrix[company]['IC'].length || '-'"></span>
-                                </button>
-                            </td>
-                            
-                            <!-- Total -->
-                            <td class="px-6 py-4 text-center font-bold text-slate-300 bg-dark-800/30">
+            <!-- Borderless List-View Header -->
+            <div class="flex items-center text-[10px] uppercase font-bold text-slate-500 tracking-widest px-6 py-3 border-b border-dark-800 sticky top-0 bg-black z-10">
+                <div class="w-1/3">Target Account</div>
+                <div class="w-[13%] text-center">C-Suite</div>
+                <div class="w-[13%] text-center">VP / Dir</div>
+                <div class="w-[13%] text-center">Manager</div>
+                <div class="w-[13%] text-center">IC</div>
+                <div class="w-[15%] text-right pr-2 text-brand-500">Total Targets</div>
+            </div>
+            
+            <!-- List Body -->
+            <div class="flex flex-col gap-1 p-2">
+                <template x-for="company in companies" :key="company">
+                    <div class="group flex items-center px-4 py-3 bg-transparent hover:bg-dark-900/50 rounded-lg transition-all duration-300 cursor-default relative">
+                        <!-- Micro-interaction active indicator -->
+                        <div class="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-0 bg-brand-500 group-hover:h-3/4 rounded-r transition-all duration-300"></div>
+                        
+                        <div class="w-1/3 font-bold text-slate-200 flex items-center gap-3 pl-2">
+                            <div class="w-6 h-6 rounded bg-dark-800 flex items-center justify-center text-slate-500 group-hover:text-brand-400 transition-colors border border-dark-700">
+                                <i class="fa-solid fa-building text-[10px]"></i>
+                            </div>
+                            <span x-text="company" class="text-sm"></span>
+                        </div>
+                        
+                        <!-- C-Suite -->
+                        <div class="w-[13%] text-center flex justify-center">
+                            <button @click="openModal(matrix[company]['C-Suite'])" 
+                                    :class="matrix[company]['C-Suite'].length > 0 ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' : 'text-slate-700'"
+                                    class="w-8 h-8 rounded-full font-bold transition-all transform group-hover:scale-110 text-xs flex items-center justify-center">
+                                <span x-text="matrix[company]['C-Suite'].length || '-'"></span>
+                            </button>
+                        </div>
+                        <!-- VP/Director -->
+                        <div class="w-[13%] text-center flex justify-center">
+                            <button @click="openModal(matrix[company]['VP/Director'])" 
+                                    :class="matrix[company]['VP/Director'].length > 0 ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' : 'text-slate-700'"
+                                    class="w-8 h-8 rounded-full font-bold transition-all transform group-hover:scale-110 text-xs flex items-center justify-center">
+                                <span x-text="matrix[company]['VP/Director'].length || '-'"></span>
+                            </button>
+                        </div>
+                        <!-- Manager -->
+                        <div class="w-[13%] text-center flex justify-center">
+                            <button @click="openModal(matrix[company]['Manager'])" 
+                                    :class="matrix[company]['Manager'].length > 0 ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' : 'text-slate-700'"
+                                    class="w-8 h-8 rounded-full font-bold transition-all transform group-hover:scale-110 text-xs flex items-center justify-center">
+                                <span x-text="matrix[company]['Manager'].length || '-'"></span>
+                            </button>
+                        </div>
+                        <!-- IC -->
+                        <div class="w-[13%] text-center flex justify-center">
+                            <button @click="openModal(matrix[company]['IC'])" 
+                                    :class="matrix[company]['IC'].length > 0 ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' : 'text-slate-700'"
+                                    class="w-8 h-8 rounded-full font-bold transition-all transform group-hover:scale-110 text-xs flex items-center justify-center">
+                                <span x-text="matrix[company]['IC'].length || '-'"></span>
+                            </button>
+                        </div>
+                        
+                        <!-- Total -->
+                        <div class="w-[15%] text-right pr-2 font-bold text-slate-300">
+                            <div class="inline-block px-3 py-1 rounded bg-dark-800 text-xs border border-dark-700 group-hover:border-brand-500/30 group-hover:text-brand-400 transition-colors">
                                 <span x-text="matrix[company]['C-Suite'].length + matrix[company]['VP/Director'].length + matrix[company]['Manager'].length + matrix[company]['IC'].length"></span>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <!-- TAB B: PIPELINE (KANBAN) -->

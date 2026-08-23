@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form
 from fastapi.responses import HTMLResponse
 from google import genai
 from google.genai import types
-from app.services.analytics import mcp_tools, tool_functions
+from app.services.llm_rotator import mcp_tools, tool_functions
 import os
 
 router = APIRouter()
@@ -14,19 +14,29 @@ ZERO-MATH POLICY:
 You are strictly forbidden from performing any mathematical calculations yourself (e.g., calculating CPA, ROI, Spend, Pipeline). 
 You MUST rely entirely on the provided tools to fetch these metrics if asked.
 
-When a user asks you to execute an action (e.g., 'Draft outreach for X', 'Sync Y to CRM', 'Suggest asset rotation'), acknowledge the command, briefly summarize why it's a good idea based on the context provided in their prompt, and state that the action has been successfully queued or executed. Keep responses concise and conversational (2-3 sentences max).
+When a user asks you to AUTOMATE or EXECUTE an action (e.g., 'Draft outreach for X', 'Sync Y to CRM', 'Suggest asset rotation'), acknowledge the command, briefly summarize why it's a good idea, and state that it has been successfully queued or executed. Keep responses concise and conversational.
+IMPORTANT: A request to 'Review Priority Action' is NOT an execution request. It is a request for analysis.
 
 When a user asks you to **Investigate** a pipeline target (e.g., 'Investigate pipeline target: X'), you should:
 1. Act as a strategic advisor. Summarize why this target is important based on the context in their prompt (e.g. number of interactions, recent activity). 
 2. Recommend an immediate next step (e.g., drafting an email, syncing to CRM).
 3. Append a special execute button at the very end of your response using this exact HTML structure, replacing [ACTION NAME] and [ACTION COMMAND] appropriately:
 <div class="mt-4"><button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "Execute: [ACTION COMMAND]"}' class="w-full py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button></div>
+
+When you retrieve a user's interaction history (using get_user_journey), you MUST append the raw chronological timeline at the end of your response inside an HTML accordion using the exact structure below. Do not summarize the timeline, just format the tool's raw data into this structure:
+<details class="mt-4 border border-dark-600 bg-dark-900 text-slate-300">
+    <summary class="p-3 text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-dark-800 transition">View Interaction History</summary>
+    <div class="p-4 text-xs font-mono space-y-2">
+        <!-- For each interaction, output a line like: -->
+        <div><span class="text-slate-500">[2026-08-23 14:00:00]</span> <span class="text-brand-400">[Website]</span> View: Decarbonization Whitepaper</div>
+    </div>
+</details>
 """
 
 chat_history = []
 
 @router.post("/chat", response_class=HTMLResponse)
-async def handle_chat(message: str = Form(...)):
+async def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None)):
     global chat_history
     
     user_html = f"""
@@ -40,10 +50,77 @@ async def handle_chat(message: str = Form(...)):
     </div>
     """
     
+    import asyncio
+    
     chat_history.append({"role": "user", "parts": [types.Part.from_text(text=message)]})
+    
+    if intent == "automate" or (trigger_id and not intent and not message.lower().startswith("draft")):
+        # Artificial execution simulation
+        await asyncio.sleep(1.5)
+        
+        logo_icon = "fa-server"
+        system_name = "Internal System"
+        msg_lower = message.lower()
+        if "crm" in msg_lower or "opportunity" in msg_lower or "sql" in msg_lower:
+            logo_icon = "fa-salesforce text-sky-400"
+            system_name = "Salesforce CRM"
+        elif "campaign" in msg_lower or "linkedin" in msg_lower or "ads" in msg_lower:
+            logo_icon = "fa-linkedin text-blue-500"
+            system_name = "LinkedIn Ads"
+        elif "email" in msg_lower or "outreach" in msg_lower or "newsletter" in msg_lower:
+            logo_icon = "fa-envelope text-fuchsia-400"
+            system_name = "Marketo"
+
+        icon_class = logo_icon.split(' ')[0]
+        icon_color = ' '.join(logo_icon.split(' ')[1:]) if ' ' in logo_icon else 'text-slate-400'
+        
+        simulated_response = f"""
+        <div class="flex gap-3 my-4">
+            <div class="w-6 h-6 bg-slate-900 flex items-center justify-center shrink-0 border border-slate-700">
+                <i class="fa-brands {icon_class} text-[10px] {icon_color}"></i>
+            </div>
+            <div class="w-full">
+                <div class="bg-black border border-dark-700 rounded p-3 font-mono text-xs shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
+                    <div class="flex justify-between items-center border-b border-dark-800 pb-2 mb-2">
+                        <span class="text-slate-500 uppercase tracking-widest">{system_name}</span>
+                        <span class="text-emerald-500 font-bold">200 OK</span>
+                    </div>
+                    <div class="text-slate-300">
+                        <span class="text-slate-500">Action:</span> {message}
+                    </div>
+                    <div class="text-slate-300 mt-1">
+                        <span class="text-slate-500">Status:</span> Record synchronized successfully
+                    </div>
+                </div>
+            </div>
+        </div>
+        """
+        if trigger_id:
+            simulated_response += f'<script>window.dispatchEvent(new CustomEvent("task-resolved", {{detail: {{id: "{trigger_id}"}}}}));</script>'
+            
+        chat_history.append({"role": "model", "parts": [types.Part.from_text(text="Action Executed Successfully.")]})
+        return HTMLResponse(content=user_html + simulated_response)
     
     try:
         from app.services.llm_rotator import get_genai_client
+        
+        # Inject the UI state into the system prompt
+        if time_context:
+            context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\n{time_context}. You MUST scope your analysis to this specific timeframe anomaly and ignore the global timeframe."
+        else:
+            context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\nThe user currently has their dashboard timeframe filtered to: {timeframe} days (0 means All Time). If they ask for metrics without specifying a date, use this timeframe."
+            
+        if intent == "review" and trigger_id:
+            context_prompt += f"""\n\nCRITICAL INSTRUCTION FOR THIS PROMPT:
+The user is reviewing a Priority Action from the dashboard Action Center. 
+Act as a strategic advisor. Analyze the action details provided by the user. Explain why it is a priority and what the impact is based on your telemetry tools if needed.
+Then, you MUST append 2 action buttons at the very end of your response to let the user execute or dismiss the action.
+You MUST use this EXACT HTML structure for the buttons:
+<div class="flex gap-2 mt-4">
+    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute the recommended action", "intent": "automate", "trigger_id": "{trigger_id}"}}' class="px-3 py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> Execute Action</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" class="px-3 py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-times"></i> Dismiss</button>
+</div>
+"""
         
         response = None
         last_err = None
@@ -54,7 +131,7 @@ async def handle_chat(message: str = Form(...)):
                     model='gemini-3.5-flash',
                     contents=chat_history,
                     config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
+                        system_instruction=context_prompt,
                         tools=[types.Tool(function_declarations=mcp_tools)],
                         temperature=0.2,
                     )
@@ -67,68 +144,80 @@ async def handle_chat(message: str = Form(...)):
             raise last_err
         
         # Unified Tool Calling Loop
-        if response.function_calls:
-            tool_responses = []
-            for function_call in response.function_calls:
-                func_name = function_call.name
-                args = {k: v for k, v in function_call.args.items()}
-                
-                if func_name in tool_functions:
-                    try:
-                        result = tool_functions[func_name](**args)
-                    except Exception as e:
-                        # Graceful Degradation
-                        result = {"error": "tool failed"}
-                else:
-                    result = {"error": f"Unknown tool: {func_name}"}
-                
-                tool_responses.append(
-                    types.Part.from_function_response(
-                        name=func_name,
-                        response=result
-                    )
-                )
-            
-            chat_history.append(response.candidates[0].content)
-            chat_history.append({"role": "user", "parts": tool_responses})
-            
-            from app.services.llm_rotator import get_genai_client
-            
-            final_response = None
-            last_err = None
-            for _ in range(3):
-                try:
-                    local_client = get_genai_client()
-                    final_response = local_client.models.generate_content(
-                        model='gemini-3.5-flash',
-                        contents=chat_history,
-                        config=types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT,
-                            temperature=0.2,
+        current_response = response
+        for _ in range(3):
+            if current_response.function_calls:
+                tool_responses = []
+                for function_call in current_response.function_calls:
+                    func_name = function_call.name
+                    args = {k: v for k, v in function_call.args.items()}
+                    
+                    if func_name in tool_functions:
+                        try:
+                            result = tool_functions[func_name](**args)
+                            if not isinstance(result, dict):
+                                result = {"data": result}
+                        except Exception as e:
+                            # Graceful Degradation
+                            result = {"error": "tool failed"}
+                    else:
+                        result = {"error": f"Unknown tool: {func_name}"}
+                    
+                    tool_responses.append(
+                        types.Part.from_function_response(
+                            name=func_name,
+                            response=result
                         )
                     )
-                    break
-                except Exception as e:
-                    last_err = e
-                    
-            if not final_response:
-                raise last_err
+                
+                chat_history.append(current_response.candidates[0].content)
+                chat_history.append({"role": "user", "parts": tool_responses})
+                
+                from app.services.llm_rotator import get_genai_client
+                
+                last_err = None
+                for attempt in range(3):
+                    try:
+                        local_client = get_genai_client()
+                        current_response = local_client.models.generate_content(
+                            model='gemini-3.5-flash',
+                            contents=chat_history,
+                            config=types.GenerateContentConfig(
+                                system_instruction=context_prompt,
+                                tools=[types.Tool(function_declarations=mcp_tools)],
+                                temperature=0.2,
+                            )
+                        )
+                        break
+                    except Exception as e:
+                        last_err = e
+                        if attempt == 2:
+                            raise e
+            else:
+                break
+                
+        text_response = current_response.text or "I have reviewed the information based on the available data."
+        chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
             
-            text_response = final_response.text
-            chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
-            
-        else:
-            text_response = response.text
-            chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
-            
+        import markdown
+        parsed_html = markdown.markdown(text_response)
+        
         ai_html = f"""
+        <style>
+        .copilot-markdown p {{ margin-bottom: 1em; }}
+        .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3, .copilot-markdown h4 {{ font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #fdf4ff; }}
+        .copilot-markdown ul {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }}
+        .copilot-markdown ol {{ list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }}
+        .copilot-markdown li {{ margin-bottom: 0.5em; }}
+        .copilot-markdown strong {{ font-weight: bold; color: #fdf4ff; }}
+        </style>
         <div class="flex gap-3 my-4">
             <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-robot text-[10px] text-black"></i>
             </div>
             <div class="w-full">
                 <div class="bg-black border border-dark-700 p-4">
-                    <div class="text-slate-200 text-sm leading-relaxed">{text_response}</div>
+                    <div class="text-slate-200 text-sm leading-relaxed copilot-markdown">{parsed_html}</div>
                 </div>
             </div>
         </div>

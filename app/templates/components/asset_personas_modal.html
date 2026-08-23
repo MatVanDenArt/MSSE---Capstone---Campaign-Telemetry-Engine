@@ -13,7 +13,7 @@
             this.selectedCellUsers = null;
             this.showAccountsModal = true;
             
-            fetch(`/api/asset-personas?campaign_id=${encodeURIComponent(this.campaignId)}&asset_name=${encodeURIComponent(assetName)}&type=${encodeURIComponent(assetType)}`)
+            fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + `/asset-personas?campaign_id=${encodeURIComponent(this.campaignId)}&asset_name=${encodeURIComponent(assetName)}&type=${encodeURIComponent(assetType)}`)
                 .then(r => r.json())
                 .then(users => {
                     this.selectedCellUsers = users;

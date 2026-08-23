@@ -43,7 +43,7 @@ def _generate_funnel(seed_time, campaign_id, email, user_id_counter, account_id,
         if crm_create_time < datetime.now():
             crm_opps.append({
                 "event_id": str(uuid.uuid4()), "user_id": user_id_counter, "account_id": account_id,
-                "event_type": "Opportunity Created", "pipeline_value": round(random.uniform(5000000, 20000000), 2), "timestamp": crm_create_time
+                "event_type": "Opportunity Created", "pipeline_value": round(random.uniform(5000000, 20000000), 2), "timestamp": crm_create_time, "utm_campaign": campaign_id
             })
             
             # Only ~15% of opportunities close won, primarily C-Suite or VP/Director
@@ -61,7 +61,7 @@ def _generate_funnel(seed_time, campaign_id, email, user_id_counter, account_id,
                         
                     crm_opps.append({
                         "event_id": str(uuid.uuid4()), "user_id": user_id_counter, "account_id": account_id,
-                        "event_type": "Closed Won", "pipeline_value": round(pipeline, 2), "timestamp": crm_won_time
+                        "event_type": "Closed Won", "pipeline_value": round(pipeline, 2), "timestamp": crm_won_time, "utm_campaign": campaign_id
                     })
         
     elif bucket_roll < 0.35:
@@ -97,10 +97,12 @@ def generate_b2b_data():
             last_name = fake.last_name()
             email = f"{first_name.lower()}.{last_name.lower()}@{domain}"
             seniority = random.choices(SENIORITY_LEVELS, weights=[5, 15, 30, 50])[0]
+            persona_type = random.choices(["Technical", "Commercial"], weights=[60, 40])[0]
             
             crm_users.append({
                 "user_id": user_id_counter, "account_id": account_id, "company_name": company_name,
-                "email": email, "first_name": first_name, "last_name": last_name, "seniority": seniority
+                "email": email, "first_name": first_name, "last_name": last_name, 
+                "seniority": seniority, "persona_type": persona_type
             })
             
             # --- Generate Data for Multiple Campaigns ---

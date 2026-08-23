@@ -5,7 +5,7 @@
             <button class="bg-brand-500 hover:bg-brand-400 text-white text-xs font-bold px-3 py-1 rounded transition-colors" onclick="alert('AI Remediation: Generating retargeting strategy for Choke Point...')"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Remediate Choke Point</button>
         </div>
         
-        <div x-data="{ data: {visitors: 0, engaged: 0, known: 0, activated: 0, pipeline: 0}, max_val: 1, loading: true }" x-init="fetch('/api/dashboard/ui-lab/funnel?campaign_id=' + document.getElementById('current_campaign').value).then(r=>r.json()).then(d => { data = d; max_val = Math.max(d.visitors, 1); loading = false; })" class="relative w-full h-64 bg-dark-900/50 rounded-xl border border-dark-700 p-6 flex items-end overflow-hidden gap-1">
+        <div x-data="{ data: {visitors: 0, engaged: 0, known: 0, activated: 0, pipeline: 0}, max_val: 1, loading: true }" x-init="fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + '/dashboard/ui-lab/funnel?campaign_id=' + document.getElementById('current_campaign').value).then(r=>r.json()).then(d => { data = d; max_val = Math.max(d.visitors, 1); loading = false; })" class="relative w-full h-64 bg-dark-900/50 rounded-xl border border-dark-700 p-6 flex items-end overflow-hidden gap-1">
             <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-dark-900/80 z-50">
                 <i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
             </div>
@@ -31,3 +31,5 @@
         </div>
     </div>
 </div>
+
+

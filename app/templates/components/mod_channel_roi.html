@@ -1,7 +1,7 @@
             <!-- Experiment A: Omnichannel Alluvial Flow -->
             <div class="bg-black p-8 border border-dark-800 relative overflow-hidden" 
                  x-data="{ data: {linkedin: {accounts_reached:0, total_spend:0, accounts:[]}, email: {accounts_engaged:0, total_clicks:0, accounts:[]}, web: {accounts_identified:0, total_pageviews:0, accounts:[]}}, loading: true }"
-                 x-init="fetch('/api/dashboard/ui-lab/channel-roi?campaign_id=' + document.getElementById('current_campaign').value).then(r=>r.json()).then(d => { data = d; loading = false; })">
+                 x-init="fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + '/dashboard/ui-lab/channel-roi?campaign_id=' + document.getElementById('current_campaign').value).then(r=>r.json()).then(d => { data = d; loading = false; })">
                 
                 <!-- Removed Header to save space -->
                 
@@ -135,4 +135,6 @@
 
                 </div>
             </div>
+
+
 

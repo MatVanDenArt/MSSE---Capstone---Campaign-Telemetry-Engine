@@ -1,8 +1,22 @@
 <!-- OOB Swap for Copilot Action Chips -->
-<div id="copilot-action-chips" hx-swap-oob="true" class="px-4 pb-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
-    {% for action in copilot_actions %}
-    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "{{ action.command }}"}' class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">{{ action.label }}</button>
-    {% endfor %}
+<div id="copilot-action-chips" hx-swap-oob="true" class="px-4 pb-4">
+    <div class="mb-3 flex items-center gap-2">
+        <i class="fa-solid fa-sparkles text-[10px] text-fuchsia-500"></i>
+        <span class="text-[10px] font-bold text-fuchsia-500 uppercase tracking-widest">Suggested Prompts</span>
+    </div>
+    <div class="grid grid-cols-1 gap-2">
+        {% for action in copilot_actions %}
+        <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "{{ action.command }}", "intent": "{{ action.intent }}"}' class="group p-3 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-all text-left flex items-start gap-3 rounded-lg backdrop-blur-sm relative overflow-hidden">
+            <div class="w-6 h-6 rounded flex items-center justify-center bg-dark-800 border border-dark-600 group-hover:bg-fuchsia-900/50 group-hover:border-fuchsia-500/50 shrink-0 mt-0.5 transition-colors">
+                <i class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-slate-200 group-hover:text-fuchsia-300 transition-colors">{{ action.label }}</div>
+                <div class="text-[10px] text-slate-500 mt-1 leading-relaxed group-hover:text-slate-400">{{ action.command }}</div>
+            </div>
+        </button>
+        {% endfor %}
+    </div>
 </div>
 
 <!-- OOB Swap for Copilot Context Update Message -->
@@ -13,30 +27,142 @@
 <!-- OOB Swap for Proactive Tasks Container -->
 <div id="copilot-tasks-container" hx-swap-oob="true">
     {% if copilot_tasks %}
-    <div class="bg-black border-b border-dark-800 flex flex-col">
+    <div class="bg-black border-b border-dark-800 flex flex-col"
+         x-data="{
+             tasks: {{ copilot_tasks | tojson | forceescape }},
+             visibleTasks: [],
+             queue: [],
+             totalTasks: {{ copilot_tasks | length }},
+             reviewingTaskId: null,
+             init() {
+                 this.visibleTasks = this.tasks.slice(0, 3);
+                 this.queue = this.tasks.slice(3);
+                 
+                 window.addEventListener('task-resolved', (e) => {
+                     if (e.detail && e.detail.id) {
+                         this.removeTask(e.detail.id, 'handoff');
+                         if (this.reviewingTaskId === e.detail.id) {
+                             this.reviewingTaskId = null;
+                         }
+                     }
+                 });
+             },
+             getGlowClass(task) {
+                 if (this.reviewingTaskId === task.id) {
+                     return 'border-fuchsia-500/50 bg-fuchsia-900/10 shadow-[inset_0_0_20px_rgba(217,70,239,0.05)] opacity-80';
+                 }
+                 const title = task.title || '';
+                 if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                     return 'border-rose-900/60 bg-rose-900/20 hover:border-rose-500/50 hover:bg-rose-900/30 shadow-[inset_0_0_15px_rgba(225,29,72,0.1)]';
+                 } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                     return 'border-emerald-900/60 bg-emerald-900/20 hover:border-emerald-500/50 hover:bg-emerald-900/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]';
+                 }
+                 return 'border-amber-900/60 bg-amber-900/20 hover:border-amber-500/50 hover:bg-amber-900/30 shadow-[inset_0_0_15px_rgba(245,158,11,0.1)]';
+             },
+             getCategoryBadge(task) {
+                 const title = task.title || '';
+                 if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                     return { label: 'THREAT', color: 'text-rose-400 bg-rose-950 border-rose-900' };
+                 } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                     return { label: 'OPPORTUNITY', color: 'text-emerald-400 bg-emerald-950 border-emerald-900' };
+                 }
+                 return { label: 'INSIGHT', color: 'text-amber-400 bg-amber-950 border-amber-900' };
+             },
+             removeTask(id, type) {
+                 const el = document.getElementById('task-card-' + id);
+                 if (el) {
+                     if (type === 'handoff') {
+                         el.classList.add('translate-x-full', 'scale-90', 'opacity-0', 'border-fuchsia-500', 'shadow-[0_0_20px_rgba(217,70,239,0.5)]');
+                     } else {
+                         el.classList.add('-translate-x-full', 'opacity-0');
+                     }
+                 }
+                 setTimeout(() => {
+                     this.visibleTasks = this.visibleTasks.filter(t => t.id !== id);
+                     if (this.queue.length > 0) {
+                         this.visibleTasks.push(this.queue.shift());
+                     }
+                 }, 300);
+             },
+             executeTask(task) {
+                 this.reviewingTaskId = task.id;
+                 this.$dispatch('open-chat');
+                 
+                 htmx.ajax('POST', '/api/chat', {
+                     target: '#chat-history',
+                     swap: 'beforeend',
+                     indicator: '#loading-indicator',
+                     values: {
+                         message: 'Review Priority Action: ' + task.title + '. Details: ' + (task.subtitle || task.message) + '. Suggested Action: ' + task.action_command,
+                         time_context: 'Strict Context: Target event occurred around ' + task.created_at,
+                         trigger_id: task.id,
+                         intent: 'review'
+                     }
+                 });
+             },
+             dismissTask(task) {
+                 this.removeTask(task.id, 'dismiss');
+                 htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + task.id, {target: '#chat-history', swap: 'none'});
+             }
+         }">
+        
         <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
             <span class="text-[10px] font-bold text-fuchsia-500 uppercase tracking-widest">Priority Actions</span>
-            <span class="text-[10px] text-slate-500 font-mono">[{{ copilot_tasks|length }}]</span>
+            <span class="text-[10px] text-slate-500 font-mono flex items-center gap-2">
+                <span x-show="queue.length > 0" class="animate-pulse text-fuchsia-400">
+                    <i class="fa-solid fa-layer-group"></i> <span x-text="queue.length"></span> Queued
+                </span>
+                <span>[<span x-text="totalTasks"></span>]</span>
+            </span>
         </div>
-        <div class="flex flex-col divide-y divide-dark-800">
-            {% for task in copilot_tasks %}
-                {% if task.is_programmatic %}
-                <button @click="$dispatch('open-chat')" hx-get="{{ task.action_command }}" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="group px-4 py-3 text-left hover:bg-dark-900 transition-colors flex items-center justify-between w-full">
-                {% else %}
-                <button @click="$dispatch('open-chat')" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "{{ task.action_command }}"}' class="group px-4 py-3 text-left hover:bg-dark-900 transition-colors flex items-center justify-between w-full">
-                {% endif %}
-                <div class="flex items-center gap-3">
-                    <div class="w-6 h-6 rounded flex items-center justify-center border border-dark-700 bg-dark-800 shrink-0">
-                        <i class="fa-solid {{ task.icon }} text-[10px] {{ task.icon_color }}"></i>
+        
+        <div class="flex flex-col p-2 space-y-2 overflow-hidden relative min-h-[300px]">
+            <template x-for="(task, index) in visibleTasks" :key="task.id">
+                <div class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
+                     :class="getGlowClass(task)"
+                     :id="'task-card-' + task.id"
+                     x-transition:enter="transition ease-out duration-300 transform"
+                     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                     x-transition:leave="transition ease-in duration-300 transform"
+                     x-transition:leave-start="opacity-100 translate-x-0"
+                     x-transition:leave-end="opacity-0 -translate-x-full">
+                    
+                    <!-- Header Row -->
+                    <div class="flex items-start justify-between w-full mb-2">
+                        <div class="flex flex-col gap-1 w-5/6">
+                            <span class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-widest w-fit" 
+                                  :class="getCategoryBadge(task).color" 
+                                  x-text="getCategoryBadge(task).label"></span>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="w-6 h-6 rounded flex items-center justify-center border border-dark-700 bg-dark-800 shrink-0 shadow-inner shadow-dark-600/20">
+                                    <i :class="'fa-solid text-[10px] ' + task.icon + ' ' + task.icon_color"></i>
+                                </div>
+                                <div class="text-xs font-bold text-slate-200 tracking-wide truncate" x-text="task.title"></div>
+                            </div>
+                        </div>
+                        <!-- Dismiss Button -->
+                        <button @click.prevent="dismissTask(task)" class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0" title="Dismiss">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
                     </div>
-                    <div>
-                        <div class="text-xs font-bold text-slate-300">{{ task.title }}</div>
-                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">{{ task.subtitle }}</div>
+                    
+                    <!-- Context Row -->
+                    <div class="mb-4 pr-2">
+                        <div class="text-[11px] text-slate-400 uppercase tracking-wider mb-1 line-clamp-2 leading-relaxed" x-text="task.subtitle || task.message"></div>
+                    </div>
+                    
+                    <!-- Action Row -->
+                    <div class="flex justify-end w-full">
+                        <button @click.prevent="executeTask(task)" 
+                                class="w-full justify-center px-4 py-2 border text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded group-hover:border-fuchsia-500/80"
+                                :class="reviewingTaskId === task.id ? 'bg-fuchsia-900/20 border-fuchsia-500/50 text-fuchsia-400 cursor-default' : 'bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border-fuchsia-500/40 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white shadow-[0_0_15px_rgba(217,70,239,0.1)] hover:shadow-[0_0_20px_rgba(217,70,239,0.3)]'">
+                            <i class="fa-solid" :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin text-fuchsia-500' : 'fa-wand-magic-sparkles text-fuchsia-500 group-hover:animate-pulse'"></i> 
+                            <span x-text="reviewingTaskId === task.id ? 'Reviewing in Copilot...' : (task.action_payload || 'Send to Copilot')"></span>
+                        </button>
                     </div>
                 </div>
-                <i class="fa-solid fa-chevron-right text-[10px] text-dark-600 group-hover:text-fuchsia-500 transition-colors"></i>
-            </button>
-            {% endfor %}
+            </template>
         </div>
     </div>
     {% endif %}

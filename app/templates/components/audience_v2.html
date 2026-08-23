@@ -1,0 +1,124 @@
+<div class="max-w-7xl mx-auto pb-48 v2-stagger-2" 
+    x-data="{
+        loading: true,
+        accounts: [],
+        topics: [],
+        
+        async fetchData() {
+            const campaignId = document.getElementById('current_campaign').value;
+            try {
+                const response = await fetch(`/api/v2/dashboard/abm-data?campaign_id=${campaignId}`);
+                const data = await response.json();
+                this.accounts = data.accounts;
+                this.topics = data.topics;
+            } catch (error) {
+                console.error('Failed to fetch ABM data:', error);
+            } finally {
+                this.loading = false;
+            }
+        }
+    }" 
+    x-init="fetchData()">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <i class="fa-solid fa-users-viewfinder text-[12px] text-emerald-400"></i>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-slate-100 tracking-wide">Audience & Target Accounts</h2>
+            <p class="text-xs text-slate-400">Buying Committee Map & Intent Topic Clusters</p>
+        </div>
+    </div>
+
+    <div x-show="loading" class="flex justify-center items-center py-24">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-emerald-500/50"></i>
+    </div>
+
+    <div x-show="!loading" style="display: none;">
+        
+        <!-- Section 1: Ranked Target Accounts & Buying Committee -->
+        <h3 class="text-sm font-bold text-white tracking-widest uppercase mb-4 mt-8"><i class="fa-solid fa-building mr-2 text-emerald-400"></i> Account Penetration</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+            <template x-for="(account, index) in accounts" :key="account.company">
+                <div class="v2-card rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-xl transition-all" 
+                         :class="index === 0 ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-brand-500/5 group-hover:bg-brand-500/10'"></div>
+                    
+                    <div class="flex justify-between items-start mb-4 relative z-10">
+                        <div>
+                            <p class="text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tier 1 Target</p>
+                            <h3 class="text-xl font-bold text-white mb-1" x-text="account.company"></h3>
+                            <p class="text-xs text-slate-400"><span class="text-emerald-400 font-bold" x-text="account.total_interactions"></span> Total Interactions</p>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                            <span class="text-xs font-bold text-slate-300" x-text="'#' + (index + 1)"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Buying Committee Map -->
+                    <div class="mt-4 pt-4 border-t border-white/5 relative z-10">
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest mb-3">Buying Committee Penetration</p>
+                        
+                        <div class="flex gap-4">
+                            <!-- Technical Stakeholders -->
+                            <div class="flex-1 bg-white/5 rounded-lg p-3 border border-white/5 border-l-2 border-l-cyan-500">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fa-solid fa-microchip text-[10px] text-cyan-400"></i>
+                                    <span class="text-xs text-slate-300 font-medium">Technical</span>
+                                </div>
+                                <div class="flex items-end gap-2">
+                                    <span class="text-xl font-bold text-white" x-text="account.technical_users"></span>
+                                    <span class="text-[10px] text-slate-500 mb-1">Engaged Users</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Commercial Stakeholders -->
+                            <div class="flex-1 bg-white/5 rounded-lg p-3 border border-white/5 border-l-2 border-l-rose-500">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fa-solid fa-handshake text-[10px] text-rose-400"></i>
+                                    <span class="text-xs text-slate-300 font-medium">Commercial</span>
+                                </div>
+                                <div class="flex items-end gap-2">
+                                    <span class="text-xl font-bold text-white" x-text="account.commercial_users"></span>
+                                    <span class="text-[10px] text-slate-500 mb-1">Engaged Users</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Section 2: Intent Topic Clusters -->
+        <h3 class="text-sm font-bold text-white tracking-widest uppercase mb-4 mt-12"><i class="fa-solid fa-diagram-project mr-2 text-fuchsia-400"></i> Intent Topic Clusters</h3>
+        
+        <div class="v2-card rounded-2xl p-6 mb-12">
+            <div class="flex flex-wrap gap-4">
+                <template x-for="(topic, index) in topics" :key="topic.intent_topic">
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-4 flex-1 min-w-[200px] group hover:bg-white/10 transition-colors cursor-default">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-sm font-semibold text-slate-200" x-text="topic.intent_topic"></h4>
+                            <i class="fa-solid fa-fire text-fuchsia-500/50 group-hover:text-fuchsia-400 transition-colors" x-show="index < 2"></i>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="text-2xl font-black text-white" x-text="topic.interactions"></span>
+                            <span class="text-xs text-slate-500 mb-1">Signals</span>
+                        </div>
+                        
+                        <!-- Mini visualization -->
+                        <div class="w-full h-1 bg-white/5 rounded-full mt-3 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 rounded-full" 
+                                 :style="`width: ${Math.max(10, (topic.interactions / topics[0].interactions) * 100)}%`"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- OOB Copilot Integration -->
+    {% include 'components/oob_copilot.html' %}
+</div>

@@ -35,7 +35,8 @@
                     <script>
                         (async function(){
                             const campaign_id = document.getElementById('current_campaign').value;
-                            const res = await fetch('/api/dashboard/ui-lab/heatmap?campaign_id=' + campaign_id);
+                            try {
+                            const res = await fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + '/dashboard/ui-lab/heatmap?campaign_id=' + campaign_id);
                             const data = await res.json();
                             const heatmapData = data.heatmap || {};
                             const maxInteractions = Math.max(...Object.values(heatmapData).concat([10]));
@@ -142,3 +143,5 @@ else if (interactions > 0) intensity = 1;
                     </script>
                 </div>
 </div>
+
+

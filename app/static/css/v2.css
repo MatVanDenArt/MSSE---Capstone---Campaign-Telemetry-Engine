@@ -1,0 +1,103 @@
+/* v2.css - North Star Aesthetics */
+
+/* Base Glassmorphic Panel */
+.v2-glass {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Premium Card with Hover Lift */
+.v2-card {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v2-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(16, 185, 129, 0.3); /* Emerald tint on hover */
+    box-shadow: 0 10px 40px -10px rgba(16, 185, 129, 0.15);
+}
+
+/* Data Gradients */
+.v2-text-gradient-emerald {
+    background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.v2-text-gradient-cyan {
+    background: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.v2-text-gradient-fuchsia {
+    background: linear-gradient(135deg, #e879f9 0%, #c026d3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Micro Animations */
+@keyframes pulse-soft {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+.v2-animate-pulse-soft {
+    animation: pulse-soft 3s infinite ease-in-out;
+}
+
+/* Staggered Fade In for Lists */
+.v2-stagger-1 { animation: fadeIn 0.4s ease-out 0.1s both; }
+.v2-stagger-2 { animation: fadeIn 0.4s ease-out 0.2s both; }
+.v2-stagger-3 { animation: fadeIn 0.4s ease-out 0.3s both; }
+.v2-stagger-4 { animation: fadeIn 0.4s ease-out 0.4s both; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Scrollbar for V2 */
+.v2-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.v2-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.2);
+}
+.v2-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+.v2-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Accent Borders */
+.v2-border-accent-emerald {
+    border-left: 3px solid #10b981;
+}
+.v2-border-accent-rose {
+    border-left: 3px solid #f43f5e;
+}
+.v2-border-accent-cyan {
+    border-left: 3px solid #06b6d4;
+}
+
+/* Floating Action Center */
+.v2-floating-panel {
+    background: rgba(9, 9, 11, 0.85); /* Very dark zinc */
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+}

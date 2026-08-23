@@ -60,5 +60,19 @@ def run_etl(dataframes: dict, db_path: str = "capstone.db"):
             
         master.to_sql("master_summary", conn, if_exists="replace", index=False)
         
+    # Create action_triggers table for state management if it doesn't exist
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS action_triggers (
+            id TEXT PRIMARY KEY,
+            campaign_id TEXT,
+            type TEXT,
+            message TEXT,
+            action_payload TEXT,
+            resolved_status BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP,
+            expires_at TIMESTAMP
+        )
+    ''')
+        
     conn.close()
     print("ETL complete. Database capstone.db updated via outer joins.")

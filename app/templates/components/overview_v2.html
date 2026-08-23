@@ -1,0 +1,38 @@
+<div class="max-w-7xl mx-auto pb-48">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <i class="fa-solid fa-chart-line text-[12px] text-emerald-400"></i>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-slate-100 tracking-wide uppercase">The CMO Lobby</h2>
+            <p class="text-xs text-slate-500">Executive Strategic Overview & ROI</p>
+        </div>
+    </div>
+
+    <!-- Top-Line AI TL;DR (V2 styled) -->
+    <div class="bg-black border border-dark-800 p-4 md:p-6 border-l-4 border-l-fuchsia-500 flex flex-col md:flex-row items-start gap-4 mb-6">
+        <div class="mt-1 w-8 h-8 rounded bg-fuchsia-500/10 border border-fuchsia-500/30 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-sparkles text-fuchsia-400 text-sm"></i>
+        </div>
+        <div>
+            <h2 class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-widest">Strategic TL;DR</h2>
+            <p class="text-sm md:text-base text-slate-200 leading-relaxed" hx-get="/api/v1/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
+                <i class="fa-solid fa-circle-notch fa-spin text-fuchsia-500 mr-2"></i> Generating Strategic Insight...
+            </p>
+        </div>
+    </div>
+
+    <!-- V2 North Star Metric Cards -->
+    {% include 'components/overview_cards_v2.html' %}
+
+    <!-- V2 North Star Visualizations -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+        {% include 'components/mod_v2_channel_roi.html' %}
+        {% include 'components/mod_v2_velocity_funnel.html' %}
+    </div>
+
+    <!-- Action Center (OOB Copilot) -->
+    {% include 'components/oob_copilot.html' %}
+</div>
