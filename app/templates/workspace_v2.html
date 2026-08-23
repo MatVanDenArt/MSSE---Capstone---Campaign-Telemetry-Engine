@@ -159,9 +159,9 @@
             <!-- Action Chips Wrapper (Hides in chat view to save space) -->
             <div x-show="activeSidebarView === 'action_center'" x-collapse>
                 <div id="copilot-action-chips" class="px-4 pb-2 pt-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
-                    <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Gen Report</button>
-                    <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Analyze Funnel</button>
-                    <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Check Fatigue</button>
+                    <button @click="activeSidebarView = 'chat'" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "Generate Campaign Report", "reset_context": "true"}' class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition rounded-lg">Gen Report</button>
+                    <button @click="activeSidebarView = 'chat'" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "Analyze Funnel Metrics", "reset_context": "true"}' class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition rounded-lg">Analyze Funnel</button>
+                    <button @click="activeSidebarView = 'chat'" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "Check Asset Fatigue", "reset_context": "true"}' class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition rounded-lg">Check Fatigue</button>
                 </div>
             </div>
             

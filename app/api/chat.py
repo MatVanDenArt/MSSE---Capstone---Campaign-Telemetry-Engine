@@ -38,8 +38,11 @@ When you draft an outreach sequence (using draft_outreach_sequence), present the
 chat_history = []
 
 @router.post("/chat", response_class=HTMLResponse)
-def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None)):
+def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None), reset_context: str = Form("false")):
     global chat_history
+    
+    if reset_context.lower() == "true":
+        chat_history = []
     
     # Prevent chat history from growing unbounded and hanging the API
     if len(chat_history) > 12:
@@ -105,7 +108,11 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
             simulated_response += f'<script>window.dispatchEvent(new CustomEvent("task-resolved", {{detail: {{id: "{trigger_id}"}}}}));</script>'
             
         chat_history.append({"role": "model", "parts": [types.Part.from_text(text="Action Executed Successfully.")]})
-        return HTMLResponse(content=user_html + simulated_response)
+        
+        full_response = user_html + simulated_response
+        if reset_context.lower() == "true":
+            return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
+        return HTMLResponse(content=full_response)
     
     try:
         from app.services.llm_rotator import get_genai_client
@@ -228,9 +235,13 @@ You MUST use this EXACT HTML structure for the buttons:
             </div>
         </div>
         """
-        return user_html + ai_html
+        full_response = user_html + ai_html
+        if reset_context.lower() == "true":
+            return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
+        return HTMLResponse(content=full_response)
         
     except Exception as e:
+        chat_history.pop() # Remove the user's message if there was an error
         error_msg = str(e)
         if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
             friendly_error = "API Rate Limit Exceeded. You have made too many requests to the AI in a short period. Please wait a moment before trying again."
@@ -249,4 +260,7 @@ You MUST use this EXACT HTML structure for the buttons:
             </div>
         </div>
         """
-        return user_html + error_html
+        full_response = user_html + error_html
+        if reset_context.lower() == "true":
+            return HTMLResponse(content=f'<div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar" hx-swap-oob="innerHTML">{full_response}</div>')
+        return HTMLResponse(content=full_response)
