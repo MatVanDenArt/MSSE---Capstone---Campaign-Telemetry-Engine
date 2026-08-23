@@ -223,26 +223,24 @@ You MUST use this EXACT HTML structure for the buttons:
                 break
                 
         text_response = current_response.text or "I have reviewed the information based on the available data."
+        chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
         
         if executed_tools:
             # Create an accordion showing the tools used
             tools_html = "".join([f"<div>> {t}()</div>" for t in executed_tools])
             tool_count = len(executed_tools)
-            tool_ui = f"""
-            <div x-data="{{ expanded: false }}" class="mb-4 bg-dark-900/50 rounded-lg p-3 border border-dark-800 w-full shadow-inner">
-               <button @click="expanded = !expanded" type="button" class="text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-fuchsia-400 transition-colors flex items-center gap-2 w-full focus:outline-none">
-                   <i class="fa-solid fa-microchip"></i> 
-                   Executed {tool_count} Autonomous Tool{'s' if tool_count > 1 else ''}
-                   <i class="fa-solid fa-chevron-down ml-auto transition-transform duration-200" :class="expanded ? 'rotate-180' : ''"></i>
-               </button>
-               <div x-show="expanded" x-collapse class="mt-3 pt-3 border-t border-dark-800 text-[10px] text-fuchsia-400/80 font-mono space-y-1 overflow-x-auto">
-                   {tools_html}
-               </div>
-            </div>
-            """
-            text_response = tool_ui + text_response
-            
-        chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
+            tool_ui = f"""<div x-data="{{ expanded: false }}" class="mb-4 bg-dark-900/50 rounded-lg p-3 border border-dark-800 w-full shadow-inner">
+<button @click="expanded = !expanded" type="button" class="text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-fuchsia-400 transition-colors flex items-center gap-2 w-full focus:outline-none">
+<i class="fa-solid fa-microchip"></i> 
+Executed {tool_count} Autonomous Tool{'s' if tool_count > 1 else ''}
+<i class="fa-solid fa-chevron-down ml-auto transition-transform duration-200" :class="expanded ? 'rotate-180' : ''"></i>
+</button>
+<div x-show="expanded" x-collapse class="mt-3 pt-3 border-t border-dark-800 text-[10px] text-fuchsia-400/80 font-mono space-y-1 overflow-x-auto">
+{tools_html}
+</div>
+</div>
+"""
+            text_response = tool_ui + "\n" + text_response
             
         import markdown
         parsed_html = markdown.markdown(text_response)
