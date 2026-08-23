@@ -8,7 +8,7 @@
         </div>
         <div>
             <h2 class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
-            <p class="text-sm md:text-base text-slate-300 leading-relaxed font-mono" hx-get="/api/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
+            <p class="text-sm md:text-base text-slate-300 leading-relaxed font-mono" hx-get="${apiPrefix}/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
                 <i class="fa-solid fa-terminal fa-fade text-fuchsia-500 mr-2"></i> Generating Strategic Insight...
             </p>
         </div>
@@ -16,53 +16,49 @@
 
     <!-- Quant Core (Metrics) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-        <!-- Spend -->
-        <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-dark-600 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 relative z-10 flex justify-between items-start">
+        {% if tam and sov %}
+        <!-- Target Account Penetration (TAM) -->
+        <button hx-get="/api/v2/dashboard/target-accounts-modal?campaign_id={{ campaign_id }}" hx-target="body" hx-swap="beforeend" class="bg-black border border-brand-500/50 flex flex-col justify-between hover:border-brand-500 transition-colors relative overflow-hidden h-32 w-full text-left group">
+            <div class="p-4 relative z-10 flex justify-between items-start w-full">
                 <div>
-                    <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Total Spend</div>
-                    <div class="text-2xl font-bold text-slate-100">${{ "{:,.0f}".format(benchmarks.live.spend) }}</div>
+                    <div class="text-brand-500 text-[10px] uppercase font-bold tracking-widest mb-1">{{ tam.metric_name }}</div>
+                    <div class="text-2xl font-bold text-brand-400">{{ tam.value }}</div>
+                    <div class="text-[10px] text-slate-500 mt-1">{{ tam.engaged_accounts }} / {{ tam.total_target_accounts }} Tier 1 Accounts</div>
                 </div>
-                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.spend.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                    <i class="fa-solid {% if benchmarks.comparisons.spend.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.spend.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
-                    {{ benchmarks.comparisons.spend.value | replace('-', '') }}% vs avg
+                <div class="flex flex-col items-end gap-2">
+                    <div class="text-[10px] font-bold uppercase tracking-widest {% if tam.delta > 0 %}text-emerald-500{% else %}text-rose-500{% endif %}">
+                        <i class="fa-solid {% if tam.delta > 0 %}fa-arrow-up{% elif tam.delta < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
+                        {{ tam.delta | replace('-', '') }}% vs avg
+                    </div>
+                    <!-- Micro-interaction icon -->
+                    <i class="fa-solid fa-arrow-right text-brand-500/0 group-hover:text-brand-500 transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0"></i>
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
-                spark: {{ benchmarks.sparklines.spend | tojson | safe }},
-                initChart() {
-                    const ctx = this.$refs.canvas.getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#525252', backgroundColor: 'rgba(82,82,82,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
-                    });
-                }
-            }" x-init="initChart()"><canvas x-ref="canvas"></canvas></div>
-        </div>
+            <!-- Progress Bar Background (Instead of sparkline) -->
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-dark-800 z-0">
+                <div class="h-full bg-brand-500" style="width: {{ tam.raw_value }}%;"></div>
+            </div>
+        </button>
         
-        <!-- Accounts -->
-        <div class="bg-black border border-brand-500/50 flex flex-col justify-between hover:border-brand-500 transition-colors relative overflow-hidden h-32">
+        <!-- Topic Share of Voice (SOV) -->
+        <div class="bg-black border border-fuchsia-500/50 flex flex-col justify-between hover:border-fuchsia-500 transition-colors relative overflow-hidden h-32">
             <div class="p-4 relative z-10 flex justify-between items-start">
                 <div>
-                    <div class="text-brand-500 text-[10px] uppercase font-bold tracking-widest mb-1">Engaged Target Accounts</div>
-                    <div class="text-2xl font-bold text-brand-400">{{ "{:,.0f}".format(benchmarks.live.accounts) }}</div>
+                    <div class="text-fuchsia-500 text-[10px] uppercase font-bold tracking-widest mb-1">{{ sov.metric_name }}</div>
+                    <div class="text-2xl font-bold text-fuchsia-400">{{ sov.value }}</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Competitor Avg: {{ sov.competitor_avg }}%</div>
                 </div>
-                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.accounts.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                    <i class="fa-solid {% if benchmarks.comparisons.accounts.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.accounts.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
-                    {{ benchmarks.comparisons.accounts.value | replace('-', '') }}% vs avg
+                <div class="text-[10px] font-bold uppercase tracking-widest {% if sov.delta > 0 %}text-emerald-500{% else %}text-rose-500{% endif %}">
+                    <i class="fa-solid {% if sov.delta > 0 %}fa-arrow-up{% elif sov.delta < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
+                    {{ sov.delta | replace('-', '') }}% vs avg
                 </div>
             </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
-                spark: {{ benchmarks.sparklines.accounts | tojson | safe }},
-                initChart() {
-                    const ctx = this.$refs.canvas.getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
-                    });
-                }
-            }" x-init="initChart()"><canvas x-ref="canvas"></canvas></div>
+            <!-- Progress Bar Background -->
+            <div class="absolute bottom-0 left-0 right-0 h-1 bg-dark-800 z-0">
+                <div class="h-full bg-fuchsia-500" style="width: {{ sov.raw_value }}%;"></div>
+            </div>
         </div>
+        {% endif %}
 
         <!-- CPA -->
         <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-dark-600 transition-colors relative overflow-hidden h-32">
@@ -121,3 +117,5 @@
     <!-- OOB Copilot Integration -->
     {% include 'components/oob_copilot.html' %}
 </div>
+
+

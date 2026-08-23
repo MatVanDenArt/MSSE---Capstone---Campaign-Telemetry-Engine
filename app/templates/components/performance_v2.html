@@ -1,0 +1,28 @@
+<div class="max-w-6xl mx-auto pb-48 animate-[fadeIn_0.3s_ease-out]">
+    <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <div class="flex items-center gap-3 mb-2">
+        <div class="w-6 h-6 bg-brand-900 border border-brand-500/50 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-layer-group text-[10px] text-brand-500"></i>
+        </div>
+        <div>
+            <h2 class="text-xs font-bold text-slate-100 uppercase tracking-widest">Asset Performance <span class="text-[10px] text-slate-500 font-normal ml-2 hidden sm:inline">| Analyze individual asset contribution and engagement timelines</span></h2>
+        </div>
+    </div>
+
+    <!-- Interactive Timeline -->
+    <div class="mt-0 mb-6">
+        {% include 'components/timeline.html' %}
+    </div>
+    
+    <!-- Asset Contribution Matrix (V2 North Star) -->
+    <div class="mt-6 mb-6">
+        {% include 'components/asset_matrix_v2.html' %}
+    </div>
+
+    <!-- OOB Copilot Integration -->
+    {% include 'components/oob_copilot.html' %}
+    
+    <!-- Modals -->
+    {% include 'components/asset_personas_modal.html' %}
+</div>

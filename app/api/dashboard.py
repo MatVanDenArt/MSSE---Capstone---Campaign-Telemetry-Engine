@@ -10,10 +10,6 @@ templates = Jinja2Templates(directory="app/templates")
 
 DB_PATH = "capstone.db"
 
-@router.get("/dashboard", response_class=HTMLResponse)
-async def get_dashboard(request: Request):
-    campaigns = get_all_campaigns()
-    return templates.TemplateResponse(request=request, name="lobby.html", context={"campaigns": campaigns})
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
 async def get_workspace(request: Request, campaign_id: str):
@@ -243,9 +239,9 @@ async def investigate_target(campaign_id: str, name: str, company: str):
     ai_summary_html = ""
     try:
         import os
-        from app.services.llm_rotator import get_legacy_generative_model
+        from app.services.llm_rotator import get_genai_client
         if ("GEMINI_API_KEY" in os.environ or "GEMINI_API_KEYS" in os.environ) and rows:
-            model = get_legacy_generative_model('gemini-3.5-flash')
+            from google.genai import types
             context_str = f"Target: {name} at {company} (Seniority: {rows[0]['seniority'] if rows else 'Unknown'}).\nRecent 10 Interactions (Chronological):\n"
             for r in rows:
                 context_str += f"- {r['timestamp']}: {r['page_viewed']} via {r['utm_source']}\n"
@@ -256,9 +252,13 @@ async def investigate_target(campaign_id: str, name: str, company: str):
             last_err = None
             for _ in range(3): # Try up to 3 times to get a working key
                 try:
-                    # Requesting a new model re-rolls the random API key
-                    model = get_legacy_generative_model('gemini-3.5-flash')
-                    response = model.generate_content(prompt)
+                    # Requesting a new client re-rolls the random API key
+                    client = get_genai_client()
+                    response = client.models.generate_content(
+                        model='gemini-3.5-flash',
+                        contents=prompt,
+                        config=types.GenerateContentConfig(temperature=0.2)
+                    )
                     break
                 except Exception as e:
                     last_err = e

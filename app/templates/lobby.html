@@ -42,19 +42,20 @@
             </div>
             
             <!-- Filters -->
-            <div class="flex items-center gap-2 bg-dark-800 p-1 rounded-lg border border-dark-700 self-start md:self-auto">
-                <button onclick="filterCampaigns('all')" class="px-4 py-1.5 text-sm font-medium rounded bg-brand-600 text-white transition-colors" id="btn-all">All</button>
-                <button onclick="filterCampaigns('active')" class="px-4 py-1.5 text-sm font-medium rounded text-slate-400 hover:text-white transition-colors" id="btn-active"><div class="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-2"></div>Active</button>
-                <button onclick="filterCampaigns('past')" class="px-4 py-1.5 text-sm font-medium rounded text-slate-400 hover:text-white transition-colors" id="btn-past"><div class="inline-block w-2 h-2 rounded-full bg-slate-500 mr-2"></div>Completed</button>
+            <div class="flex flex-col md:flex-row items-center gap-4 self-start md:self-auto">
+                <div class="flex items-center gap-2 bg-dark-800 p-1 rounded-lg border border-dark-700">
+                    <button onclick="filterCampaigns('all')" class="px-4 py-1.5 text-sm font-medium rounded bg-brand-600 text-white transition-colors" id="btn-all">All</button>
+                    <button onclick="filterCampaigns('active')" class="px-4 py-1.5 text-sm font-medium rounded text-slate-400 hover:text-white transition-colors" id="btn-active"><div class="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-2"></div>Active</button>
+                    <button onclick="filterCampaigns('past')" class="px-4 py-1.5 text-sm font-medium rounded text-slate-400 hover:text-white transition-colors" id="btn-past"><div class="inline-block w-2 h-2 rounded-full bg-slate-500 mr-2"></div>Completed</button>
+                </div>
             </div>
         </div>
 
         <!-- Campaign Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="campaign-grid">
             {% for campaign in campaigns %}
-            <div class="glass-panel p-6 rounded-xl cursor-pointer hover:bg-dark-800 transition-all hover:-translate-y-1 hover:shadow-2xl border border-transparent hover:border-brand-500/30 group campaign-card"
-                 data-status="{% if campaign.is_active %}active{% else %}past{% endif %}"
-                 onclick="window.location.href='/api/dashboard/workspace?campaign_id={{ campaign.campaign_id }}'">
+            <div class="glass-panel p-6 rounded-xl hover:bg-dark-800 transition-all hover:-translate-y-1 hover:shadow-2xl border border-transparent hover:border-brand-500/30 group campaign-card flex flex-col h-full"
+                 data-status="{% if campaign.is_active %}active{% else %}past{% endif %}">
                 
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
@@ -66,14 +67,18 @@
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Completed</span>
                         {% endif %}
                     </div>
-                    <i class="fa-solid fa-arrow-right text-slate-600 group-hover:text-brand-400 group-hover:-rotate-45 transition-all"></i>
                 </div>
                 
                 <h2 class="text-xl font-bold text-slate-100 mb-6">{{ campaign.name }}</h2>
                 
-                <div class="pt-4 border-t border-dark-700/50">
+                <div class="pt-4 border-t border-dark-700/50 mb-6">
                     <p class="text-xs text-slate-500 uppercase font-semibold mb-1">Pipeline Generated</p>
                     <p class="text-2xl font-bold text-brand-400">${{ "{:,.0f}".format(campaign.total_pipeline) }}</p>
+                </div>
+                
+                <div class="mt-auto grid grid-cols-2 gap-3 pt-2">
+                    <a href="/api/v1/dashboard/workspace?campaign_id={{ campaign.campaign_id }}" class="text-center px-4 py-2 text-xs font-bold uppercase tracking-wider rounded border border-fuchsia-600/30 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white transition-colors">Launch V1</a>
+                    <a href="/api/v2/dashboard/workspace?campaign_id={{ campaign.campaign_id }}" class="text-center px-4 py-2 text-xs font-bold uppercase tracking-wider rounded border border-brand-600/30 text-brand-400 hover:bg-brand-600 hover:text-white transition-colors">Launch V2</a>
                 </div>
             </div>
             {% endfor %}

@@ -44,24 +44,24 @@
     
     <!-- 1. Slim Left Sidebar (Navigation) -->
     <nav class="w-16 bg-black border-r border-dark-800 flex flex-col items-center py-4 shrink-0 z-20">
-        <a href="/api/dashboard" class="text-brand-500 hover:text-brand-400 mb-8" title="Back to Campaigns">
+        <a href="/lobby" class="text-brand-500 hover:text-brand-400 mb-8" title="Back to Campaigns">
             <i class="fa-solid fa-square-poll-vertical text-xl"></i>
         </a>
         
         <div class="flex flex-col gap-4 w-full px-2" x-data="{ activeTab: 'overview' }">
-            <button @click="activeTab = 'overview'" hx-get="/api/dashboard/overview" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent" :class="activeTab === 'overview' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Executive Overview">
+            <button @click="activeTab = 'overview'" hx-get="/api/v1/dashboard/overview" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent" :class="activeTab === 'overview' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Executive Overview">
                 <i class="fa-solid fa-chart-pie"></i>
             </button>
-            <button @click="activeTab = 'performance'" hx-get="/api/dashboard/performance" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent" :class="activeTab === 'performance' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Asset Performance">
+            <button @click="activeTab = 'performance'" hx-get="/api/v1/dashboard/performance" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent" :class="activeTab === 'performance' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Asset Performance">
                 <i class="fa-solid fa-layer-group"></i>
             </button>
-            <button @click="activeTab = 'audience'" hx-get="/api/dashboard/audience" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent" :class="activeTab === 'audience' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Audience & Target Accounts">
+            <button @click="activeTab = 'audience'" hx-get="/api/v1/dashboard/audience" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent" :class="activeTab === 'audience' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Audience & Target Accounts">
                 <i class="fa-solid fa-users-viewfinder"></i>
             </button>
         </div>
         
         <div class="mt-auto flex flex-col gap-4 w-full px-2">
-            <button hx-get="/api/dashboard/data-model" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-fuchsia-500 hover:text-fuchsia-400 transition hover:bg-dark-800 border border-transparent" title="Data Model">
+            <button hx-get="/api/v1/dashboard/data-model" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-fuchsia-500 hover:text-fuchsia-400 transition hover:bg-dark-800 border border-transparent" title="Data Model">
                 <i class="fa-solid fa-network-wired"></i>
             </button>
             <button class="p-3 text-slate-500 hover:text-white transition hover:bg-dark-800 border border-transparent" title="Settings">
@@ -87,13 +87,13 @@
             <div class="flex items-center gap-4 shrink-0">
                 <span class="px-2 py-1 text-[10px] font-bold bg-dark-900 border border-dark-800 text-slate-400 uppercase tracking-wider">Timeframe</span>
                 <div class="flex bg-dark-900 border border-dark-800 p-0.5" x-data="{ activeTimeframe: 0 }">
-                    <button @click="activeTimeframe = 0" hx-get="/api/dashboard/overview?timeframe=0" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 0 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition">All Time</button>
-                    <button @click="activeTimeframe = 30" hx-get="/api/dashboard/overview?timeframe=30" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 30 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition">30 Days</button>
+                    <button @click="activeTimeframe = 0" hx-get="/api/v1/dashboard/overview?timeframe=0" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 0 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition">All Time</button>
+                    <button @click="activeTimeframe = 30" hx-get="/api/v1/dashboard/overview?timeframe=30" hx-include="#current_campaign" hx-target="#main-canvas" :class="activeTimeframe === 30 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition">30 Days</button>
                 </div>
             </div>
         </header>
 
-        <main id="main-canvas" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6" hx-get="/api/dashboard/overview?campaign_id={{ campaign_id }}" hx-trigger="load">
+        <main id="main-canvas" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6" hx-get="/api/v1/dashboard/overview?campaign_id={{ campaign_id }}" hx-trigger="load">
             <div class="flex justify-center items-center h-full"><i class="fa-solid fa-spinner fa-spin text-brand-500 text-3xl"></i></div>
         </main>
     </div>

@@ -5,7 +5,7 @@
                 init() {
                     const campaignId = '{{ campaign_id }}';
                     const timeframe = '{{ timeframe }}';
-                    fetch(`/api/dashboard/asset-timeline?campaign_id=${campaignId}&timeframe=${timeframe}`)
+                    fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + `/dashboard/asset-timeline?campaign_id=${campaignId}&timeframe=${timeframe}`)
                         .then(res => res.json())
                         .then(data => {
                             this.timelineData = data || [];
@@ -228,3 +228,5 @@
                             });
                     }
                 </script>
+
+

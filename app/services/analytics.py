@@ -1217,7 +1217,7 @@ def get_channel_roi_data(campaign_id: str) -> dict:
         cursor.execute('''
             SELECT COUNT(DISTINCT c.company_name), COUNT(e.event_id)
             FROM mailchimp_events e JOIN crm_users c ON e.user_id = c.user_id 
-            WHERE e.campaign_id = ?
+            WHERE e.campaign_id LIKE '%' || ? || '%'
         ''', (campaign_id,))
         em_row = cursor.fetchone()
         em_accounts = em_row[0] or 0
@@ -1226,7 +1226,7 @@ def get_channel_roi_data(campaign_id: str) -> dict:
         cursor.execute('''
             SELECT DISTINCT c.company_name
             FROM mailchimp_events e JOIN crm_users c ON e.user_id = c.user_id 
-            WHERE e.campaign_id = ? LIMIT 10
+            WHERE e.campaign_id LIKE '%' || ? || '%' LIMIT 10
         ''', (campaign_id,))
         em_list = [r[0] for r in cursor.fetchall()]
 

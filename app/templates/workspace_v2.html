@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@3.0.0/dist/chartjs-chart-treemap.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 500: '#3b82f6', 600: '#2563eb', 400: '#60a5fa' },
+                        dark: { 900: '#0a0a0a', 800: '#171717', 700: '#262626', 600: '#404040' }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/css/v2.css">
+    <style>
+        body { background-color: #000; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #000; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-flex; }
+        .htmx-request.htmx-indicator { display: inline-flex; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body x-data="{ isChatOpen: false, activeTimeframe: 30, activeTab: 'overview' }" @open-chat.window="isChatOpen = true" @close-chat.window="isChatOpen = false" class="h-screen flex overflow-hidden antialiased bg-black text-slate-200">
+
+    <!-- Global context state -->
+    <input type="hidden" id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+    
+    <!-- 1. Slim Left Sidebar (Navigation) -->
+    <nav class="w-16 bg-black border-r border-dark-800 flex flex-col items-center py-4 shrink-0 z-20">
+        <a href="/lobby" class="text-brand-500 hover:text-brand-400 mb-8" title="Back to Campaigns">
+            <i class="fa-solid fa-square-poll-vertical text-xl"></i>
+        </a>
+        
+        <div class="flex flex-col gap-4 w-full px-2">
+            <button id="tab-overview" @click="activeTab = 'overview'" hx-get="/api/v2/dashboard/overview" hx-include="#current_campaign, [name='timeframe']" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent rounded" :class="activeTab === 'overview' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Executive Overview">
+                <i class="fa-solid fa-chart-pie"></i>
+            </button>
+            <button id="tab-performance" @click="activeTab = 'performance'" hx-get="/api/v2/dashboard/performance" hx-include="#current_campaign, [name='timeframe']" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent rounded" :class="activeTab === 'performance' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Asset Performance">
+                <i class="fa-solid fa-layer-group"></i>
+            </button>
+            <button id="tab-audience" @click="activeTab = 'audience'" hx-get="/api/v2/dashboard/audience" hx-include="#current_campaign, [name='timeframe']" hx-target="#main-canvas" class="p-3 text-slate-400 hover:text-white transition hover:bg-dark-800 border border-transparent rounded" :class="activeTab === 'audience' ? 'text-white border-dark-700 bg-dark-900' : ''" title="Audience & Target Accounts">
+                <i class="fa-solid fa-users-viewfinder"></i>
+            </button>
+        </div>
+        
+        <div class="mt-auto flex flex-col gap-4 w-full px-2">
+            <button hx-get="/api/v2/dashboard/data-model" hx-include="#current_campaign" hx-target="#main-canvas" class="p-3 text-fuchsia-500 hover:text-fuchsia-400 transition hover:bg-dark-800 border border-transparent" title="Data Model">
+                <i class="fa-solid fa-network-wired"></i>
+            </button>
+            <button class="p-3 text-slate-500 hover:text-white transition hover:bg-dark-800 border border-transparent" title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 2. Main Canvas (Middle Column) -->
+    <div class="flex-1 flex flex-col min-w-0 bg-black relative transition-all duration-300">
+        
+        <!-- Context Bar -->
+        <header class="h-16 border-b border-dark-800 flex items-center justify-between px-6 shrink-0 bg-black z-10">
+            <h1 class="text-xs font-semibold text-slate-400 tracking-widest uppercase flex items-center gap-3">
+                {% if 'LIVE' in campaign_id %}
+                <div class="w-2 h-2 bg-emerald-500"></div>
+                {% else %}
+                <div class="w-2 h-2 bg-slate-500"></div>
+                {% endif %}
+                {{ campaign_id.replace("CMP_LIVE_", "").replace("CMP_PAST_", "").replace("_", " ") }}
+            </h1>
+            
+            <div class="flex items-center gap-4 shrink-0">
+                <span class="px-2 py-1 text-[10px] font-bold bg-dark-900 border border-dark-800 text-slate-400 uppercase tracking-wider">Timeframe</span>
+                <div class="flex bg-dark-900 border border-dark-800 p-0.5">
+                    <button @click="activeTimeframe = 7; setTimeout(() => document.getElementById('tab-' + activeTab).click(), 10)" :class="activeTimeframe === 7 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition rounded">7 Days</button>
+                    <button @click="activeTimeframe = 30; setTimeout(() => document.getElementById('tab-' + activeTab).click(), 10)" :class="activeTimeframe === 30 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition rounded">30 Days</button>
+                    <button @click="activeTimeframe = 90; setTimeout(() => document.getElementById('tab-' + activeTab).click(), 10)" :class="activeTimeframe === 90 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition rounded">90 Days</button>
+                    <button @click="activeTimeframe = 0; setTimeout(() => document.getElementById('tab-' + activeTab).click(), 10)" :class="activeTimeframe === 0 ? 'bg-black text-brand-400 border border-dark-700' : 'text-brand-400 hover:text-brand-300 hover:bg-dark-800 border border-transparent'" class="text-[10px] uppercase font-bold px-3 py-1.5 transition rounded">All Time</button>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-canvas" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6" hx-get="/api/v2/dashboard/overview?campaign_id={{ campaign_id }}" hx-trigger="load">
+            <div class="flex justify-center items-center h-full"><i class="fa-solid fa-spinner fa-spin text-brand-500 text-3xl"></i></div>
+        </main>
+    </div>
+
+    <!-- 3. Action Center (Middle Right Column) -->
+    <aside class="w-[30%] min-w-[320px] max-w-[400px] border-l border-dark-800 flex flex-col bg-dark-900 shrink-0 relative z-20">
+        <!-- Header -->
+        <div class="h-16 border-b border-dark-800 flex items-center px-4 bg-dark-900 shrink-0">
+            <h2 class="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Action Center
+            </h2>
+        </div>
+        
+        <!-- Proactive Tasks Container -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar pb-32">
+            <div id="copilot-tasks-container"></div>
+        </div>
+        
+        <!-- Command Input Area -->
+        <div class="absolute bottom-0 left-0 w-full bg-dark-900 pt-2">
+            <!-- Action Chips -->
+            <div id="copilot-action-chips" class="px-4 pb-2 flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar whitespace-nowrap">
+                <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Gen Report</button>
+                <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Analyze Funnel</button>
+                <button class="text-[10px] uppercase font-bold text-fuchsia-400 bg-black border border-dark-700 hover:border-fuchsia-500 px-3 py-1.5 transition">Check Fatigue</button>
+            </div>
+            
+            <div id="loading-indicator" class="htmx-indicator px-4 py-1.5 text-[10px] uppercase font-bold text-fuchsia-500 bg-black border-t border-dark-800 items-center gap-2 w-full">
+                <i class="fa-solid fa-terminal fa-fade"></i> Computing...
+            </div>
+            
+            <div class="p-4 border-t border-dark-800 bg-black">
+                <form @submit="isChatOpen = true; setTimeout(() => $el.reset(), 10)" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" class="flex w-full relative group">
+                    <input type="hidden" name="timeframe" :value="activeTimeframe">
+                    <div class="absolute left-3 top-3 text-fuchsia-500 font-mono text-sm">></div>
+                    <input type="text" name="message" class="w-full bg-black border border-dark-700 text-fuchsia-400 text-sm focus:border-fuchsia-500 focus:outline-none placeholder-dark-600 py-3 pl-8 pr-12 transition-colors font-mono" placeholder="query telemetry..." required autocomplete="off">
+                    <button type="submit" class="absolute right-2 top-2 w-8 h-8 flex items-center justify-center bg-fuchsia-600 hover:bg-fuchsia-500 text-black transition-colors">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 4. AI Chat Column (Far Right Shift) -->
+    <aside :class="isChatOpen ? 'w-[30%] min-w-[320px] max-w-[400px] border-l border-dark-800 opacity-100' : 'w-0 opacity-0 overflow-hidden'" class="flex flex-col bg-dark-900 shrink-0 relative z-10 transition-all duration-300 ease-in-out">
+        <!-- Header -->
+        <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 bg-dark-900 shrink-0">
+            <h2 class="text-xs font-bold text-fuchsia-500 uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Copilot Chat
+            </h2>
+            <button @click="isChatOpen = false" class="text-slate-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <!-- Chat Feed -->
+        <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar">
+            
+        </div>
+    </aside>
+
+    <script>
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.target.id === 'chat-history') {
+                const form = evt.detail.elt;
+                if (form.tagName === 'FORM') form.reset();
+                const chatHistory = document.getElementById('chat-history');
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        });
+    </script>
+    <!-- Dev Telemetry Badge -->
+    <div class="fixed bottom-4 left-4 bg-dark-900/80 backdrop-blur border border-dark-700 rounded-lg p-2 flex flex-col gap-1 z-50 shadow-xl pointer-events-none"
+         x-data="{ stats: {total_calls: 0, cache_hits: 0}, pollInterval: null }"
+         x-init="
+            const fetchStats = async () => {
+                try {
+                    const res = await fetch('/api/v2/telemetry/ai-calls');
+                    stats = await res.json();
+                } catch(e) {}
+            };
+            fetchStats();
+            pollInterval = setInterval(fetchStats, 2000);
+         ">
+        <div class="text-[9px] uppercase tracking-widest font-bold text-slate-500 mb-1 border-b border-dark-800 pb-1 flex items-center justify-between">
+            <span>AI Telemetry</span>
+            <i class="fa-solid fa-satellite-dish text-brand-500/50 animate-pulse ml-2"></i>
+        </div>
+        <div class="flex items-center justify-between gap-4">
+            <span class="text-[10px] text-slate-400">API Calls:</span>
+            <span class="text-xs font-mono font-bold text-rose-400" x-text="stats.total_calls"></span>
+        </div>
+        <div class="flex items-center justify-between gap-4">
+            <span class="text-[10px] text-slate-400">Cache Hits:</span>
+            <span class="text-xs font-mono font-bold text-emerald-400" x-text="stats.cache_hits"></span>
+        </div>
+    </div>
+</body>
+</html>

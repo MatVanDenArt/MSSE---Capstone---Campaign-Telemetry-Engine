@@ -6,7 +6,8 @@
                 networkInitialized: false,
                 selectedUser: null,
                 init() {
-                    fetch('/api/dashboard/audience-data')
+                    const campaignId = '{{ campaign_id }}';
+                    fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + '/dashboard/audience-data' + (campaignId ? `?campaign_id=${campaignId}` : ''))
                         .then(res => res.json())
                         .then(data => {
                             this.users = data.users || [];
@@ -338,3 +339,5 @@
                     }
                 }
             </script>
+
+
