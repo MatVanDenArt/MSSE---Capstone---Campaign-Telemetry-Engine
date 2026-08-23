@@ -23,13 +23,7 @@ When a user asks you to **Investigate** a pipeline target (e.g., 'Investigate pi
 3. Append a special execute button at the very end of your response using this exact HTML structure, replacing [ACTION NAME] and [ACTION COMMAND] appropriately:
 <div class="mt-4"><button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "Execute: [ACTION COMMAND]"}' class="w-full py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button></div>
 
-When you retrieve a user's interaction history (using get_user_journey), the tool will return a JSON object with an 'html_timeline' field. You MUST append this exact HTML timeline at the end of your response inside an HTML accordion using the exact structure below. Do not summarize the timeline, just inject the tool's 'html_timeline' value directly:
-<details class="mt-4 border border-dark-600 bg-dark-900 text-slate-300">
-    <summary class="p-3 text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-dark-800 transition">View Interaction History</summary>
-    <div class="p-4">
-        <!-- INJECT 'html_timeline' HERE -->
-    </div>
-</details>
+When you retrieve a user's interaction history (using get_user_journey), the tool will return a JSON object with a placeholder indicating the timeline is rendered to the UI. Do NOT attempt to output the timeline yourself. Provide a concise strategic summary of their journey instead.
 
 When you generate A/B test variations (using generate_ab_test_variants), format the response clearly using markdown blockquotes for the copy and bold text for the Control/Variant A/Variant B labels. Include the strategic rationale.
 When you draft an outreach sequence (using draft_outreach_sequence), present the sequence clearly using markdown numbered lists or bold headers for each day/step, and italicize the actual email copy. Include the strategic note.
@@ -166,6 +160,7 @@ def chat_stream(task_id: str):
         
         try:
             from app.services.llm_rotator import get_genai_client
+            captured_html_timeline = None
             
             # Inject the UI state into the system prompt
             if time_context:
@@ -238,6 +233,10 @@ def chat_stream(task_id: str):
                                 result = tool_functions[func_name](**args)
                                 if not isinstance(result, dict):
                                     result = {"data": result}
+                                    
+                                if func_name == "get_user_journey" and "html_timeline" in result:
+                                    captured_html_timeline = result["html_timeline"]
+                                    result["html_timeline"] = "[HTML TIMELINE RENDERED TO UI - DO NOT OUTPUT HTML. JUST PROVIDE A STRATEGIC SUMMARY]"
                             except Exception as e:
                                 # Graceful Degradation
                                 result = {"error": "tool failed"}
@@ -283,6 +282,18 @@ def chat_stream(task_id: str):
                     break
                     
             text_response = current_response.text or "I have reviewed the information based on the available data."
+            
+            if captured_html_timeline:
+                timeline_accordion = f"""
+<details class="mt-4 border border-dark-600 bg-dark-900 text-slate-300">
+    <summary class="p-3 text-xs font-bold uppercase tracking-widest cursor-pointer hover:bg-dark-800 transition">View Interaction History</summary>
+    <div class="p-4">
+        {captured_html_timeline}
+    </div>
+</details>
+                """
+                text_response += "\n" + timeline_accordion
+                
             chat_history.append({"role": "model", "parts": [types.Part.from_text(text=text_response)]})
             
             if executed_tools:
