@@ -139,11 +139,11 @@ You MUST use this EXACT HTML structure for the buttons:
         last_err = None
         from app.services.llm_rotator import get_genai_client, mark_key_exhausted
         
-        for _ in range(3):
+        for _ in range(5):
             try:
                 local_client = get_genai_client()
                 response = local_client.models.generate_content(
-                    model='gemini-3.5-flash',
+                    model='gemini-3.6-flash',
                     contents=chat_history,
                     config=types.GenerateContentConfig(
                         system_instruction=context_prompt,
@@ -195,11 +195,11 @@ You MUST use this EXACT HTML structure for the buttons:
                 from app.services.llm_rotator import get_genai_client
                 
                 last_err = None
-                for attempt in range(3):
+                for attempt in range(5):
                     try:
                         local_client = get_genai_client()
                         current_response = local_client.models.generate_content(
-                            model='gemini-3.5-flash',
+                            model='gemini-3.6-flash',
                             contents=chat_history,
                             config=types.GenerateContentConfig(
                                 system_instruction=context_prompt,
@@ -215,7 +215,7 @@ You MUST use this EXACT HTML structure for the buttons:
                             if hasattr(local_client, 'api_key'):
                                 mark_key_exhausted(local_client.api_key)
                                 
-                        if attempt == 2:
+                        if attempt == 4:
                             raise e
             else:
                 break
