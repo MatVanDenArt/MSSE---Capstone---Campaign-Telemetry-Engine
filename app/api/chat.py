@@ -82,15 +82,23 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
         logo_icon = "fa-server"
         system_name = "Internal System"
         msg_lower = message.lower()
-        if "crm" in msg_lower or "opportunity" in msg_lower or "sql" in msg_lower:
+        status_msg = "Record synchronized successfully"
+        
+        if "crm" in msg_lower or "opportunity" in msg_lower or "sql" in msg_lower or "salesforce" in msg_lower:
             logo_icon = "fa-salesforce text-sky-400"
             system_name = "Salesforce CRM"
+            status_msg = "Lead intent data synchronized successfully"
         elif "campaign" in msg_lower or "linkedin" in msg_lower or "ads" in msg_lower:
             logo_icon = "fa-linkedin text-blue-500"
             system_name = "LinkedIn Ads"
-        elif "email" in msg_lower or "outreach" in msg_lower or "newsletter" in msg_lower:
+            if "budget" in msg_lower or "shift" in msg_lower:
+                status_msg = "Budget reallocation applied successfully"
+            else:
+                status_msg = "Campaign parameters updated"
+        elif "email" in msg_lower or "outreach" in msg_lower or "newsletter" in msg_lower or "marketo" in msg_lower:
             logo_icon = "fa-envelope text-fuchsia-400"
             system_name = "Marketo"
+            status_msg = "Outreach workflow triggered successfully"
 
         icon_class = logo_icon.split(' ')[0]
         icon_color = ' '.join(logo_icon.split(' ')[1:]) if ' ' in logo_icon else 'text-slate-400'
@@ -110,7 +118,7 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
                         <span class="text-slate-500">Action:</span> {message}
                     </div>
                     <div class="text-slate-300 mt-1">
-                        <span class="text-slate-500">Status:</span> Record synchronized successfully
+                        <span class="text-slate-500">Status:</span> {status_msg}
                     </div>
                 </div>
             </div>
@@ -189,12 +197,13 @@ def chat_stream(task_id: str):
                 context_prompt += f"""\n\nCRITICAL INSTRUCTION FOR THIS PROMPT:
     The user is reviewing a Priority Action from the dashboard Action Center. 
     Act as a strategic advisor. Analyze the action details provided by the user. Explain why it is a priority and what the impact is based on your telemetry tools if needed.
-    Then, you MUST append 2 action buttons at the very end of your response to let the user execute or dismiss the action.
-    You MUST use this EXACT HTML structure for the buttons:
-    <div class="flex gap-2 mt-4">
-        <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute the recommended action", "intent": "automate", "trigger_id": "{trigger_id}"}}' class="px-3 py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> Execute Action</button>
-        <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" class="px-3 py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded"><i class="fa-solid fa-times"></i> Dismiss</button>
-    </div>
+    
+    After your analysis, you MUST provide exactly 1 to 3 concrete automated next steps (e.g. "Draft Follow-Up Email", "Sync to Salesforce").
+    
+    To format this, you MUST place a `### Recommended Action(s)` header immediately before the buttons.
+    Then, for EACH suggested action, output an HTML button using this EXACT structure, replacing [ACTION NAME] with a short label (e.g. "Draft Email"), [ACTION COMMAND] with the specific automated instruction you would want the user to click, and [INTENT] with either 'automate' (if pushing data to a CRM/System) or 'chat' (if generating content like drafting an email):
+    
+    <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[ACTION COMMAND]", "intent": "[INTENT]", "trigger_id": "{trigger_id}"}}' class="mb-2 w-full py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
     """
             
             response = None
@@ -368,6 +377,7 @@ def chat_stream(task_id: str):
                 <div class="w-full min-w-0">
                     <div class="bg-black border border-dark-700 p-4 w-full">
                         <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
+                        {"<div class='mt-4 border-t border-dark-800 pt-4'><button onclick='window.dispatchEvent(new CustomEvent(\"task-resolved\", {{detail: {{id: \"" + trigger_id + "\"}}}}))' class='w-full py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded'><i class='fa-solid fa-check'></i> Clear Alert from Queue</button></div>" if (intent == "review" and trigger_id) else ""}
                     </div>
                 </div>
             </div>
