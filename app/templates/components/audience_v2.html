@@ -295,51 +295,53 @@
             <!-- Section 1: Ranked Target Accounts & Buying Committee -->
             <h3 class="text-sm font-bold text-white tracking-widest uppercase mb-4 mt-8"><i class="fa-solid fa-building mr-2 text-emerald-400"></i> Account Penetration</h3>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-12">
                 <template x-for="(account, index) in accounts" :key="account.company">
-                    <div class="v2-card rounded-xl p-4 relative overflow-hidden group cursor-pointer" @click="openDeepDive(account)">
+                    <div class="v2-card rounded-xl p-4 relative overflow-hidden group cursor-pointer flex flex-col h-full" @click="openDeepDive(account)">
                         <div class="absolute -right-4 -top-4 w-24 h-24 rounded-full blur-xl transition-all" 
                              :class="index === 0 ? 'bg-emerald-500/10 group-hover:bg-emerald-500/30' : 'bg-brand-500/5 group-hover:bg-brand-500/20'"></div>
                         
-                        <div class="flex justify-between items-start mb-4 relative z-10">
+                        <!-- Header Section -->
+                        <div class="flex justify-between items-start mb-4 relative z-10 flex-1">
                             <div>
-                                <p class="text-[9px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">Tier 1 Target</p>
-                                <h3 class="text-base font-bold text-white mb-1 group-hover:text-emerald-300 transition-colors flex items-center gap-2" x-text="account.company"></h3>
-                                <p class="text-[10px] text-slate-400"><span class="text-emerald-400 font-bold" x-text="account.total_interactions"></span> Total Interactions</p>
-                            </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <div class="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                                    <span class="text-[9px] font-bold text-slate-300" x-text="'#' + (index + 1)"></span>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <p class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">Tier 1 Target</p>
+                                    <div class="w-5 h-5 rounded bg-white/5 border border-white/10 flex items-center justify-center">
+                                        <span class="text-[9px] font-bold text-slate-300" x-text="'#' + (index + 1)"></span>
+                                    </div>
                                 </div>
-                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-dark-900/50 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Deep Dive <i class="fa-solid fa-arrow-right ml-1 text-emerald-500"></i></div>
+                                <h3 class="text-base font-bold text-white mb-2 group-hover:text-emerald-300 transition-colors flex items-center gap-2" x-text="account.company"></h3>
+                                
+                                <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20">
+                                    <i class="fa-solid fa-chart-line text-[9px] text-emerald-400"></i>
+                                    <span class="text-[10px] text-emerald-300"><strong class="font-bold text-emerald-400" x-text="account.total_interactions"></strong> Interactions</span>
+                                </div>
                             </div>
+                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-dark-900/50 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap mt-1">Deep Dive <i class="fa-solid fa-arrow-right ml-1 text-emerald-500"></i></div>
                         </div>
                         
-                        <!-- Buying Committee Map -->
-                        <div class="mt-4 pt-4 border-t border-white/5 relative z-10">
-                            <p class="text-[10px] text-slate-500 uppercase tracking-widest mb-3">Buying Committee Penetration</p>
+                        <!-- Compact Buying Committee Map -->
+                        <div class="mt-auto pt-3 border-t border-white/5 relative z-10">
+                            <p class="text-[9px] text-slate-500 uppercase tracking-widest mb-2 flex justify-between">
+                                <span>Buying Committee</span>
+                                <span>Engaged</span>
+                            </p>
                             
-                            <div class="flex gap-4">
-                                <div class="flex-1 bg-white/5 rounded-lg p-2 border border-white/5 border-l-2 border-l-cyan-500">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <i class="fa-solid fa-microchip text-[9px] text-cyan-400"></i>
-                                        <span class="text-[10px] text-slate-300 font-medium">Technical</span>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex items-center justify-between bg-dark-900/40 rounded px-2 py-1.5 border border-white/5">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-microchip text-[10px] text-cyan-400"></i>
+                                        <span class="text-[10px] text-slate-300">Technical</span>
                                     </div>
-                                    <div class="flex items-end gap-2">
-                                        <span class="text-base font-bold text-white" x-text="account.technical_users"></span>
-                                        <span class="text-[9px] text-slate-500 mb-0.5">Engaged Users</span>
-                                    </div>
+                                    <span class="text-xs font-bold text-cyan-100" x-text="account.technical_users"></span>
                                 </div>
                                 
-                                <div class="flex-1 bg-white/5 rounded-lg p-2 border border-white/5 border-l-2 border-l-rose-500">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <i class="fa-solid fa-handshake text-[9px] text-rose-400"></i>
-                                        <span class="text-[10px] text-slate-300 font-medium">Commercial</span>
+                                <div class="flex items-center justify-between bg-dark-900/40 rounded px-2 py-1.5 border border-white/5">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa-solid fa-handshake text-[10px] text-rose-400"></i>
+                                        <span class="text-[10px] text-slate-300">Commercial</span>
                                     </div>
-                                    <div class="flex items-end gap-2">
-                                        <span class="text-base font-bold text-white" x-text="account.commercial_users"></span>
-                                        <span class="text-[9px] text-slate-500 mb-0.5">Engaged Users</span>
-                                    </div>
+                                    <span class="text-xs font-bold text-rose-100" x-text="account.commercial_users"></span>
                                 </div>
                             </div>
                         </div>
