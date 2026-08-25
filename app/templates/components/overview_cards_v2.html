@@ -4,7 +4,7 @@
     <!-- Metric 1: Pipeline Generated -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group">
         
-        <p class="text-[10px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">Pipeline Generated</p>
+        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Pipeline Generated</p>
         <h3 class="text-3xl font-black text-white mb-2 tracking-tight">${{ "{:,.1f}".format(benchmarks.live.cpa / 1000) }}M</h3>
         <div class="flex items-center text-xs">
             {% if benchmarks.comparisons.cpa.good %}
@@ -19,7 +19,7 @@
     <!-- Metric 2: High-Intent Conversions (Replacing Velocity for now) -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group">
         
-        <p class="text-[10px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">High-Intent Conversions</p>
+        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">High-Intent Conversions</p>
         <h3 class="text-3xl font-black text-white mb-2 tracking-tight">{{ "{:,.0f}".format(benchmarks.live.conversions) }}</h3>
         <div class="flex items-center text-xs">
             {% if benchmarks.comparisons.conversions.good %}
@@ -34,7 +34,7 @@
     <!-- Metric 3: Target Account Penetration -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group cursor-pointer hover:border-rose-500/50" hx-get="/api/v1/dashboard/target-accounts-modal?campaign_id={{ campaign_id }}" hx-target="body" hx-swap="beforeend">
         
-        <p class="text-[10px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">{{ tam.metric_name }}</p>
+        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ tam.metric_name }}</p>
         <h3 class="text-3xl font-black text-white mb-2 tracking-tight">{{ tam.value }}</h3>
         <div class="flex items-center text-xs">
             {% if tam.delta > 0 %}
@@ -49,7 +49,7 @@
     <!-- Metric 4: Topic Share of Voice -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group">
         
-        <p class="text-[10px] font-semibold text-slate-400 mb-2 uppercase tracking-wider">{{ sov.metric_name }}</p>
+        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ sov.metric_name }}</p>
         <h3 class="text-3xl font-black text-white mb-2 tracking-tight">{{ sov.value }}</h3>
         <div class="flex items-center text-xs">
             {% if sov.delta > 0 %}
