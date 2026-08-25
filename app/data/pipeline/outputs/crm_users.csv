@@ -1,596 +1,599 @@
-user_id,account_id,company_name,email,first_name,last_name,seniority,persona_type
-1,1,Shell,danielle.johnson@shell.com,Danielle,Johnson,VP/Director,Commercial
-2,1,Shell,joshua.walker@shell.com,Joshua,Walker,Manager,Technical
-3,1,Shell,jill.rhodes@shell.com,Jill,Rhodes,VP/Director,Commercial
-4,1,Shell,patricia.miller@shell.com,Patricia,Miller,IC,Technical
-5,1,Shell,robert.johnson@shell.com,Robert,Johnson,C-Suite,Technical
-6,1,Shell,jeffery.wagner@shell.com,Jeffery,Wagner,Manager,Commercial
-7,1,Shell,anthony.gonzalez@shell.com,Anthony,Gonzalez,IC,Commercial
-8,1,Shell,debra.gardner@shell.com,Debra,Gardner,IC,Technical
-9,1,Shell,jeffrey.lawrence@shell.com,Jeffrey,Lawrence,Manager,Technical
-10,1,Shell,lisa.smith@shell.com,Lisa,Smith,IC,Commercial
-11,1,Shell,linda.wolfe@shell.com,Linda,Wolfe,VP/Director,Technical
-12,1,Shell,matthew.moore@shell.com,Matthew,Moore,Manager,Technical
-13,1,Shell,susan.rogers@shell.com,Susan,Rogers,IC,Technical
-14,1,Shell,christopher.davis@shell.com,Christopher,Davis,Manager,Technical
-15,1,Shell,melanie.munoz@shell.com,Melanie,Munoz,Manager,Technical
-16,1,Shell,lindsay.blair@shell.com,Lindsay,Blair,C-Suite,Technical
-17,1,Shell,amanda.dudley@shell.com,Amanda,Dudley,VP/Director,Commercial
-18,1,Shell,nicholas.arnold@shell.com,Nicholas,Arnold,VP/Director,Technical
-19,1,Shell,maria.montgomery@shell.com,Maria,Montgomery,IC,Commercial
-20,1,Shell,michelle.ray@shell.com,Michelle,Ray,Manager,Technical
-21,1,Shell,janet.williams@shell.com,Janet,Williams,VP/Director,Commercial
-22,1,Shell,jeremy.roberts@shell.com,Jeremy,Roberts,IC,Commercial
-23,1,Shell,christopher.hall@shell.com,Christopher,Hall,IC,Commercial
-24,1,Shell,craig.ramirez@shell.com,Craig,Ramirez,Manager,Technical
-25,1,Shell,cynthia.diaz@shell.com,Cynthia,Diaz,IC,Technical
-26,1,Shell,mitchell.clark@shell.com,Mitchell,Clark,Manager,Commercial
-27,1,Shell,joseph.zuniga@shell.com,Joseph,Zuniga,IC,Commercial
-28,1,Shell,deborah.lynch@shell.com,Deborah,Lynch,VP/Director,Commercial
-29,1,Shell,george.daniel@shell.com,George,Daniel,IC,Technical
-30,1,Shell,frank.gray@shell.com,Frank,Gray,Manager,Technical
-31,1,Shell,veronica.bowman@shell.com,Veronica,Bowman,IC,Commercial
-32,1,Shell,angela.cohen@shell.com,Angela,Cohen,Manager,Technical
-33,1,Shell,megan.parsons@shell.com,Megan,Parsons,IC,Technical
-34,1,Shell,jeremy.johnson@shell.com,Jeremy,Johnson,IC,Commercial
-35,1,Shell,leslie.adams@shell.com,Leslie,Adams,Manager,Technical
-36,1,Shell,jason.hahn@shell.com,Jason,Hahn,IC,Technical
-37,1,Shell,nancy.edwards@shell.com,Nancy,Edwards,IC,Technical
-38,1,Shell,diana.foster@shell.com,Diana,Foster,Manager,Commercial
-39,1,Shell,robin.ellis@shell.com,Robin,Ellis,IC,Technical
-40,1,Shell,joseph.wright@shell.com,Joseph,Wright,VP/Director,Commercial
-41,1,Shell,anna.baker@shell.com,Anna,Baker,IC,Commercial
-42,1,Shell,brenda.hurst@shell.com,Brenda,Hurst,Manager,Technical
-43,1,Shell,reginald.robinson@shell.com,Reginald,Robinson,Manager,Commercial
-44,1,Shell,whitney.hicks@shell.com,Whitney,Hicks,VP/Director,Technical
-45,1,Shell,christopher.williams@shell.com,Christopher,Williams,IC,Commercial
-46,1,Shell,daniel.burton@shell.com,Daniel,Burton,VP/Director,Technical
-47,1,Shell,laura.henderson@shell.com,Laura,Henderson,IC,Technical
-48,1,Shell,bryan.james@shell.com,Bryan,James,Manager,Technical
-49,1,Shell,wendy.rice@shell.com,Wendy,Rice,Manager,Technical
-50,1,Shell,tasha.valencia@shell.com,Tasha,Valencia,IC,Commercial
-51,2,Aramco,alexander.le@aramco.com,Alexander,Le,IC,Technical
-52,2,Aramco,erin.herrera@aramco.com,Erin,Herrera,Manager,Commercial
-53,2,Aramco,joseph.davidson@aramco.com,Joseph,Davidson,VP/Director,Technical
-54,2,Aramco,daniel.graham@aramco.com,Daniel,Graham,Manager,Commercial
-55,2,Aramco,shawn.mckay@aramco.com,Shawn,Mckay,IC,Technical
-56,2,Aramco,nancy.baker@aramco.com,Nancy,Baker,IC,Technical
-57,2,Aramco,vincent.white@aramco.com,Vincent,White,IC,Commercial
-58,2,Aramco,rita.harrell@aramco.com,Rita,Harrell,Manager,Commercial
-59,2,Aramco,kenneth.fowler@aramco.com,Kenneth,Fowler,IC,Technical
-60,2,Aramco,chelsea.hernandez@aramco.com,Chelsea,Hernandez,IC,Technical
-61,2,Aramco,kathryn.ryan@aramco.com,Kathryn,Ryan,IC,Technical
-62,2,Aramco,kimberly.moreno@aramco.com,Kimberly,Moreno,C-Suite,Technical
-63,2,Aramco,aaron.nguyen@aramco.com,Aaron,Nguyen,C-Suite,Commercial
-64,2,Aramco,andrew.hickman@aramco.com,Andrew,Hickman,IC,Commercial
-65,2,Aramco,natasha.decker@aramco.com,Natasha,Decker,Manager,Technical
-66,2,Aramco,kyle.brown@aramco.com,Kyle,Brown,IC,Commercial
-67,2,Aramco,natalie.arroyo@aramco.com,Natalie,Arroyo,VP/Director,Technical
-68,2,Aramco,christopher.tucker@aramco.com,Christopher,Tucker,VP/Director,Commercial
-69,2,Aramco,chad.hodges@aramco.com,Chad,Hodges,IC,Technical
-70,2,Aramco,katie.anderson@aramco.com,Katie,Anderson,Manager,Technical
-71,2,Aramco,thomas.pierce@aramco.com,Thomas,Pierce,Manager,Commercial
-72,2,Aramco,joseph.brennan@aramco.com,Joseph,Brennan,Manager,Technical
-73,2,Aramco,rodney.lewis@aramco.com,Rodney,Lewis,IC,Commercial
-74,2,Aramco,amber.blair@aramco.com,Amber,Blair,Manager,Technical
-75,2,Aramco,james.collins@aramco.com,James,Collins,IC,Commercial
-76,2,Aramco,wanda.santos@aramco.com,Wanda,Santos,Manager,Technical
-77,2,Aramco,samuel.holmes@aramco.com,Samuel,Holmes,VP/Director,Technical
-78,2,Aramco,david.walker@aramco.com,David,Walker,Manager,Technical
-79,2,Aramco,matthew.chapman@aramco.com,Matthew,Chapman,Manager,Technical
-80,2,Aramco,jerry.robinson@aramco.com,Jerry,Robinson,VP/Director,Commercial
-81,2,Aramco,chad.welch@aramco.com,Chad,Welch,Manager,Commercial
-82,2,Aramco,jeremy.whitehead@aramco.com,Jeremy,Whitehead,IC,Technical
-83,2,Aramco,michele.jones@aramco.com,Michele,Jones,Manager,Commercial
-84,3,Equinor,john.caldwell@equinor.com,John,Caldwell,IC,Commercial
-85,3,Equinor,jason.anderson@equinor.com,Jason,Anderson,IC,Technical
-86,3,Equinor,selena.duncan@equinor.com,Selena,Duncan,Manager,Technical
-87,3,Equinor,thomas.mueller@equinor.com,Thomas,Mueller,Manager,Technical
-88,3,Equinor,lindsey.lee@equinor.com,Lindsey,Lee,IC,Technical
-89,3,Equinor,collin.jordan@equinor.com,Collin,Jordan,Manager,Commercial
-90,3,Equinor,rodney.owens@equinor.com,Rodney,Owens,VP/Director,Commercial
-91,3,Equinor,jessica.nunez@equinor.com,Jessica,Nunez,IC,Technical
-92,3,Equinor,tracey.garcia@equinor.com,Tracey,Garcia,IC,Commercial
-93,3,Equinor,richard.morgan@equinor.com,Richard,Morgan,VP/Director,Technical
-94,3,Equinor,michelle.wright@equinor.com,Michelle,Wright,IC,Technical
-95,3,Equinor,james.west@equinor.com,James,West,VP/Director,Technical
-96,3,Equinor,robert.ramirez@equinor.com,Robert,Ramirez,IC,Technical
-97,3,Equinor,john.leblanc@equinor.com,John,Leblanc,IC,Commercial
-98,3,Equinor,scott.callahan@equinor.com,Scott,Callahan,VP/Director,Commercial
-99,3,Equinor,andrea.williams@equinor.com,Andrea,Williams,IC,Technical
-100,3,Equinor,yvette.huff@equinor.com,Yvette,Huff,VP/Director,Commercial
-101,3,Equinor,tanya.house@equinor.com,Tanya,House,Manager,Technical
-102,3,Equinor,melinda.martin@equinor.com,Melinda,Martin,Manager,Commercial
-103,3,Equinor,todd.lewis@equinor.com,Todd,Lewis,IC,Technical
-104,3,Equinor,richard.brown@equinor.com,Richard,Brown,C-Suite,Technical
-105,3,Equinor,nicholas.galloway@equinor.com,Nicholas,Galloway,IC,Commercial
-106,3,Equinor,joseph.bowers@equinor.com,Joseph,Bowers,Manager,Commercial
-107,3,Equinor,spencer.henderson@equinor.com,Spencer,Henderson,IC,Commercial
-108,3,Equinor,susan.cowan@equinor.com,Susan,Cowan,IC,Technical
-109,3,Equinor,angela.higgins@equinor.com,Angela,Higgins,VP/Director,Technical
-110,3,Equinor,eric.phillips@equinor.com,Eric,Phillips,VP/Director,Commercial
-111,3,Equinor,tanya.riley@equinor.com,Tanya,Riley,VP/Director,Technical
-112,3,Equinor,amy.adkins@equinor.com,Amy,Adkins,VP/Director,Technical
-113,3,Equinor,brian.silva@equinor.com,Brian,Silva,IC,Technical
-114,3,Equinor,wesley.farrell@equinor.com,Wesley,Farrell,VP/Director,Technical
-115,3,Equinor,eric.yu@equinor.com,Eric,Yu,IC,Technical
-116,3,Equinor,christopher.lopez@equinor.com,Christopher,Lopez,VP/Director,Commercial
-117,3,Equinor,brooke.leonard@equinor.com,Brooke,Leonard,Manager,Commercial
-118,3,Equinor,joe.wilson@equinor.com,Joe,Wilson,IC,Technical
-119,3,Equinor,pamela.sanchez@equinor.com,Pamela,Sanchez,C-Suite,Technical
-120,4,BP,brooke.harvey@bp.com,Brooke,Harvey,IC,Technical
-121,4,BP,robert.silva@bp.com,Robert,Silva,Manager,Commercial
-122,4,BP,alexandra.donovan@bp.com,Alexandra,Donovan,Manager,Technical
-123,4,BP,james.moran@bp.com,James,Moran,VP/Director,Commercial
-124,4,BP,john.foster@bp.com,John,Foster,Manager,Commercial
-125,4,BP,emily.evans@bp.com,Emily,Evans,IC,Technical
-126,4,BP,leslie.walton@bp.com,Leslie,Walton,IC,Technical
-127,4,BP,charles.ellis@bp.com,Charles,Ellis,VP/Director,Technical
-128,4,BP,yolanda.ferrell@bp.com,Yolanda,Ferrell,IC,Technical
-129,4,BP,charles.lewis@bp.com,Charles,Lewis,Manager,Technical
-130,4,BP,joseph.mahoney@bp.com,Joseph,Mahoney,Manager,Technical
-131,4,BP,nicole.suarez@bp.com,Nicole,Suarez,Manager,Technical
-132,4,BP,mike.moore@bp.com,Mike,Moore,Manager,Commercial
-133,4,BP,martha.warner@bp.com,Martha,Warner,IC,Technical
-134,4,BP,cheryl.archer@bp.com,Cheryl,Archer,IC,Technical
-135,4,BP,destiny.smith@bp.com,Destiny,Smith,IC,Technical
-136,4,BP,lisa.evans@bp.com,Lisa,Evans,IC,Technical
-137,4,BP,elizabeth.mcmillan@bp.com,Elizabeth,Mcmillan,IC,Commercial
-138,4,BP,dennis.wilson@bp.com,Dennis,Wilson,VP/Director,Technical
-139,4,BP,daniel.tran@bp.com,Daniel,Tran,Manager,Technical
-140,4,BP,joseph.jacobs@bp.com,Joseph,Jacobs,IC,Commercial
-141,4,BP,jennifer.harris@bp.com,Jennifer,Harris,IC,Technical
-142,4,BP,cynthia.baker@bp.com,Cynthia,Baker,IC,Technical
-143,4,BP,tracy.whitehead@bp.com,Tracy,Whitehead,IC,Commercial
-144,4,BP,meghan.davis@bp.com,Meghan,Davis,C-Suite,Technical
-145,4,BP,rodney.hill@bp.com,Rodney,Hill,VP/Director,Commercial
-146,4,BP,adam.wise@bp.com,Adam,Wise,VP/Director,Technical
-147,4,BP,dana.green@bp.com,Dana,Green,IC,Technical
-148,4,BP,joyce.arnold@bp.com,Joyce,Arnold,VP/Director,Commercial
-149,4,BP,ronald.smith@bp.com,Ronald,Smith,IC,Technical
-150,4,BP,charles.ware@bp.com,Charles,Ware,C-Suite,Technical
-151,4,BP,rebecca.gardner@bp.com,Rebecca,Gardner,IC,Technical
-152,4,BP,mary.aguilar@bp.com,Mary,Aguilar,C-Suite,Technical
-153,4,BP,earl.anderson@bp.com,Earl,Anderson,IC,Commercial
-154,4,BP,kyle.nolan@bp.com,Kyle,Nolan,C-Suite,Technical
-155,4,BP,laura.valencia@bp.com,Laura,Valencia,IC,Commercial
-156,4,BP,rachel.clark@bp.com,Rachel,Clark,Manager,Technical
-157,4,BP,john.garcia@bp.com,John,Garcia,IC,Commercial
-158,4,BP,kimberly.henson@bp.com,Kimberly,Henson,IC,Commercial
-159,4,BP,richard.oliver@bp.com,Richard,Oliver,Manager,Technical
-160,4,BP,eric.spears@bp.com,Eric,Spears,IC,Technical
-161,4,BP,michelle.cherry@bp.com,Michelle,Cherry,Manager,Technical
-162,4,BP,lisa.keith@bp.com,Lisa,Keith,IC,Commercial
-163,4,BP,angel.doyle@bp.com,Angel,Doyle,Manager,Commercial
-164,4,BP,martin.galvan@bp.com,Martin,Galvan,IC,Technical
-165,4,BP,leah.shields@bp.com,Leah,Shields,VP/Director,Commercial
-166,4,BP,lisa.adams@bp.com,Lisa,Adams,Manager,Technical
-167,4,BP,kristin.rodriguez@bp.com,Kristin,Rodriguez,Manager,Technical
-168,5,Chevron,monica.garrison@chevron.com,Monica,Garrison,Manager,Commercial
-169,5,Chevron,jeffrey.velasquez@chevron.com,Jeffrey,Velasquez,IC,Technical
-170,5,Chevron,steven.torres@chevron.com,Steven,Torres,IC,Technical
-171,5,Chevron,laura.perez@chevron.com,Laura,Perez,Manager,Technical
-172,5,Chevron,andrew.lee@chevron.com,Andrew,Lee,IC,Technical
-173,5,Chevron,mark.lin@chevron.com,Mark,Lin,IC,Commercial
-174,5,Chevron,tammy.ramirez@chevron.com,Tammy,Ramirez,IC,Technical
-175,5,Chevron,darlene.ross@chevron.com,Darlene,Ross,C-Suite,Commercial
-176,5,Chevron,tina.herrera@chevron.com,Tina,Herrera,Manager,Technical
-177,5,Chevron,sheila.wilson@chevron.com,Sheila,Wilson,IC,Technical
-178,5,Chevron,tara.white@chevron.com,Tara,White,IC,Technical
-179,5,Chevron,sydney.baker@chevron.com,Sydney,Baker,IC,Technical
-180,5,Chevron,daniel.hamilton@chevron.com,Daniel,Hamilton,IC,Technical
-181,5,Chevron,jessica.edwards@chevron.com,Jessica,Edwards,IC,Technical
-182,5,Chevron,catherine.dixon@chevron.com,Catherine,Dixon,C-Suite,Technical
-183,5,Chevron,paul.ray@chevron.com,Paul,Ray,IC,Commercial
-184,5,Chevron,jonathan.fletcher@chevron.com,Jonathan,Fletcher,IC,Commercial
-185,5,Chevron,aaron.frost@chevron.com,Aaron,Frost,IC,Technical
-186,5,Chevron,amanda.ball@chevron.com,Amanda,Ball,Manager,Commercial
-187,5,Chevron,judy.lambert@chevron.com,Judy,Lambert,IC,Commercial
-188,5,Chevron,michael.jones@chevron.com,Michael,Jones,IC,Technical
-189,5,Chevron,elizabeth.rivera@chevron.com,Elizabeth,Rivera,IC,Technical
-190,5,Chevron,lee.charles@chevron.com,Lee,Charles,IC,Technical
-191,5,Chevron,jennifer.evans@chevron.com,Jennifer,Evans,IC,Technical
-192,5,Chevron,kyle.ortiz@chevron.com,Kyle,Ortiz,VP/Director,Commercial
-193,5,Chevron,richard.phillips@chevron.com,Richard,Phillips,Manager,Commercial
-194,5,Chevron,david.fisher@chevron.com,David,Fisher,VP/Director,Technical
-195,5,Chevron,shelby.byrd@chevron.com,Shelby,Byrd,Manager,Commercial
-196,5,Chevron,raven.gilbert@chevron.com,Raven,Gilbert,Manager,Technical
-197,5,Chevron,kevin.kelley@chevron.com,Kevin,Kelley,IC,Commercial
-198,5,Chevron,aaron.mitchell@chevron.com,Aaron,Mitchell,Manager,Technical
-199,5,Chevron,russell.carpenter@chevron.com,Russell,Carpenter,IC,Technical
-200,5,Chevron,diana.marshall@chevron.com,Diana,Marshall,IC,Commercial
-201,5,Chevron,scott.lewis@chevron.com,Scott,Lewis,IC,Commercial
-202,5,Chevron,thomas.santana@chevron.com,Thomas,Santana,Manager,Commercial
-203,5,Chevron,laura.jackson@chevron.com,Laura,Jackson,IC,Technical
-204,5,Chevron,christopher.robertson@chevron.com,Christopher,Robertson,IC,Technical
-205,5,Chevron,cynthia.rogers@chevron.com,Cynthia,Rogers,Manager,Commercial
-206,5,Chevron,loretta.potter@chevron.com,Loretta,Potter,VP/Director,Technical
-207,5,Chevron,emily.walker@chevron.com,Emily,Walker,IC,Commercial
-208,5,Chevron,james.johnson@chevron.com,James,Johnson,IC,Technical
-209,5,Chevron,john.alvarez@chevron.com,John,Alvarez,IC,Technical
-210,5,Chevron,melissa.jones@chevron.com,Melissa,Jones,IC,Technical
-211,5,Chevron,robert.soto@chevron.com,Robert,Soto,Manager,Technical
-212,6,ExxonMobil,james.horton@exxonmobil.com,James,Horton,IC,Commercial
-213,6,ExxonMobil,troy.sanchez@exxonmobil.com,Troy,Sanchez,IC,Commercial
-214,6,ExxonMobil,diana.smith@exxonmobil.com,Diana,Smith,Manager,Commercial
-215,6,ExxonMobil,karen.carrillo@exxonmobil.com,Karen,Carrillo,IC,Technical
-216,6,ExxonMobil,daniel.coleman@exxonmobil.com,Daniel,Coleman,IC,Commercial
-217,6,ExxonMobil,gregory.rubio@exxonmobil.com,Gregory,Rubio,VP/Director,Technical
-218,6,ExxonMobil,april.williams@exxonmobil.com,April,Williams,Manager,Technical
-219,6,ExxonMobil,john.charles@exxonmobil.com,John,Charles,IC,Technical
-220,6,ExxonMobil,stephen.solis@exxonmobil.com,Stephen,Solis,IC,Technical
-221,6,ExxonMobil,elizabeth.travis@exxonmobil.com,Elizabeth,Travis,IC,Commercial
-222,6,ExxonMobil,caitlin.dodson@exxonmobil.com,Caitlin,Dodson,Manager,Commercial
-223,6,ExxonMobil,patricia.salazar@exxonmobil.com,Patricia,Salazar,Manager,Technical
-224,6,ExxonMobil,jennifer.wagner@exxonmobil.com,Jennifer,Wagner,IC,Technical
-225,6,ExxonMobil,maria.kelley@exxonmobil.com,Maria,Kelley,IC,Commercial
-226,6,ExxonMobil,phyllis.manning@exxonmobil.com,Phyllis,Manning,Manager,Commercial
-227,6,ExxonMobil,thomas.green@exxonmobil.com,Thomas,Green,Manager,Technical
-228,6,ExxonMobil,john.walsh@exxonmobil.com,John,Walsh,Manager,Commercial
-229,6,ExxonMobil,katie.boyd@exxonmobil.com,Katie,Boyd,Manager,Technical
-230,6,ExxonMobil,courtney.hill@exxonmobil.com,Courtney,Hill,IC,Technical
-231,6,ExxonMobil,chris.mitchell@exxonmobil.com,Chris,Mitchell,VP/Director,Technical
-232,6,ExxonMobil,joseph.flores@exxonmobil.com,Joseph,Flores,VP/Director,Technical
-233,6,ExxonMobil,amber.taylor@exxonmobil.com,Amber,Taylor,Manager,Technical
-234,6,ExxonMobil,jesse.benson@exxonmobil.com,Jesse,Benson,Manager,Technical
-235,6,ExxonMobil,jasmine.brown@exxonmobil.com,Jasmine,Brown,IC,Technical
-236,6,ExxonMobil,rick.daniels@exxonmobil.com,Rick,Daniels,IC,Commercial
-237,6,ExxonMobil,robert.clark@exxonmobil.com,Robert,Clark,C-Suite,Commercial
-238,6,ExxonMobil,robert.stein@exxonmobil.com,Robert,Stein,IC,Technical
-239,6,ExxonMobil,brandy.dominguez@exxonmobil.com,Brandy,Dominguez,IC,Technical
-240,6,ExxonMobil,melissa.cannon@exxonmobil.com,Melissa,Cannon,Manager,Commercial
-241,6,ExxonMobil,omar.smith@exxonmobil.com,Omar,Smith,IC,Technical
-242,7,TotalEnergies,michael.molina@totalenergies.com,Michael,Molina,IC,Commercial
-243,7,TotalEnergies,melissa.ashley@totalenergies.com,Melissa,Ashley,Manager,Technical
-244,7,TotalEnergies,robert.adkins@totalenergies.com,Robert,Adkins,Manager,Technical
-245,7,TotalEnergies,amy.morrison@totalenergies.com,Amy,Morrison,IC,Commercial
-246,7,TotalEnergies,jeffrey.robinson@totalenergies.com,Jeffrey,Robinson,IC,Commercial
-247,7,TotalEnergies,ryan.johnson@totalenergies.com,Ryan,Johnson,IC,Commercial
-248,7,TotalEnergies,matthew.shelton@totalenergies.com,Matthew,Shelton,IC,Commercial
-249,7,TotalEnergies,richard.martin@totalenergies.com,Richard,Martin,IC,Commercial
-250,7,TotalEnergies,tanner.anderson@totalenergies.com,Tanner,Anderson,VP/Director,Technical
-251,7,TotalEnergies,cindy.johnson@totalenergies.com,Cindy,Johnson,IC,Technical
-252,7,TotalEnergies,phillip.elliott@totalenergies.com,Phillip,Elliott,Manager,Technical
-253,7,TotalEnergies,anthony.day@totalenergies.com,Anthony,Day,Manager,Technical
-254,7,TotalEnergies,derek.murray@totalenergies.com,Derek,Murray,IC,Technical
-255,7,TotalEnergies,brent.gray@totalenergies.com,Brent,Gray,IC,Technical
-256,7,TotalEnergies,jason.murphy@totalenergies.com,Jason,Murphy,IC,Technical
-257,7,TotalEnergies,kathleen.gray@totalenergies.com,Kathleen,Gray,IC,Technical
-258,7,TotalEnergies,karen.decker@totalenergies.com,Karen,Decker,IC,Technical
-259,7,TotalEnergies,johnny.miller@totalenergies.com,Johnny,Miller,VP/Director,Commercial
-260,7,TotalEnergies,andrew.ryan@totalenergies.com,Andrew,Ryan,C-Suite,Technical
-261,7,TotalEnergies,zoe.bell@totalenergies.com,Zoe,Bell,Manager,Commercial
-262,7,TotalEnergies,debra.harrington@totalenergies.com,Debra,Harrington,IC,Technical
-263,7,TotalEnergies,denise.webster@totalenergies.com,Denise,Webster,Manager,Technical
-264,7,TotalEnergies,stefanie.gonzalez@totalenergies.com,Stefanie,Gonzalez,IC,Technical
-265,7,TotalEnergies,andrew.hernandez@totalenergies.com,Andrew,Hernandez,Manager,Technical
-266,7,TotalEnergies,david.caldwell@totalenergies.com,David,Caldwell,IC,Commercial
-267,7,TotalEnergies,anne.robinson@totalenergies.com,Anne,Robinson,IC,Commercial
-268,7,TotalEnergies,holly.wang@totalenergies.com,Holly,Wang,VP/Director,Technical
-269,7,TotalEnergies,gary.lawson@totalenergies.com,Gary,Lawson,IC,Commercial
-270,7,TotalEnergies,julie.wilson@totalenergies.com,Julie,Wilson,IC,Commercial
-271,7,TotalEnergies,lori.oconnell@totalenergies.com,Lori,Oconnell,Manager,Commercial
-272,7,TotalEnergies,daniel.johnson@totalenergies.com,Daniel,Johnson,VP/Director,Technical
-273,7,TotalEnergies,larry.byrd@totalenergies.com,Larry,Byrd,IC,Technical
-274,7,TotalEnergies,susan.sanders@totalenergies.com,Susan,Sanders,IC,Technical
-275,7,TotalEnergies,jennifer.jones@totalenergies.com,Jennifer,Jones,IC,Commercial
-276,7,TotalEnergies,hannah.burton@totalenergies.com,Hannah,Burton,IC,Technical
-277,7,TotalEnergies,curtis.barton@totalenergies.com,Curtis,Barton,C-Suite,Technical
-278,7,TotalEnergies,melissa.burke@totalenergies.com,Melissa,Burke,IC,Technical
-279,7,TotalEnergies,david.riggs@totalenergies.com,David,Riggs,IC,Technical
-280,7,TotalEnergies,kimberly.reed@totalenergies.com,Kimberly,Reed,Manager,Technical
-281,7,TotalEnergies,ross.wood@totalenergies.com,Ross,Wood,Manager,Technical
-282,7,TotalEnergies,william.peterson@totalenergies.com,William,Peterson,IC,Technical
-283,7,TotalEnergies,melissa.short@totalenergies.com,Melissa,Short,VP/Director,Technical
-284,7,TotalEnergies,daniel.yu@totalenergies.com,Daniel,Yu,IC,Commercial
-285,7,TotalEnergies,cynthia.poole@totalenergies.com,Cynthia,Poole,IC,Commercial
-286,7,TotalEnergies,jasmine.graham@totalenergies.com,Jasmine,Graham,IC,Technical
-287,7,TotalEnergies,jessica.sheppard@totalenergies.com,Jessica,Sheppard,IC,Technical
-288,7,TotalEnergies,joseph.morton@totalenergies.com,Joseph,Morton,Manager,Technical
-289,8,ConocoPhillips,amanda.webb@conocophillips.com,Amanda,Webb,Manager,Technical
-290,8,ConocoPhillips,ryan.simon@conocophillips.com,Ryan,Simon,IC,Technical
-291,8,ConocoPhillips,joseph.christian@conocophillips.com,Joseph,Christian,IC,Technical
-292,8,ConocoPhillips,mariah.miller@conocophillips.com,Mariah,Miller,Manager,Technical
-293,8,ConocoPhillips,nicole.sanchez@conocophillips.com,Nicole,Sanchez,Manager,Technical
-294,8,ConocoPhillips,steven.bishop@conocophillips.com,Steven,Bishop,Manager,Technical
-295,8,ConocoPhillips,nicholas.johnson@conocophillips.com,Nicholas,Johnson,IC,Commercial
-296,8,ConocoPhillips,melissa.white@conocophillips.com,Melissa,White,IC,Technical
-297,8,ConocoPhillips,jason.salinas@conocophillips.com,Jason,Salinas,VP/Director,Technical
-298,8,ConocoPhillips,matthew.beard@conocophillips.com,Matthew,Beard,Manager,Technical
-299,8,ConocoPhillips,jacqueline.hill@conocophillips.com,Jacqueline,Hill,Manager,Technical
-300,8,ConocoPhillips,alejandro.vaughan@conocophillips.com,Alejandro,Vaughan,IC,Technical
-301,8,ConocoPhillips,christopher.cortez@conocophillips.com,Christopher,Cortez,C-Suite,Technical
-302,8,ConocoPhillips,tracy.chang@conocophillips.com,Tracy,Chang,Manager,Technical
-303,8,ConocoPhillips,hannah.brewer@conocophillips.com,Hannah,Brewer,IC,Technical
-304,8,ConocoPhillips,travis.mcguire@conocophillips.com,Travis,Mcguire,IC,Technical
-305,8,ConocoPhillips,christopher.walker@conocophillips.com,Christopher,Walker,IC,Technical
-306,8,ConocoPhillips,heather.torres@conocophillips.com,Heather,Torres,Manager,Technical
-307,8,ConocoPhillips,bonnie.kennedy@conocophillips.com,Bonnie,Kennedy,Manager,Technical
-308,8,ConocoPhillips,alyssa.coleman@conocophillips.com,Alyssa,Coleman,IC,Technical
-309,8,ConocoPhillips,julie.rivera@conocophillips.com,Julie,Rivera,IC,Commercial
-310,8,ConocoPhillips,jacqueline.nelson@conocophillips.com,Jacqueline,Nelson,IC,Technical
-311,8,ConocoPhillips,john.martinez@conocophillips.com,John,Martinez,IC,Technical
-312,8,ConocoPhillips,james.wilson@conocophillips.com,James,Wilson,IC,Commercial
-313,8,ConocoPhillips,amanda.gill@conocophillips.com,Amanda,Gill,IC,Commercial
-314,8,ConocoPhillips,jacob.robinson@conocophillips.com,Jacob,Robinson,IC,Technical
-315,8,ConocoPhillips,todd.hardy@conocophillips.com,Todd,Hardy,Manager,Technical
-316,8,ConocoPhillips,tiffany.warren@conocophillips.com,Tiffany,Warren,IC,Technical
-317,8,ConocoPhillips,justin.garcia@conocophillips.com,Justin,Garcia,C-Suite,Technical
-318,8,ConocoPhillips,james.perez@conocophillips.com,James,Perez,Manager,Commercial
-319,8,ConocoPhillips,harry.smith@conocophillips.com,Harry,Smith,IC,Commercial
-320,8,ConocoPhillips,amanda.hill@conocophillips.com,Amanda,Hill,VP/Director,Technical
-321,9,Eni,terri.tran@eni.com,Terri,Tran,Manager,Technical
-322,9,Eni,heidi.martinez@eni.com,Heidi,Martinez,VP/Director,Technical
-323,9,Eni,miranda.henry@eni.com,Miranda,Henry,IC,Technical
-324,9,Eni,monique.andrews@eni.com,Monique,Andrews,IC,Technical
-325,9,Eni,taylor.alexander@eni.com,Taylor,Alexander,VP/Director,Commercial
-326,9,Eni,jack.williams@eni.com,Jack,Williams,VP/Director,Technical
-327,9,Eni,shelley.woods@eni.com,Shelley,Woods,IC,Technical
-328,9,Eni,lynn.morales@eni.com,Lynn,Morales,IC,Technical
-329,9,Eni,charles.soto@eni.com,Charles,Soto,IC,Commercial
-330,9,Eni,brian.hernandez@eni.com,Brian,Hernandez,IC,Technical
-331,9,Eni,anna.torres@eni.com,Anna,Torres,IC,Technical
-332,9,Eni,victoria.wilson@eni.com,Victoria,Wilson,Manager,Commercial
-333,9,Eni,kathy.obrien@eni.com,Kathy,Obrien,IC,Technical
-334,9,Eni,krystal.perez@eni.com,Krystal,Perez,IC,Commercial
-335,9,Eni,alexandra.hayes@eni.com,Alexandra,Hayes,IC,Commercial
-336,9,Eni,scott.dalton@eni.com,Scott,Dalton,Manager,Technical
-337,9,Eni,veronica.torres@eni.com,Veronica,Torres,IC,Technical
-338,9,Eni,christine.lynch@eni.com,Christine,Lynch,VP/Director,Technical
-339,9,Eni,jody.meza@eni.com,Jody,Meza,C-Suite,Technical
-340,9,Eni,jared.clark@eni.com,Jared,Clark,IC,Technical
-341,9,Eni,donna.moore@eni.com,Donna,Moore,Manager,Commercial
-342,9,Eni,glenn.jones@eni.com,Glenn,Jones,IC,Technical
-343,9,Eni,aaron.hayes@eni.com,Aaron,Hayes,IC,Commercial
-344,9,Eni,brittney.carter@eni.com,Brittney,Carter,IC,Commercial
-345,9,Eni,jesse.mann@eni.com,Jesse,Mann,IC,Commercial
-346,9,Eni,jacqueline.gibson@eni.com,Jacqueline,Gibson,Manager,Technical
-347,9,Eni,grace.bradshaw@eni.com,Grace,Bradshaw,IC,Commercial
-348,9,Eni,kristin.weber@eni.com,Kristin,Weber,IC,Technical
-349,9,Eni,donna.peck@eni.com,Donna,Peck,VP/Director,Technical
-350,9,Eni,ronald.stephens@eni.com,Ronald,Stephens,IC,Technical
-351,9,Eni,deborah.kerr@eni.com,Deborah,Kerr,Manager,Technical
-352,9,Eni,margaret.jones@eni.com,Margaret,Jones,IC,Commercial
-353,9,Eni,gabriel.parker@eni.com,Gabriel,Parker,IC,Technical
-354,9,Eni,kaitlyn.carroll@eni.com,Kaitlyn,Carroll,Manager,Technical
-355,9,Eni,keith.martinez@eni.com,Keith,Martinez,C-Suite,Technical
-356,9,Eni,haley.lyons@eni.com,Haley,Lyons,Manager,Technical
-357,9,Eni,sherri.mason@eni.com,Sherri,Mason,VP/Director,Commercial
-358,9,Eni,troy.miller@eni.com,Troy,Miller,IC,Technical
-359,9,Eni,bill.reynolds@eni.com,Bill,Reynolds,IC,Commercial
-360,10,Petrobras,marcus.wright@petrobras.com,Marcus,Wright,IC,Commercial
-361,10,Petrobras,christopher.hayden@petrobras.com,Christopher,Hayden,VP/Director,Technical
-362,10,Petrobras,mary.johnston@petrobras.com,Mary,Johnston,Manager,Technical
-363,10,Petrobras,stephanie.key@petrobras.com,Stephanie,Key,IC,Technical
-364,10,Petrobras,emily.adams@petrobras.com,Emily,Adams,IC,Commercial
-365,10,Petrobras,billy.avila@petrobras.com,Billy,Avila,Manager,Technical
-366,10,Petrobras,thomas.pearson@petrobras.com,Thomas,Pearson,Manager,Technical
-367,10,Petrobras,sabrina.white@petrobras.com,Sabrina,White,VP/Director,Technical
-368,10,Petrobras,brenda.walters@petrobras.com,Brenda,Walters,Manager,Commercial
-369,10,Petrobras,travis.davis@petrobras.com,Travis,Davis,Manager,Commercial
-370,10,Petrobras,michael.cook@petrobras.com,Michael,Cook,C-Suite,Technical
-371,10,Petrobras,elizabeth.hodge@petrobras.com,Elizabeth,Hodge,Manager,Technical
-372,10,Petrobras,mark.steele@petrobras.com,Mark,Steele,IC,Commercial
-373,10,Petrobras,keith.landry@petrobras.com,Keith,Landry,IC,Technical
-374,10,Petrobras,lisa.pierce@petrobras.com,Lisa,Pierce,IC,Technical
-375,10,Petrobras,shawn.edwards@petrobras.com,Shawn,Edwards,VP/Director,Technical
-376,10,Petrobras,marcus.cordova@petrobras.com,Marcus,Cordova,IC,Technical
-377,10,Petrobras,richard.robertson@petrobras.com,Richard,Robertson,Manager,Technical
-378,10,Petrobras,vanessa.sandoval@petrobras.com,Vanessa,Sandoval,Manager,Technical
-379,10,Petrobras,amy.gutierrez@petrobras.com,Amy,Gutierrez,Manager,Commercial
-380,10,Petrobras,jacob.cox@petrobras.com,Jacob,Cox,Manager,Technical
-381,10,Petrobras,katherine.garrett@petrobras.com,Katherine,Garrett,IC,Commercial
-382,10,Petrobras,kathleen.harris@petrobras.com,Kathleen,Harris,IC,Technical
-383,10,Petrobras,andrea.pennington@petrobras.com,Andrea,Pennington,C-Suite,Technical
-384,10,Petrobras,samuel.wolfe@petrobras.com,Samuel,Wolfe,Manager,Commercial
-385,10,Petrobras,david.dudley@petrobras.com,David,Dudley,VP/Director,Commercial
-386,10,Petrobras,chelsea.allen@petrobras.com,Chelsea,Allen,IC,Technical
-387,10,Petrobras,eric.pierce@petrobras.com,Eric,Pierce,IC,Technical
-388,10,Petrobras,andrea.davis@petrobras.com,Andrea,Davis,IC,Technical
-389,10,Petrobras,victoria.durham@petrobras.com,Victoria,Durham,Manager,Technical
-390,10,Petrobras,steven.wilson@petrobras.com,Steven,Wilson,Manager,Technical
-391,10,Petrobras,marilyn.jimenez@petrobras.com,Marilyn,Jimenez,VP/Director,Technical
-392,10,Petrobras,jennifer.hicks@petrobras.com,Jennifer,Hicks,IC,Technical
-393,10,Petrobras,joshua.davenport@petrobras.com,Joshua,Davenport,VP/Director,Commercial
-394,10,Petrobras,tina.sanchez@petrobras.com,Tina,Sanchez,IC,Technical
-395,10,Petrobras,andrea.reyes@petrobras.com,Andrea,Reyes,IC,Technical
-396,10,Petrobras,sandra.romero@petrobras.com,Sandra,Romero,C-Suite,Commercial
-397,10,Petrobras,natasha.shields@petrobras.com,Natasha,Shields,IC,Technical
-398,11,Schlumberger,joshua.tyler@schlumberger.com,Joshua,Tyler,IC,Technical
-399,11,Schlumberger,robert.villa@schlumberger.com,Robert,Villa,Manager,Technical
-400,11,Schlumberger,william.hoover@schlumberger.com,William,Hoover,IC,Technical
-401,11,Schlumberger,justin.evans@schlumberger.com,Justin,Evans,IC,Commercial
-402,11,Schlumberger,brenda.duarte@schlumberger.com,Brenda,Duarte,IC,Technical
-403,11,Schlumberger,tracy.hernandez@schlumberger.com,Tracy,Hernandez,Manager,Commercial
-404,11,Schlumberger,amanda.reed@schlumberger.com,Amanda,Reed,Manager,Technical
-405,11,Schlumberger,andrea.daniels@schlumberger.com,Andrea,Daniels,Manager,Commercial
-406,11,Schlumberger,stanley.morris@schlumberger.com,Stanley,Morris,Manager,Commercial
-407,11,Schlumberger,jacob.terry@schlumberger.com,Jacob,Terry,IC,Commercial
-408,11,Schlumberger,ashley.hall@schlumberger.com,Ashley,Hall,VP/Director,Commercial
-409,11,Schlumberger,kimberly.williams@schlumberger.com,Kimberly,Williams,VP/Director,Commercial
-410,11,Schlumberger,julie.thornton@schlumberger.com,Julie,Thornton,Manager,Technical
-411,11,Schlumberger,lisa.hughes@schlumberger.com,Lisa,Hughes,IC,Technical
-412,11,Schlumberger,elizabeth.hoover@schlumberger.com,Elizabeth,Hoover,IC,Technical
-413,11,Schlumberger,tina.simpson@schlumberger.com,Tina,Simpson,VP/Director,Commercial
-414,11,Schlumberger,benjamin.shaw@schlumberger.com,Benjamin,Shaw,IC,Technical
-415,11,Schlumberger,brittany.kane@schlumberger.com,Brittany,Kane,IC,Technical
-416,11,Schlumberger,morgan.alexander@schlumberger.com,Morgan,Alexander,IC,Technical
-417,11,Schlumberger,alicia.bryant@schlumberger.com,Alicia,Bryant,VP/Director,Technical
-418,11,Schlumberger,jennifer.ortiz@schlumberger.com,Jennifer,Ortiz,IC,Technical
-419,11,Schlumberger,diana.moore@schlumberger.com,Diana,Moore,IC,Commercial
-420,11,Schlumberger,terrance.costa@schlumberger.com,Terrance,Costa,IC,Technical
-421,11,Schlumberger,matthew.schwartz@schlumberger.com,Matthew,Schwartz,IC,Commercial
-422,11,Schlumberger,debra.christian@schlumberger.com,Debra,Christian,Manager,Commercial
-423,11,Schlumberger,melissa.villarreal@schlumberger.com,Melissa,Villarreal,Manager,Technical
-424,11,Schlumberger,norman.stewart@schlumberger.com,Norman,Stewart,VP/Director,Commercial
-425,11,Schlumberger,jennifer.malone@schlumberger.com,Jennifer,Malone,IC,Commercial
-426,11,Schlumberger,monique.johnson@schlumberger.com,Monique,Johnson,VP/Director,Technical
-427,11,Schlumberger,casey.welch@schlumberger.com,Casey,Welch,Manager,Technical
-428,11,Schlumberger,samantha.bright@schlumberger.com,Samantha,Bright,Manager,Technical
-429,11,Schlumberger,julie.hamilton@schlumberger.com,Julie,Hamilton,Manager,Technical
-430,11,Schlumberger,corey.schultz@schlumberger.com,Corey,Schultz,Manager,Technical
-431,11,Schlumberger,monique.wallace@schlumberger.com,Monique,Wallace,IC,Technical
-432,11,Schlumberger,heather.berger@schlumberger.com,Heather,Berger,VP/Director,Commercial
-433,11,Schlumberger,brandon.flynn@schlumberger.com,Brandon,Flynn,Manager,Commercial
-434,11,Schlumberger,kelly.brooks@schlumberger.com,Kelly,Brooks,Manager,Technical
-435,11,Schlumberger,dustin.schmidt@schlumberger.com,Dustin,Schmidt,Manager,Commercial
-436,11,Schlumberger,ashlee.sparks@schlumberger.com,Ashlee,Sparks,Manager,Commercial
-437,11,Schlumberger,george.miller@schlumberger.com,George,Miller,IC,Technical
-438,11,Schlumberger,monica.harvey@schlumberger.com,Monica,Harvey,Manager,Technical
-439,11,Schlumberger,john.durham@schlumberger.com,John,Durham,VP/Director,Commercial
-440,11,Schlumberger,douglas.murray@schlumberger.com,Douglas,Murray,IC,Technical
-441,11,Schlumberger,jonathan.scott@schlumberger.com,Jonathan,Scott,IC,Commercial
-442,11,Schlumberger,albert.ballard@schlumberger.com,Albert,Ballard,Manager,Technical
-443,12,Halliburton,rachel.byrd@halliburton.com,Rachel,Byrd,IC,Technical
-444,12,Halliburton,eric.alexander@halliburton.com,Eric,Alexander,Manager,Technical
-445,12,Halliburton,michael.matthews@halliburton.com,Michael,Matthews,Manager,Commercial
-446,12,Halliburton,danielle.coleman@halliburton.com,Danielle,Coleman,C-Suite,Commercial
-447,12,Halliburton,john.bruce@halliburton.com,John,Bruce,Manager,Technical
-448,12,Halliburton,james.cruz@halliburton.com,James,Cruz,IC,Commercial
-449,12,Halliburton,timothy.young@halliburton.com,Timothy,Young,IC,Commercial
-450,12,Halliburton,ashley.andrews@halliburton.com,Ashley,Andrews,IC,Commercial
-451,12,Halliburton,victoria.phillips@halliburton.com,Victoria,Phillips,IC,Commercial
-452,12,Halliburton,tiffany.barrett@halliburton.com,Tiffany,Barrett,Manager,Commercial
-453,12,Halliburton,joshua.knight@halliburton.com,Joshua,Knight,Manager,Technical
-454,12,Halliburton,gina.garner@halliburton.com,Gina,Garner,Manager,Commercial
-455,12,Halliburton,brandon.obrien@halliburton.com,Brandon,Obrien,IC,Commercial
-456,12,Halliburton,tyler.strong@halliburton.com,Tyler,Strong,VP/Director,Technical
-457,12,Halliburton,justin.lindsey@halliburton.com,Justin,Lindsey,IC,Technical
-458,12,Halliburton,catherine.gomez@halliburton.com,Catherine,Gomez,IC,Technical
-459,12,Halliburton,dana.oliver@halliburton.com,Dana,Oliver,Manager,Technical
-460,12,Halliburton,erica.le@halliburton.com,Erica,Le,IC,Technical
-461,12,Halliburton,donna.massey@halliburton.com,Donna,Massey,Manager,Technical
-462,12,Halliburton,courtney.berger@halliburton.com,Courtney,Berger,IC,Commercial
-463,12,Halliburton,debbie.parker@halliburton.com,Debbie,Parker,Manager,Technical
-464,12,Halliburton,scott.riley@halliburton.com,Scott,Riley,Manager,Technical
-465,12,Halliburton,jessica.davis@halliburton.com,Jessica,Davis,IC,Commercial
-466,12,Halliburton,kenneth.burgess@halliburton.com,Kenneth,Burgess,IC,Technical
-467,12,Halliburton,gregory.anderson@halliburton.com,Gregory,Anderson,IC,Commercial
-468,12,Halliburton,amber.mata@halliburton.com,Amber,Mata,Manager,Technical
-469,12,Halliburton,alyssa.mcintyre@halliburton.com,Alyssa,Mcintyre,IC,Technical
-470,12,Halliburton,maria.scott@halliburton.com,Maria,Scott,IC,Commercial
-471,12,Halliburton,makayla.olson@halliburton.com,Makayla,Olson,Manager,Commercial
-472,12,Halliburton,lindsay.francis@halliburton.com,Lindsay,Francis,IC,Technical
-473,12,Halliburton,matthew.wilson@halliburton.com,Matthew,Wilson,Manager,Technical
-474,12,Halliburton,sydney.taylor@halliburton.com,Sydney,Taylor,VP/Director,Technical
-475,12,Halliburton,tammy.dalton@halliburton.com,Tammy,Dalton,IC,Technical
-476,12,Halliburton,jennifer.whitney@halliburton.com,Jennifer,Whitney,Manager,Commercial
-477,12,Halliburton,tammy.ballard@halliburton.com,Tammy,Ballard,Manager,Commercial
-478,12,Halliburton,michael.gibbs@halliburton.com,Michael,Gibbs,Manager,Commercial
-479,12,Halliburton,alexander.herrera@halliburton.com,Alexander,Herrera,IC,Technical
-480,12,Halliburton,shawn.chambers@halliburton.com,Shawn,Chambers,IC,Commercial
-481,12,Halliburton,emily.richards@halliburton.com,Emily,Richards,IC,Technical
-482,12,Halliburton,lynn.bentley@halliburton.com,Lynn,Bentley,IC,Commercial
-483,12,Halliburton,daniel.hall@halliburton.com,Daniel,Hall,VP/Director,Technical
-484,12,Halliburton,angel.henson@halliburton.com,Angel,Henson,C-Suite,Commercial
-485,13,Baker Hughes,anna.herman@bakerhughes.com,Anna,Herman,VP/Director,Commercial
-486,13,Baker Hughes,jeffrey.brown@bakerhughes.com,Jeffrey,Brown,VP/Director,Technical
-487,13,Baker Hughes,madison.blankenship@bakerhughes.com,Madison,Blankenship,IC,Commercial
-488,13,Baker Hughes,kevin.ortiz@bakerhughes.com,Kevin,Ortiz,IC,Technical
-489,13,Baker Hughes,donald.shah@bakerhughes.com,Donald,Shah,IC,Technical
-490,13,Baker Hughes,kevin.vasquez@bakerhughes.com,Kevin,Vasquez,Manager,Technical
-491,13,Baker Hughes,colton.clay@bakerhughes.com,Colton,Clay,Manager,Technical
-492,13,Baker Hughes,derek.chavez@bakerhughes.com,Derek,Chavez,IC,Technical
-493,13,Baker Hughes,ellen.paul@bakerhughes.com,Ellen,Paul,Manager,Technical
-494,13,Baker Hughes,sonya.barnes@bakerhughes.com,Sonya,Barnes,IC,Commercial
-495,13,Baker Hughes,julia.moore@bakerhughes.com,Julia,Moore,VP/Director,Commercial
-496,13,Baker Hughes,robert.garcia@bakerhughes.com,Robert,Garcia,IC,Commercial
-497,13,Baker Hughes,tracy.russell@bakerhughes.com,Tracy,Russell,Manager,Technical
-498,13,Baker Hughes,stephanie.johnson@bakerhughes.com,Stephanie,Johnson,VP/Director,Technical
-499,13,Baker Hughes,mitchell.ramos@bakerhughes.com,Mitchell,Ramos,IC,Technical
-500,13,Baker Hughes,stephanie.foley@bakerhughes.com,Stephanie,Foley,IC,Commercial
-501,13,Baker Hughes,cory.jennings@bakerhughes.com,Cory,Jennings,IC,Technical
-502,13,Baker Hughes,amy.levine@bakerhughes.com,Amy,Levine,IC,Technical
-503,13,Baker Hughes,michael.sanders@bakerhughes.com,Michael,Sanders,VP/Director,Technical
-504,13,Baker Hughes,james.martinez@bakerhughes.com,James,Martinez,VP/Director,Commercial
-505,13,Baker Hughes,melanie.gibson@bakerhughes.com,Melanie,Gibson,Manager,Technical
-506,13,Baker Hughes,elizabeth.may@bakerhughes.com,Elizabeth,May,IC,Technical
-507,13,Baker Hughes,carla.smith@bakerhughes.com,Carla,Smith,VP/Director,Commercial
-508,13,Baker Hughes,kristin.sanchez@bakerhughes.com,Kristin,Sanchez,C-Suite,Commercial
-509,13,Baker Hughes,david.cunningham@bakerhughes.com,David,Cunningham,VP/Director,Technical
-510,13,Baker Hughes,casey.hubbard@bakerhughes.com,Casey,Hubbard,Manager,Technical
-511,13,Baker Hughes,jamie.robinson@bakerhughes.com,Jamie,Robinson,IC,Technical
-512,13,Baker Hughes,molly.murphy@bakerhughes.com,Molly,Murphy,C-Suite,Commercial
-513,13,Baker Hughes,dylan.lester@bakerhughes.com,Dylan,Lester,Manager,Technical
-514,13,Baker Hughes,aaron.garrison@bakerhughes.com,Aaron,Garrison,VP/Director,Technical
-515,13,Baker Hughes,duane.anderson@bakerhughes.com,Duane,Anderson,IC,Technical
-516,13,Baker Hughes,john.thompson@bakerhughes.com,John,Thompson,IC,Technical
-517,13,Baker Hughes,donna.johnson@bakerhughes.com,Donna,Johnson,IC,Technical
-518,14,Weatherford,alexis.tyler@weatherford.com,Alexis,Tyler,Manager,Technical
-519,14,Weatherford,john.morris@weatherford.com,John,Morris,IC,Commercial
-520,14,Weatherford,grant.williams@weatherford.com,Grant,Williams,IC,Commercial
-521,14,Weatherford,judy.fox@weatherford.com,Judy,Fox,Manager,Commercial
-522,14,Weatherford,julie.alvarez@weatherford.com,Julie,Alvarez,C-Suite,Commercial
-523,14,Weatherford,kimberly.palmer@weatherford.com,Kimberly,Palmer,IC,Technical
-524,14,Weatherford,daniel.gordon@weatherford.com,Daniel,Gordon,VP/Director,Commercial
-525,14,Weatherford,sonia.williams@weatherford.com,Sonia,Williams,Manager,Commercial
-526,14,Weatherford,krista.camacho@weatherford.com,Krista,Camacho,Manager,Technical
-527,14,Weatherford,adrienne.ellis@weatherford.com,Adrienne,Ellis,VP/Director,Commercial
-528,14,Weatherford,tamara.brown@weatherford.com,Tamara,Brown,IC,Commercial
-529,14,Weatherford,timothy.morales@weatherford.com,Timothy,Morales,Manager,Technical
-530,14,Weatherford,gina.henry@weatherford.com,Gina,Henry,Manager,Technical
-531,14,Weatherford,renee.jones@weatherford.com,Renee,Jones,Manager,Commercial
-532,14,Weatherford,christopher.franklin@weatherford.com,Christopher,Franklin,VP/Director,Commercial
-533,14,Weatherford,cameron.hill@weatherford.com,Cameron,Hill,IC,Technical
-534,14,Weatherford,cynthia.kelley@weatherford.com,Cynthia,Kelley,IC,Technical
-535,14,Weatherford,mark.vang@weatherford.com,Mark,Vang,IC,Technical
-536,14,Weatherford,alyssa.chavez@weatherford.com,Alyssa,Chavez,IC,Technical
-537,14,Weatherford,catherine.garcia@weatherford.com,Catherine,Garcia,IC,Technical
-538,14,Weatherford,jacqueline.farrell@weatherford.com,Jacqueline,Farrell,Manager,Technical
-539,14,Weatherford,debra.mack@weatherford.com,Debra,Mack,IC,Commercial
-540,14,Weatherford,jennifer.lewis@weatherford.com,Jennifer,Lewis,Manager,Technical
-541,14,Weatherford,shannon.perez@weatherford.com,Shannon,Perez,VP/Director,Technical
-542,14,Weatherford,matthew.chavez@weatherford.com,Matthew,Chavez,IC,Technical
-543,14,Weatherford,robert.davis@weatherford.com,Robert,Davis,VP/Director,Technical
-544,14,Weatherford,ronald.ortega@weatherford.com,Ronald,Ortega,IC,Technical
-545,14,Weatherford,nicholas.hernandez@weatherford.com,Nicholas,Hernandez,IC,Technical
-546,14,Weatherford,sandra.jones@weatherford.com,Sandra,Jones,IC,Commercial
-547,14,Weatherford,marie.davis@weatherford.com,Marie,Davis,Manager,Commercial
-548,14,Weatherford,colin.rodgers@weatherford.com,Colin,Rodgers,VP/Director,Technical
-549,14,Weatherford,lisa.hawkins@weatherford.com,Lisa,Hawkins,Manager,Technical
-550,14,Weatherford,brenda.hoffman@weatherford.com,Brenda,Hoffman,IC,Technical
-551,15,National Oilwell Varco,mark.martinez@nationaloilwellvarco.com,Mark,Martinez,Manager,Technical
-552,15,National Oilwell Varco,michael.ortega@nationaloilwellvarco.com,Michael,Ortega,IC,Technical
-553,15,National Oilwell Varco,karen.parrish@nationaloilwellvarco.com,Karen,Parrish,IC,Technical
-554,15,National Oilwell Varco,jennifer.schmitt@nationaloilwellvarco.com,Jennifer,Schmitt,IC,Commercial
-555,15,National Oilwell Varco,caroline.bell@nationaloilwellvarco.com,Caroline,Bell,IC,Commercial
-556,15,National Oilwell Varco,becky.lewis@nationaloilwellvarco.com,Becky,Lewis,IC,Commercial
-557,15,National Oilwell Varco,diane.walker@nationaloilwellvarco.com,Diane,Walker,C-Suite,Commercial
-558,15,National Oilwell Varco,daniel.bruce@nationaloilwellvarco.com,Daniel,Bruce,IC,Technical
-559,15,National Oilwell Varco,michael.farmer@nationaloilwellvarco.com,Michael,Farmer,VP/Director,Commercial
-560,15,National Oilwell Varco,audrey.aguirre@nationaloilwellvarco.com,Audrey,Aguirre,Manager,Technical
-561,15,National Oilwell Varco,megan.villegas@nationaloilwellvarco.com,Megan,Villegas,C-Suite,Commercial
-562,15,National Oilwell Varco,loretta.austin@nationaloilwellvarco.com,Loretta,Austin,IC,Technical
-563,15,National Oilwell Varco,dawn.johnson@nationaloilwellvarco.com,Dawn,Johnson,VP/Director,Commercial
-564,15,National Oilwell Varco,sarah.gallegos@nationaloilwellvarco.com,Sarah,Gallegos,C-Suite,Commercial
-565,15,National Oilwell Varco,joseph.white@nationaloilwellvarco.com,Joseph,White,Manager,Technical
-566,15,National Oilwell Varco,jacqueline.parker@nationaloilwellvarco.com,Jacqueline,Parker,Manager,Technical
-567,15,National Oilwell Varco,matthew.smith@nationaloilwellvarco.com,Matthew,Smith,IC,Commercial
-568,15,National Oilwell Varco,molly.knight@nationaloilwellvarco.com,Molly,Knight,IC,Technical
-569,15,National Oilwell Varco,richard.thomas@nationaloilwellvarco.com,Richard,Thomas,VP/Director,Technical
-570,15,National Oilwell Varco,cynthia.johnson@nationaloilwellvarco.com,Cynthia,Johnson,IC,Commercial
-571,15,National Oilwell Varco,julie.lewis@nationaloilwellvarco.com,Julie,Lewis,Manager,Commercial
-572,15,National Oilwell Varco,robert.peterson@nationaloilwellvarco.com,Robert,Peterson,Manager,Technical
-573,15,National Oilwell Varco,mitchell.griffith@nationaloilwellvarco.com,Mitchell,Griffith,Manager,Commercial
-574,15,National Oilwell Varco,kimberly.bradley@nationaloilwellvarco.com,Kimberly,Bradley,VP/Director,Technical
-575,15,National Oilwell Varco,christopher.williams@nationaloilwellvarco.com,Christopher,Williams,Manager,Commercial
-576,15,National Oilwell Varco,eric.williamson@nationaloilwellvarco.com,Eric,Williamson,Manager,Commercial
-577,15,National Oilwell Varco,emily.nelson@nationaloilwellvarco.com,Emily,Nelson,C-Suite,Technical
-578,15,National Oilwell Varco,ebony.tucker@nationaloilwellvarco.com,Ebony,Tucker,IC,Technical
-579,15,National Oilwell Varco,scott.nelson@nationaloilwellvarco.com,Scott,Nelson,Manager,Technical
-580,15,National Oilwell Varco,kari.wilson@nationaloilwellvarco.com,Kari,Wilson,VP/Director,Technical
-581,15,National Oilwell Varco,russell.campbell@nationaloilwellvarco.com,Russell,Campbell,Manager,Technical
-582,15,National Oilwell Varco,erika.tucker@nationaloilwellvarco.com,Erika,Tucker,IC,Technical
-583,15,National Oilwell Varco,elizabeth.williams@nationaloilwellvarco.com,Elizabeth,Williams,Manager,Commercial
-584,15,National Oilwell Varco,randall.greene@nationaloilwellvarco.com,Randall,Greene,IC,Commercial
-585,15,National Oilwell Varco,adrian.turner@nationaloilwellvarco.com,Adrian,Turner,IC,Technical
-586,15,National Oilwell Varco,jason.taylor@nationaloilwellvarco.com,Jason,Taylor,IC,Technical
-587,15,National Oilwell Varco,jonathan.murphy@nationaloilwellvarco.com,Jonathan,Murphy,C-Suite,Commercial
-588,15,National Oilwell Varco,adrian.burgess@nationaloilwellvarco.com,Adrian,Burgess,IC,Technical
-589,15,National Oilwell Varco,gregory.james@nationaloilwellvarco.com,Gregory,James,IC,Commercial
-590,15,National Oilwell Varco,jane.mason@nationaloilwellvarco.com,Jane,Mason,Manager,Technical
-591,15,National Oilwell Varco,martha.drake@nationaloilwellvarco.com,Martha,Drake,C-Suite,Technical
-592,15,National Oilwell Varco,charles.hensley@nationaloilwellvarco.com,Charles,Hensley,IC,Commercial
-593,15,National Oilwell Varco,bobby.smith@nationaloilwellvarco.com,Bobby,Smith,IC,Commercial
-594,15,National Oilwell Varco,samantha.atkins@nationaloilwellvarco.com,Samantha,Atkins,VP/Director,Commercial
-595,15,National Oilwell Varco,barbara.berry@nationaloilwellvarco.com,Barbara,Berry,Manager,Technical
+user_id,account_id,company_name,email,first_name,last_name,job_title,seniority,persona_type
+1,1,Shell,danielle.johnson@shell.com,Danielle,Johnson,Director of Marketing,VP/Director,Commercial
+2,1,Shell,joshua.walker@shell.com,Joshua,Walker,Sales Manager,Manager,Commercial
+3,1,Shell,jill.rhodes@shell.com,Jill,Rhodes,Software Engineer,IC,Technical
+4,1,Shell,patricia.miller@shell.com,Patricia,Miller,Engineering Manager,Manager,Technical
+5,1,Shell,robert.johnson@shell.com,Robert,Johnson,Sales Representative,IC,Commercial
+6,1,Shell,jeffery.wagner@shell.com,Jeffery,Wagner,Engineering Manager,Manager,Technical
+7,1,Shell,anthony.gonzalez@shell.com,Anthony,Gonzalez,Systems Administrator,IC,Technical
+8,1,Shell,debra.gardner@shell.com,Debra,Gardner,Data Science Manager,Manager,Technical
+9,1,Shell,jeffrey.lawrence@shell.com,Jeffrey,Lawrence,VP of Data Science,VP/Director,Technical
+10,1,Shell,lisa.smith@shell.com,Lisa,Smith,Account Executive,IC,Commercial
+11,1,Shell,linda.wolfe@shell.com,Linda,Wolfe,Systems Administrator,IC,Technical
+12,1,Shell,matthew.moore@shell.com,Matthew,Moore,VP of Data Science,VP/Director,Technical
+13,1,Shell,susan.rogers@shell.com,Susan,Rogers,Account Executive,IC,Commercial
+14,1,Shell,christopher.davis@shell.com,Christopher,Davis,Account Executive,IC,Commercial
+15,1,Shell,melanie.munoz@shell.com,Melanie,Munoz,Sales Representative,IC,Commercial
+16,1,Shell,lindsay.blair@shell.com,Lindsay,Blair,Account Manager,Manager,Commercial
+17,1,Shell,amanda.dudley@shell.com,Amanda,Dudley,VP of Data Science,VP/Director,Technical
+18,1,Shell,nicholas.arnold@shell.com,Nicholas,Arnold,Account Executive,IC,Commercial
+19,1,Shell,maria.montgomery@shell.com,Maria,Montgomery,Data Scientist,IC,Technical
+20,1,Shell,michelle.ray@shell.com,Michelle,Ray,Director of IT,VP/Director,Technical
+21,1,Shell,janet.williams@shell.com,Janet,Williams,Account Executive,IC,Commercial
+22,1,Shell,jeremy.roberts@shell.com,Jeremy,Roberts,Data Science Manager,Manager,Technical
+23,1,Shell,christopher.hall@shell.com,Christopher,Hall,Data Science Manager,Manager,Technical
+24,1,Shell,craig.ramirez@shell.com,Craig,Ramirez,Security Manager,Manager,Technical
+25,1,Shell,cynthia.diaz@shell.com,Cynthia,Diaz,VP of Data Science,VP/Director,Technical
+26,1,Shell,mitchell.clark@shell.com,Mitchell,Clark,Systems Administrator,IC,Technical
+27,1,Shell,joseph.zuniga@shell.com,Joseph,Zuniga,Marketing Manager,Manager,Commercial
+28,1,Shell,deborah.lynch@shell.com,Deborah,Lynch,Software Engineer,IC,Technical
+29,1,Shell,george.daniel@shell.com,George,Daniel,Data Scientist,IC,Technical
+30,1,Shell,frank.gray@shell.com,Frank,Gray,Software Engineer,IC,Technical
+31,1,Shell,veronica.bowman@shell.com,Veronica,Bowman,Security Manager,Manager,Technical
+32,1,Shell,angela.cohen@shell.com,Angela,Cohen,Account Executive,IC,Commercial
+33,1,Shell,megan.parsons@shell.com,Megan,Parsons,Cloud Architect,IC,Technical
+34,1,Shell,jeremy.johnson@shell.com,Jeremy,Johnson,Cloud Architect,IC,Technical
+35,1,Shell,leslie.adams@shell.com,Leslie,Adams,Data Science Manager,Manager,Technical
+36,1,Shell,jason.hahn@shell.com,Jason,Hahn,Account Executive,IC,Commercial
+37,1,Shell,nancy.edwards@shell.com,Nancy,Edwards,Data Scientist,IC,Technical
+38,1,Shell,diana.foster@shell.com,Diana,Foster,VP of Sales,VP/Director,Commercial
+39,1,Shell,robin.ellis@shell.com,Robin,Ellis,Software Engineer,IC,Technical
+40,1,Shell,joseph.wright@shell.com,Joseph,Wright,Customer Success Manager,IC,Commercial
+41,1,Shell,anna.baker@shell.com,Anna,Baker,Engineering Manager,Manager,Technical
+42,1,Shell,brenda.hurst@shell.com,Brenda,Hurst,VP of Engineering,VP/Director,Technical
+43,1,Shell,reginald.robinson@shell.com,Reginald,Robinson,Data Scientist,IC,Technical
+44,1,Shell,whitney.hicks@shell.com,Whitney,Hicks,Director of IT,VP/Director,Technical
+45,1,Shell,christopher.williams@shell.com,Christopher,Williams,Business Development Manager,Manager,Commercial
+46,1,Shell,daniel.burton@shell.com,Daniel,Burton,Marketing Specialist,IC,Commercial
+47,1,Shell,laura.henderson@shell.com,Laura,Henderson,Cloud Architect,IC,Technical
+48,1,Shell,bryan.james@shell.com,Bryan,James,Engineering Manager,Manager,Technical
+49,1,Shell,wendy.rice@shell.com,Wendy,Rice,Engineering Manager,Manager,Technical
+50,1,Shell,tasha.valencia@shell.com,Tasha,Valencia,Data Scientist,IC,Technical
+51,2,Aramco,alexander.le@aramco.com,Alexander,Le,Director of Marketing,VP/Director,Commercial
+52,2,Aramco,erin.herrera@aramco.com,Erin,Herrera,VP of Data Science,VP/Director,Technical
+53,2,Aramco,joseph.davidson@aramco.com,Joseph,Davidson,Director of Cloud Infrastructure,VP/Director,Technical
+54,2,Aramco,daniel.graham@aramco.com,Daniel,Graham,Security Manager,Manager,Technical
+55,2,Aramco,shawn.mckay@aramco.com,Shawn,Mckay,Security Manager,Manager,Technical
+56,2,Aramco,nancy.baker@aramco.com,Nancy,Baker,Director of Cloud Infrastructure,VP/Director,Technical
+57,2,Aramco,vincent.white@aramco.com,Vincent,White,Engineering Manager,Manager,Technical
+58,2,Aramco,rita.harrell@aramco.com,Rita,Harrell,Account Executive,IC,Commercial
+59,2,Aramco,kenneth.fowler@aramco.com,Kenneth,Fowler,VP of Sales,VP/Director,Commercial
+60,2,Aramco,chelsea.hernandez@aramco.com,Chelsea,Hernandez,Security Manager,Manager,Technical
+61,2,Aramco,kathryn.ryan@aramco.com,Kathryn,Ryan,Director of Cloud Infrastructure,VP/Director,Technical
+62,2,Aramco,kimberly.moreno@aramco.com,Kimberly,Moreno,Business Development Manager,Manager,Commercial
+63,2,Aramco,aaron.nguyen@aramco.com,Aaron,Nguyen,Account Executive,IC,Commercial
+64,2,Aramco,andrew.hickman@aramco.com,Andrew,Hickman,VP of Sales,VP/Director,Commercial
+65,2,Aramco,natasha.decker@aramco.com,Natasha,Decker,Marketing Specialist,IC,Commercial
+66,2,Aramco,kyle.brown@aramco.com,Kyle,Brown,Director of IT,VP/Director,Technical
+67,2,Aramco,natalie.arroyo@aramco.com,Natalie,Arroyo,Marketing Specialist,IC,Commercial
+68,2,Aramco,christopher.tucker@aramco.com,Christopher,Tucker,Account Manager,Manager,Commercial
+69,2,Aramco,chad.hodges@aramco.com,Chad,Hodges,Customer Success Manager,IC,Commercial
+70,2,Aramco,katie.anderson@aramco.com,Katie,Anderson,Business Development Manager,Manager,Commercial
+71,2,Aramco,thomas.pierce@aramco.com,Thomas,Pierce,VP of Engineering,VP/Director,Technical
+72,2,Aramco,joseph.brennan@aramco.com,Joseph,Brennan,Cloud Architect,IC,Technical
+73,2,Aramco,rodney.lewis@aramco.com,Rodney,Lewis,Director of IT,VP/Director,Technical
+74,2,Aramco,amber.blair@aramco.com,Amber,Blair,Director of IT,VP/Director,Technical
+75,2,Aramco,james.collins@aramco.com,James,Collins,Director of IT,VP/Director,Technical
+76,2,Aramco,wanda.santos@aramco.com,Wanda,Santos,Marketing Manager,Manager,Commercial
+77,2,Aramco,samuel.holmes@aramco.com,Samuel,Holmes,Software Engineer,IC,Technical
+78,2,Aramco,david.walker@aramco.com,David,Walker,Data Science Manager,Manager,Technical
+79,2,Aramco,matthew.chapman@aramco.com,Matthew,Chapman,Cloud Architect,IC,Technical
+80,2,Aramco,jerry.robinson@aramco.com,Jerry,Robinson,Data Science Manager,Manager,Technical
+81,3,Equinor,chad.welch@equinor.com,Chad,Welch,Sales Manager,Manager,Commercial
+82,3,Equinor,jeremy.whitehead@equinor.com,Jeremy,Whitehead,Chief Executive Officer,C-Suite,Commercial
+83,3,Equinor,michele.jones@equinor.com,Michele,Jones,VP of Data Science,VP/Director,Technical
+84,3,Equinor,john.caldwell@equinor.com,John,Caldwell,VP of Engineering,VP/Director,Technical
+85,3,Equinor,jason.anderson@equinor.com,Jason,Anderson,Data Scientist,IC,Technical
+86,3,Equinor,selena.duncan@equinor.com,Selena,Duncan,Data Science Manager,Manager,Technical
+87,3,Equinor,thomas.mueller@equinor.com,Thomas,Mueller,Account Executive,IC,Commercial
+88,3,Equinor,lindsey.lee@equinor.com,Lindsey,Lee,Software Engineer,IC,Technical
+89,3,Equinor,collin.jordan@equinor.com,Collin,Jordan,Software Engineer,IC,Technical
+90,3,Equinor,rodney.owens@equinor.com,Rodney,Owens,Marketing Specialist,IC,Commercial
+91,3,Equinor,jessica.nunez@equinor.com,Jessica,Nunez,Account Manager,Manager,Commercial
+92,3,Equinor,tracey.garcia@equinor.com,Tracey,Garcia,Account Manager,Manager,Commercial
+93,3,Equinor,richard.morgan@equinor.com,Richard,Morgan,Software Engineer,IC,Technical
+94,3,Equinor,michelle.wright@equinor.com,Michelle,Wright,VP of Data Science,VP/Director,Technical
+95,3,Equinor,james.west@equinor.com,James,West,Chief Information Officer,C-Suite,Technical
+96,3,Equinor,robert.ramirez@equinor.com,Robert,Ramirez,Systems Administrator,IC,Technical
+97,3,Equinor,john.leblanc@equinor.com,John,Leblanc,Software Engineer,IC,Technical
+98,3,Equinor,scott.callahan@equinor.com,Scott,Callahan,Director of Marketing,VP/Director,Commercial
+99,3,Equinor,andrea.williams@equinor.com,Andrea,Williams,Marketing Specialist,IC,Commercial
+100,3,Equinor,yvette.huff@equinor.com,Yvette,Huff,Data Science Manager,Manager,Technical
+101,3,Equinor,tanya.house@equinor.com,Tanya,House,Account Executive,IC,Commercial
+102,3,Equinor,melinda.martin@equinor.com,Melinda,Martin,Data Scientist,IC,Technical
+103,3,Equinor,todd.lewis@equinor.com,Todd,Lewis,Systems Administrator,IC,Technical
+104,3,Equinor,richard.brown@equinor.com,Richard,Brown,Marketing Specialist,IC,Commercial
+105,3,Equinor,nicholas.galloway@equinor.com,Nicholas,Galloway,Marketing Specialist,IC,Commercial
+106,3,Equinor,joseph.bowers@equinor.com,Joseph,Bowers,Cloud Architect,IC,Technical
+107,3,Equinor,spencer.henderson@equinor.com,Spencer,Henderson,Data Scientist,IC,Technical
+108,3,Equinor,susan.cowan@equinor.com,Susan,Cowan,Sales Manager,Manager,Commercial
+109,3,Equinor,angela.higgins@equinor.com,Angela,Higgins,Security Manager,Manager,Technical
+110,3,Equinor,eric.phillips@equinor.com,Eric,Phillips,Business Development Manager,Manager,Commercial
+111,3,Equinor,tanya.riley@equinor.com,Tanya,Riley,Marketing Manager,Manager,Commercial
+112,3,Equinor,amy.adkins@equinor.com,Amy,Adkins,Business Development Manager,Manager,Commercial
+113,3,Equinor,brian.silva@equinor.com,Brian,Silva,Account Manager,Manager,Commercial
+114,3,Equinor,wesley.farrell@equinor.com,Wesley,Farrell,Data Science Manager,Manager,Technical
+115,3,Equinor,eric.yu@equinor.com,Eric,Yu,Cloud Architect,IC,Technical
+116,3,Equinor,christopher.lopez@equinor.com,Christopher,Lopez,VP of Customer Success,VP/Director,Commercial
+117,3,Equinor,brooke.leonard@equinor.com,Brooke,Leonard,Chief Data Officer,C-Suite,Technical
+118,3,Equinor,joe.wilson@equinor.com,Joe,Wilson,Software Engineer,IC,Technical
+119,3,Equinor,pamela.sanchez@equinor.com,Pamela,Sanchez,Data Science Manager,Manager,Technical
+120,3,Equinor,brooke.harvey@equinor.com,Brooke,Harvey,Chief Information Officer,C-Suite,Technical
+121,3,Equinor,robert.silva@equinor.com,Robert,Silva,Data Science Manager,Manager,Technical
+122,3,Equinor,alexandra.donovan@equinor.com,Alexandra,Donovan,Account Executive,IC,Commercial
+123,3,Equinor,james.moran@equinor.com,James,Moran,Cloud Architect,IC,Technical
+124,3,Equinor,john.foster@equinor.com,John,Foster,Cloud Architect,IC,Technical
+125,4,BP,emily.evans@bp.com,Emily,Evans,Director of Cloud Infrastructure,VP/Director,Technical
+126,4,BP,leslie.walton@bp.com,Leslie,Walton,Customer Success Manager,IC,Commercial
+127,4,BP,charles.ellis@bp.com,Charles,Ellis,Account Manager,Manager,Commercial
+128,4,BP,yolanda.ferrell@bp.com,Yolanda,Ferrell,Data Science Manager,Manager,Technical
+129,4,BP,charles.lewis@bp.com,Charles,Lewis,IT Manager,Manager,Technical
+130,4,BP,joseph.mahoney@bp.com,Joseph,Mahoney,Marketing Specialist,IC,Commercial
+131,4,BP,nicole.suarez@bp.com,Nicole,Suarez,Cloud Architect,IC,Technical
+132,4,BP,mike.moore@bp.com,Mike,Moore,Director of Marketing,VP/Director,Commercial
+133,4,BP,martha.warner@bp.com,Martha,Warner,Data Scientist,IC,Technical
+134,4,BP,cheryl.archer@bp.com,Cheryl,Archer,Director of Cloud Infrastructure,VP/Director,Technical
+135,4,BP,destiny.smith@bp.com,Destiny,Smith,Sales Representative,IC,Commercial
+136,4,BP,lisa.evans@bp.com,Lisa,Evans,Marketing Manager,Manager,Commercial
+137,4,BP,elizabeth.mcmillan@bp.com,Elizabeth,Mcmillan,Systems Administrator,IC,Technical
+138,4,BP,dennis.wilson@bp.com,Dennis,Wilson,Sales Manager,Manager,Commercial
+139,4,BP,daniel.tran@bp.com,Daniel,Tran,Account Executive,IC,Commercial
+140,4,BP,joseph.jacobs@bp.com,Joseph,Jacobs,Systems Administrator,IC,Technical
+141,4,BP,jennifer.harris@bp.com,Jennifer,Harris,VP of Engineering,VP/Director,Technical
+142,4,BP,cynthia.baker@bp.com,Cynthia,Baker,Account Manager,Manager,Commercial
+143,4,BP,tracy.whitehead@bp.com,Tracy,Whitehead,Sales Representative,IC,Commercial
+144,4,BP,meghan.davis@bp.com,Meghan,Davis,Data Scientist,IC,Technical
+145,4,BP,rodney.hill@bp.com,Rodney,Hill,Cloud Architect,IC,Technical
+146,4,BP,adam.wise@bp.com,Adam,Wise,Customer Success Manager,IC,Commercial
+147,4,BP,dana.green@bp.com,Dana,Green,Data Scientist,IC,Technical
+148,4,BP,joyce.arnold@bp.com,Joyce,Arnold,Data Science Manager,Manager,Technical
+149,4,BP,ronald.smith@bp.com,Ronald,Smith,Engineering Manager,Manager,Technical
+150,4,BP,charles.ware@bp.com,Charles,Ware,Director of IT,VP/Director,Technical
+151,4,BP,rebecca.gardner@bp.com,Rebecca,Gardner,Systems Administrator,IC,Technical
+152,4,BP,mary.aguilar@bp.com,Mary,Aguilar,Engineering Manager,Manager,Technical
+153,4,BP,earl.anderson@bp.com,Earl,Anderson,Engineering Manager,Manager,Technical
+154,4,BP,kyle.nolan@bp.com,Kyle,Nolan,Sales Representative,IC,Commercial
+155,4,BP,laura.valencia@bp.com,Laura,Valencia,Account Manager,Manager,Commercial
+156,4,BP,rachel.clark@bp.com,Rachel,Clark,Sales Representative,IC,Commercial
+157,4,BP,john.garcia@bp.com,John,Garcia,Marketing Specialist,IC,Commercial
+158,4,BP,kimberly.henson@bp.com,Kimberly,Henson,Security Manager,Manager,Technical
+159,4,BP,richard.oliver@bp.com,Richard,Oliver,Chief Security Officer,C-Suite,Technical
+160,4,BP,eric.spears@bp.com,Eric,Spears,Marketing Specialist,IC,Commercial
+161,4,BP,michelle.cherry@bp.com,Michelle,Cherry,Systems Administrator,IC,Technical
+162,4,BP,lisa.keith@bp.com,Lisa,Keith,Account Executive,IC,Commercial
+163,4,BP,angel.doyle@bp.com,Angel,Doyle,Systems Administrator,IC,Technical
+164,4,BP,martin.galvan@bp.com,Martin,Galvan,VP of Data Science,VP/Director,Technical
+165,4,BP,leah.shields@bp.com,Leah,Shields,Security Manager,Manager,Technical
+166,4,BP,lisa.adams@bp.com,Lisa,Adams,Business Development Manager,Manager,Commercial
+167,4,BP,kristin.rodriguez@bp.com,Kristin,Rodriguez,Engineering Manager,Manager,Technical
+168,4,BP,monica.garrison@bp.com,Monica,Garrison,Cloud Architect,IC,Technical
+169,4,BP,jeffrey.velasquez@bp.com,Jeffrey,Velasquez,Engineering Manager,Manager,Technical
+170,4,BP,steven.torres@bp.com,Steven,Torres,Marketing Specialist,IC,Commercial
+171,4,BP,laura.perez@bp.com,Laura,Perez,Marketing Specialist,IC,Commercial
+172,5,Chevron,andrew.lee@chevron.com,Andrew,Lee,IT Manager,Manager,Technical
+173,5,Chevron,mark.lin@chevron.com,Mark,Lin,Data Science Manager,Manager,Technical
+174,5,Chevron,tammy.ramirez@chevron.com,Tammy,Ramirez,VP of Sales,VP/Director,Commercial
+175,5,Chevron,darlene.ross@chevron.com,Darlene,Ross,Cloud Architect,IC,Technical
+176,5,Chevron,tina.herrera@chevron.com,Tina,Herrera,VP of Data Science,VP/Director,Technical
+177,5,Chevron,sheila.wilson@chevron.com,Sheila,Wilson,Sales Representative,IC,Commercial
+178,5,Chevron,tara.white@chevron.com,Tara,White,Sales Manager,Manager,Commercial
+179,5,Chevron,sydney.baker@chevron.com,Sydney,Baker,Marketing Specialist,IC,Commercial
+180,5,Chevron,daniel.hamilton@chevron.com,Daniel,Hamilton,VP of Sales,VP/Director,Commercial
+181,5,Chevron,jessica.edwards@chevron.com,Jessica,Edwards,Software Engineer,IC,Technical
+182,5,Chevron,catherine.dixon@chevron.com,Catherine,Dixon,Data Science Manager,Manager,Technical
+183,5,Chevron,paul.ray@chevron.com,Paul,Ray,VP of Sales,VP/Director,Commercial
+184,5,Chevron,jonathan.fletcher@chevron.com,Jonathan,Fletcher,Account Executive,IC,Commercial
+185,5,Chevron,aaron.frost@chevron.com,Aaron,Frost,Security Manager,Manager,Technical
+186,5,Chevron,amanda.ball@chevron.com,Amanda,Ball,Cloud Architect,IC,Technical
+187,5,Chevron,judy.lambert@chevron.com,Judy,Lambert,Sales Representative,IC,Commercial
+188,5,Chevron,michael.jones@chevron.com,Michael,Jones,Account Manager,Manager,Commercial
+189,5,Chevron,elizabeth.rivera@chevron.com,Elizabeth,Rivera,Engineering Manager,Manager,Technical
+190,5,Chevron,lee.charles@chevron.com,Lee,Charles,Security Manager,Manager,Technical
+191,5,Chevron,jennifer.evans@chevron.com,Jennifer,Evans,Customer Success Manager,IC,Commercial
+192,5,Chevron,kyle.ortiz@chevron.com,Kyle,Ortiz,Chief Marketing Officer,C-Suite,Commercial
+193,5,Chevron,richard.phillips@chevron.com,Richard,Phillips,Data Science Manager,Manager,Technical
+194,5,Chevron,david.fisher@chevron.com,David,Fisher,Account Manager,Manager,Commercial
+195,5,Chevron,shelby.byrd@chevron.com,Shelby,Byrd,Data Scientist,IC,Technical
+196,5,Chevron,raven.gilbert@chevron.com,Raven,Gilbert,Director of Business Development,VP/Director,Commercial
+197,5,Chevron,kevin.kelley@chevron.com,Kevin,Kelley,Systems Administrator,IC,Technical
+198,5,Chevron,aaron.mitchell@chevron.com,Aaron,Mitchell,Software Engineer,IC,Technical
+199,5,Chevron,russell.carpenter@chevron.com,Russell,Carpenter,Director of IT,VP/Director,Technical
+200,5,Chevron,diana.marshall@chevron.com,Diana,Marshall,Security Manager,Manager,Technical
+201,5,Chevron,scott.lewis@chevron.com,Scott,Lewis,Cloud Architect,IC,Technical
+202,5,Chevron,thomas.santana@chevron.com,Thomas,Santana,Data Science Manager,Manager,Technical
+203,5,Chevron,laura.jackson@chevron.com,Laura,Jackson,IT Manager,Manager,Technical
+204,5,Chevron,christopher.robertson@chevron.com,Christopher,Robertson,Marketing Manager,Manager,Commercial
+205,5,Chevron,cynthia.rogers@chevron.com,Cynthia,Rogers,VP of Customer Success,VP/Director,Commercial
+206,6,ExxonMobil,loretta.potter@exxonmobil.com,Loretta,Potter,Cloud Architect,IC,Technical
+207,6,ExxonMobil,emily.walker@exxonmobil.com,Emily,Walker,Customer Success Manager,IC,Commercial
+208,6,ExxonMobil,james.johnson@exxonmobil.com,James,Johnson,Engineering Manager,Manager,Technical
+209,6,ExxonMobil,john.alvarez@exxonmobil.com,John,Alvarez,Software Engineer,IC,Technical
+210,6,ExxonMobil,melissa.jones@exxonmobil.com,Melissa,Jones,Data Scientist,IC,Technical
+211,6,ExxonMobil,robert.soto@exxonmobil.com,Robert,Soto,Account Executive,IC,Commercial
+212,6,ExxonMobil,james.horton@exxonmobil.com,James,Horton,Systems Administrator,IC,Technical
+213,6,ExxonMobil,troy.sanchez@exxonmobil.com,Troy,Sanchez,Engineering Manager,Manager,Technical
+214,6,ExxonMobil,diana.smith@exxonmobil.com,Diana,Smith,Sales Manager,Manager,Commercial
+215,6,ExxonMobil,karen.carrillo@exxonmobil.com,Karen,Carrillo,Software Engineer,IC,Technical
+216,6,ExxonMobil,daniel.coleman@exxonmobil.com,Daniel,Coleman,Marketing Specialist,IC,Commercial
+217,6,ExxonMobil,gregory.rubio@exxonmobil.com,Gregory,Rubio,VP of Data Science,VP/Director,Technical
+218,6,ExxonMobil,april.williams@exxonmobil.com,April,Williams,Director of Cloud Infrastructure,VP/Director,Technical
+219,6,ExxonMobil,john.charles@exxonmobil.com,John,Charles,Marketing Specialist,IC,Commercial
+220,6,ExxonMobil,stephen.solis@exxonmobil.com,Stephen,Solis,Systems Administrator,IC,Technical
+221,6,ExxonMobil,elizabeth.travis@exxonmobil.com,Elizabeth,Travis,Security Manager,Manager,Technical
+222,6,ExxonMobil,caitlin.dodson@exxonmobil.com,Caitlin,Dodson,Sales Manager,Manager,Commercial
+223,6,ExxonMobil,patricia.salazar@exxonmobil.com,Patricia,Salazar,Data Scientist,IC,Technical
+224,6,ExxonMobil,jennifer.wagner@exxonmobil.com,Jennifer,Wagner,IT Manager,Manager,Technical
+225,6,ExxonMobil,maria.kelley@exxonmobil.com,Maria,Kelley,VP of Engineering,VP/Director,Technical
+226,6,ExxonMobil,phyllis.manning@exxonmobil.com,Phyllis,Manning,Business Development Manager,Manager,Commercial
+227,6,ExxonMobil,thomas.green@exxonmobil.com,Thomas,Green,Data Science Manager,Manager,Technical
+228,6,ExxonMobil,john.walsh@exxonmobil.com,John,Walsh,Data Scientist,IC,Technical
+229,6,ExxonMobil,katie.boyd@exxonmobil.com,Katie,Boyd,Marketing Specialist,IC,Commercial
+230,6,ExxonMobil,courtney.hill@exxonmobil.com,Courtney,Hill,IT Manager,Manager,Technical
+231,6,ExxonMobil,chris.mitchell@exxonmobil.com,Chris,Mitchell,Account Executive,IC,Commercial
+232,6,ExxonMobil,joseph.flores@exxonmobil.com,Joseph,Flores,VP of Customer Success,VP/Director,Commercial
+233,6,ExxonMobil,amber.taylor@exxonmobil.com,Amber,Taylor,Data Science Manager,Manager,Technical
+234,6,ExxonMobil,jesse.benson@exxonmobil.com,Jesse,Benson,Sales Representative,IC,Commercial
+235,6,ExxonMobil,jasmine.brown@exxonmobil.com,Jasmine,Brown,Security Manager,Manager,Technical
+236,6,ExxonMobil,rick.daniels@exxonmobil.com,Rick,Daniels,Account Executive,IC,Commercial
+237,6,ExxonMobil,robert.clark@exxonmobil.com,Robert,Clark,VP of Sales,VP/Director,Commercial
+238,6,ExxonMobil,robert.stein@exxonmobil.com,Robert,Stein,Customer Success Manager,IC,Commercial
+239,6,ExxonMobil,brandy.dominguez@exxonmobil.com,Brandy,Dominguez,Marketing Specialist,IC,Commercial
+240,6,ExxonMobil,melissa.cannon@exxonmobil.com,Melissa,Cannon,Account Manager,Manager,Commercial
+241,6,ExxonMobil,omar.smith@exxonmobil.com,Omar,Smith,Director of Cloud Infrastructure,VP/Director,Technical
+242,6,ExxonMobil,michael.molina@exxonmobil.com,Michael,Molina,Systems Administrator,IC,Technical
+243,6,ExxonMobil,melissa.ashley@exxonmobil.com,Melissa,Ashley,Marketing Manager,Manager,Commercial
+244,6,ExxonMobil,robert.adkins@exxonmobil.com,Robert,Adkins,Account Manager,Manager,Commercial
+245,6,ExxonMobil,amy.morrison@exxonmobil.com,Amy,Morrison,Software Engineer,IC,Technical
+246,6,ExxonMobil,jeffrey.robinson@exxonmobil.com,Jeffrey,Robinson,Data Science Manager,Manager,Technical
+247,6,ExxonMobil,ryan.johnson@exxonmobil.com,Ryan,Johnson,VP of Sales,VP/Director,Commercial
+248,6,ExxonMobil,matthew.shelton@exxonmobil.com,Matthew,Shelton,Systems Administrator,IC,Technical
+249,6,ExxonMobil,richard.martin@exxonmobil.com,Richard,Martin,Director of Cloud Infrastructure,VP/Director,Technical
+250,6,ExxonMobil,tanner.anderson@exxonmobil.com,Tanner,Anderson,Marketing Specialist,IC,Commercial
+251,6,ExxonMobil,cindy.johnson@exxonmobil.com,Cindy,Johnson,Data Science Manager,Manager,Technical
+252,6,ExxonMobil,phillip.elliott@exxonmobil.com,Phillip,Elliott,Sales Manager,Manager,Commercial
+253,6,ExxonMobil,anthony.day@exxonmobil.com,Anthony,Day,Chief Marketing Officer,C-Suite,Commercial
+254,7,TotalEnergies,derek.murray@totalenergies.com,Derek,Murray,Security Manager,Manager,Technical
+255,7,TotalEnergies,brent.gray@totalenergies.com,Brent,Gray,VP of Sales,VP/Director,Commercial
+256,7,TotalEnergies,jason.murphy@totalenergies.com,Jason,Murphy,IT Manager,Manager,Technical
+257,7,TotalEnergies,kathleen.gray@totalenergies.com,Kathleen,Gray,Account Manager,Manager,Commercial
+258,7,TotalEnergies,karen.decker@totalenergies.com,Karen,Decker,Security Manager,Manager,Technical
+259,7,TotalEnergies,johnny.miller@totalenergies.com,Johnny,Miller,Security Manager,Manager,Technical
+260,7,TotalEnergies,andrew.ryan@totalenergies.com,Andrew,Ryan,Director of IT,VP/Director,Technical
+261,7,TotalEnergies,zoe.bell@totalenergies.com,Zoe,Bell,Systems Administrator,IC,Technical
+262,7,TotalEnergies,debra.harrington@totalenergies.com,Debra,Harrington,Account Manager,Manager,Commercial
+263,7,TotalEnergies,denise.webster@totalenergies.com,Denise,Webster,Cloud Architect,IC,Technical
+264,7,TotalEnergies,stefanie.gonzalez@totalenergies.com,Stefanie,Gonzalez,Systems Administrator,IC,Technical
+265,7,TotalEnergies,andrew.hernandez@totalenergies.com,Andrew,Hernandez,Systems Administrator,IC,Technical
+266,7,TotalEnergies,david.caldwell@totalenergies.com,David,Caldwell,Security Manager,Manager,Technical
+267,7,TotalEnergies,anne.robinson@totalenergies.com,Anne,Robinson,IT Manager,Manager,Technical
+268,7,TotalEnergies,holly.wang@totalenergies.com,Holly,Wang,Systems Administrator,IC,Technical
+269,7,TotalEnergies,gary.lawson@totalenergies.com,Gary,Lawson,Sales Manager,Manager,Commercial
+270,7,TotalEnergies,julie.wilson@totalenergies.com,Julie,Wilson,Security Manager,Manager,Technical
+271,7,TotalEnergies,lori.oconnell@totalenergies.com,Lori,Oconnell,Marketing Manager,Manager,Commercial
+272,7,TotalEnergies,daniel.johnson@totalenergies.com,Daniel,Johnson,Data Science Manager,Manager,Technical
+273,7,TotalEnergies,larry.byrd@totalenergies.com,Larry,Byrd,Sales Representative,IC,Commercial
+274,7,TotalEnergies,susan.sanders@totalenergies.com,Susan,Sanders,VP of Sales,VP/Director,Commercial
+275,7,TotalEnergies,jennifer.jones@totalenergies.com,Jennifer,Jones,Data Scientist,IC,Technical
+276,7,TotalEnergies,hannah.burton@totalenergies.com,Hannah,Burton,VP of Customer Success,VP/Director,Commercial
+277,7,TotalEnergies,curtis.barton@totalenergies.com,Curtis,Barton,Sales Manager,Manager,Commercial
+278,7,TotalEnergies,melissa.burke@totalenergies.com,Melissa,Burke,Sales Representative,IC,Commercial
+279,7,TotalEnergies,david.riggs@totalenergies.com,David,Riggs,Sales Representative,IC,Commercial
+280,7,TotalEnergies,kimberly.reed@totalenergies.com,Kimberly,Reed,Software Engineer,IC,Technical
+281,7,TotalEnergies,ross.wood@totalenergies.com,Ross,Wood,Account Manager,Manager,Commercial
+282,7,TotalEnergies,william.peterson@totalenergies.com,William,Peterson,Sales Representative,IC,Commercial
+283,7,TotalEnergies,melissa.short@totalenergies.com,Melissa,Short,Account Executive,IC,Commercial
+284,7,TotalEnergies,daniel.yu@totalenergies.com,Daniel,Yu,Sales Manager,Manager,Commercial
+285,7,TotalEnergies,cynthia.poole@totalenergies.com,Cynthia,Poole,Chief Revenue Officer,C-Suite,Commercial
+286,7,TotalEnergies,jasmine.graham@totalenergies.com,Jasmine,Graham,IT Manager,Manager,Technical
+287,7,TotalEnergies,jessica.sheppard@totalenergies.com,Jessica,Sheppard,Data Scientist,IC,Technical
+288,7,TotalEnergies,joseph.morton@totalenergies.com,Joseph,Morton,Director of Cloud Infrastructure,VP/Director,Technical
+289,8,ConocoPhillips,amanda.webb@conocophillips.com,Amanda,Webb,Data Scientist,IC,Technical
+290,8,ConocoPhillips,ryan.simon@conocophillips.com,Ryan,Simon,Business Development Manager,Manager,Commercial
+291,8,ConocoPhillips,joseph.christian@conocophillips.com,Joseph,Christian,Security Manager,Manager,Technical
+292,8,ConocoPhillips,mariah.miller@conocophillips.com,Mariah,Miller,Marketing Specialist,IC,Commercial
+293,8,ConocoPhillips,nicole.sanchez@conocophillips.com,Nicole,Sanchez,VP of Customer Success,VP/Director,Commercial
+294,8,ConocoPhillips,steven.bishop@conocophillips.com,Steven,Bishop,Cloud Architect,IC,Technical
+295,8,ConocoPhillips,nicholas.johnson@conocophillips.com,Nicholas,Johnson,Security Manager,Manager,Technical
+296,8,ConocoPhillips,melissa.white@conocophillips.com,Melissa,White,Systems Administrator,IC,Technical
+297,8,ConocoPhillips,jason.salinas@conocophillips.com,Jason,Salinas,Cloud Architect,IC,Technical
+298,8,ConocoPhillips,matthew.beard@conocophillips.com,Matthew,Beard,Chief Operating Officer,C-Suite,Commercial
+299,8,ConocoPhillips,jacqueline.hill@conocophillips.com,Jacqueline,Hill,Engineering Manager,Manager,Technical
+300,8,ConocoPhillips,alejandro.vaughan@conocophillips.com,Alejandro,Vaughan,Customer Success Manager,IC,Commercial
+301,8,ConocoPhillips,christopher.cortez@conocophillips.com,Christopher,Cortez,Cloud Architect,IC,Technical
+302,8,ConocoPhillips,tracy.chang@conocophillips.com,Tracy,Chang,Data Science Manager,Manager,Technical
+303,8,ConocoPhillips,hannah.brewer@conocophillips.com,Hannah,Brewer,Marketing Specialist,IC,Commercial
+304,8,ConocoPhillips,travis.mcguire@conocophillips.com,Travis,Mcguire,Account Executive,IC,Commercial
+305,8,ConocoPhillips,christopher.walker@conocophillips.com,Christopher,Walker,Data Science Manager,Manager,Technical
+306,8,ConocoPhillips,heather.torres@conocophillips.com,Heather,Torres,Cloud Architect,IC,Technical
+307,8,ConocoPhillips,bonnie.kennedy@conocophillips.com,Bonnie,Kennedy,IT Manager,Manager,Technical
+308,8,ConocoPhillips,alyssa.coleman@conocophillips.com,Alyssa,Coleman,VP of Data Science,VP/Director,Technical
+309,8,ConocoPhillips,julie.rivera@conocophillips.com,Julie,Rivera,Marketing Specialist,IC,Commercial
+310,8,ConocoPhillips,jacqueline.nelson@conocophillips.com,Jacqueline,Nelson,Business Development Manager,Manager,Commercial
+311,8,ConocoPhillips,john.martinez@conocophillips.com,John,Martinez,Cloud Architect,IC,Technical
+312,8,ConocoPhillips,james.wilson@conocophillips.com,James,Wilson,Software Engineer,IC,Technical
+313,8,ConocoPhillips,amanda.gill@conocophillips.com,Amanda,Gill,Director of Business Development,VP/Director,Commercial
+314,8,ConocoPhillips,jacob.robinson@conocophillips.com,Jacob,Robinson,Customer Success Manager,IC,Commercial
+315,8,ConocoPhillips,todd.hardy@conocophillips.com,Todd,Hardy,VP of Data Science,VP/Director,Technical
+316,8,ConocoPhillips,tiffany.warren@conocophillips.com,Tiffany,Warren,Cloud Architect,IC,Technical
+317,8,ConocoPhillips,justin.garcia@conocophillips.com,Justin,Garcia,Customer Success Manager,IC,Commercial
+318,8,ConocoPhillips,james.perez@conocophillips.com,James,Perez,VP of Engineering,VP/Director,Technical
+319,8,ConocoPhillips,harry.smith@conocophillips.com,Harry,Smith,Customer Success Manager,IC,Commercial
+320,8,ConocoPhillips,amanda.hill@conocophillips.com,Amanda,Hill,Software Engineer,IC,Technical
+321,8,ConocoPhillips,terri.tran@conocophillips.com,Terri,Tran,Cloud Architect,IC,Technical
+322,8,ConocoPhillips,heidi.martinez@conocophillips.com,Heidi,Martinez,Software Engineer,IC,Technical
+323,8,ConocoPhillips,miranda.henry@conocophillips.com,Miranda,Henry,Systems Administrator,IC,Technical
+324,8,ConocoPhillips,monique.andrews@conocophillips.com,Monique,Andrews,Director of IT,VP/Director,Technical
+325,8,ConocoPhillips,taylor.alexander@conocophillips.com,Taylor,Alexander,Security Manager,Manager,Technical
+326,8,ConocoPhillips,jack.williams@conocophillips.com,Jack,Williams,Sales Representative,IC,Commercial
+327,8,ConocoPhillips,shelley.woods@conocophillips.com,Shelley,Woods,Sales Representative,IC,Commercial
+328,8,ConocoPhillips,lynn.morales@conocophillips.com,Lynn,Morales,Cloud Architect,IC,Technical
+329,8,ConocoPhillips,charles.soto@conocophillips.com,Charles,Soto,IT Manager,Manager,Technical
+330,8,ConocoPhillips,brian.hernandez@conocophillips.com,Brian,Hernandez,Cloud Architect,IC,Technical
+331,8,ConocoPhillips,anna.torres@conocophillips.com,Anna,Torres,Customer Success Manager,IC,Commercial
+332,8,ConocoPhillips,victoria.wilson@conocophillips.com,Victoria,Wilson,VP of Engineering,VP/Director,Technical
+333,8,ConocoPhillips,kathy.obrien@conocophillips.com,Kathy,Obrien,Account Executive,IC,Commercial
+334,8,ConocoPhillips,krystal.perez@conocophillips.com,Krystal,Perez,Account Executive,IC,Commercial
+335,8,ConocoPhillips,alexandra.hayes@conocophillips.com,Alexandra,Hayes,Director of IT,VP/Director,Technical
+336,8,ConocoPhillips,scott.dalton@conocophillips.com,Scott,Dalton,Data Scientist,IC,Technical
+337,8,ConocoPhillips,veronica.torres@conocophillips.com,Veronica,Torres,Marketing Specialist,IC,Commercial
+338,9,Eni,christine.lynch@eni.com,Christine,Lynch,Account Executive,IC,Commercial
+339,9,Eni,jody.meza@eni.com,Jody,Meza,Marketing Manager,Manager,Commercial
+340,9,Eni,jared.clark@eni.com,Jared,Clark,Account Executive,IC,Commercial
+341,9,Eni,donna.moore@eni.com,Donna,Moore,Software Engineer,IC,Technical
+342,9,Eni,glenn.jones@eni.com,Glenn,Jones,Account Manager,Manager,Commercial
+343,9,Eni,aaron.hayes@eni.com,Aaron,Hayes,Chief Information Officer,C-Suite,Technical
+344,9,Eni,brittney.carter@eni.com,Brittney,Carter,Software Engineer,IC,Technical
+345,9,Eni,jesse.mann@eni.com,Jesse,Mann,Sales Manager,Manager,Commercial
+346,9,Eni,jacqueline.gibson@eni.com,Jacqueline,Gibson,Engineering Manager,Manager,Technical
+347,9,Eni,grace.bradshaw@eni.com,Grace,Bradshaw,Customer Success Manager,IC,Commercial
+348,9,Eni,kristin.weber@eni.com,Kristin,Weber,Sales Manager,Manager,Commercial
+349,9,Eni,donna.peck@eni.com,Donna,Peck,Sales Representative,IC,Commercial
+350,9,Eni,ronald.stephens@eni.com,Ronald,Stephens,Systems Administrator,IC,Technical
+351,9,Eni,deborah.kerr@eni.com,Deborah,Kerr,Director of IT,VP/Director,Technical
+352,9,Eni,margaret.jones@eni.com,Margaret,Jones,VP of Data Science,VP/Director,Technical
+353,9,Eni,gabriel.parker@eni.com,Gabriel,Parker,Data Science Manager,Manager,Technical
+354,9,Eni,kaitlyn.carroll@eni.com,Kaitlyn,Carroll,Sales Manager,Manager,Commercial
+355,9,Eni,keith.martinez@eni.com,Keith,Martinez,Data Scientist,IC,Technical
+356,9,Eni,haley.lyons@eni.com,Haley,Lyons,Business Development Manager,Manager,Commercial
+357,9,Eni,sherri.mason@eni.com,Sherri,Mason,Security Manager,Manager,Technical
+358,9,Eni,troy.miller@eni.com,Troy,Miller,Cloud Architect,IC,Technical
+359,9,Eni,bill.reynolds@eni.com,Bill,Reynolds,Data Scientist,IC,Technical
+360,9,Eni,marcus.wright@eni.com,Marcus,Wright,Software Engineer,IC,Technical
+361,9,Eni,christopher.hayden@eni.com,Christopher,Hayden,Software Engineer,IC,Technical
+362,9,Eni,mary.johnston@eni.com,Mary,Johnston,Data Scientist,IC,Technical
+363,9,Eni,stephanie.key@eni.com,Stephanie,Key,Cloud Architect,IC,Technical
+364,9,Eni,emily.adams@eni.com,Emily,Adams,Systems Administrator,IC,Technical
+365,9,Eni,billy.avila@eni.com,Billy,Avila,Customer Success Manager,IC,Commercial
+366,9,Eni,thomas.pearson@eni.com,Thomas,Pearson,Data Scientist,IC,Technical
+367,9,Eni,sabrina.white@eni.com,Sabrina,White,VP of Engineering,VP/Director,Technical
+368,9,Eni,brenda.walters@eni.com,Brenda,Walters,Engineering Manager,Manager,Technical
+369,9,Eni,travis.davis@eni.com,Travis,Davis,Systems Administrator,IC,Technical
+370,9,Eni,michael.cook@eni.com,Michael,Cook,Account Executive,IC,Commercial
+371,9,Eni,elizabeth.hodge@eni.com,Elizabeth,Hodge,Customer Success Manager,IC,Commercial
+372,9,Eni,mark.steele@eni.com,Mark,Steele,Chief Data Officer,C-Suite,Technical
+373,9,Eni,keith.landry@eni.com,Keith,Landry,Data Scientist,IC,Technical
+374,9,Eni,lisa.pierce@eni.com,Lisa,Pierce,Systems Administrator,IC,Technical
+375,9,Eni,shawn.edwards@eni.com,Shawn,Edwards,VP of Sales,VP/Director,Commercial
+376,9,Eni,marcus.cordova@eni.com,Marcus,Cordova,Director of Cloud Infrastructure,VP/Director,Technical
+377,9,Eni,richard.robertson@eni.com,Richard,Robertson,Data Science Manager,Manager,Technical
+378,10,Petrobras,vanessa.sandoval@petrobras.com,Vanessa,Sandoval,Account Executive,IC,Commercial
+379,10,Petrobras,amy.gutierrez@petrobras.com,Amy,Gutierrez,Software Engineer,IC,Technical
+380,10,Petrobras,jacob.cox@petrobras.com,Jacob,Cox,Systems Administrator,IC,Technical
+381,10,Petrobras,katherine.garrett@petrobras.com,Katherine,Garrett,Data Science Manager,Manager,Technical
+382,10,Petrobras,kathleen.harris@petrobras.com,Kathleen,Harris,Data Science Manager,Manager,Technical
+383,10,Petrobras,andrea.pennington@petrobras.com,Andrea,Pennington,Security Manager,Manager,Technical
+384,10,Petrobras,samuel.wolfe@petrobras.com,Samuel,Wolfe,Data Scientist,IC,Technical
+385,10,Petrobras,david.dudley@petrobras.com,David,Dudley,Engineering Manager,Manager,Technical
+386,10,Petrobras,chelsea.allen@petrobras.com,Chelsea,Allen,Marketing Manager,Manager,Commercial
+387,10,Petrobras,eric.pierce@petrobras.com,Eric,Pierce,Software Engineer,IC,Technical
+388,10,Petrobras,andrea.davis@petrobras.com,Andrea,Davis,Chief Marketing Officer,C-Suite,Commercial
+389,10,Petrobras,victoria.durham@petrobras.com,Victoria,Durham,Director of IT,VP/Director,Technical
+390,10,Petrobras,steven.wilson@petrobras.com,Steven,Wilson,Customer Success Manager,IC,Commercial
+391,10,Petrobras,marilyn.jimenez@petrobras.com,Marilyn,Jimenez,VP of Sales,VP/Director,Commercial
+392,10,Petrobras,jennifer.hicks@petrobras.com,Jennifer,Hicks,Engineering Manager,Manager,Technical
+393,10,Petrobras,joshua.davenport@petrobras.com,Joshua,Davenport,Systems Administrator,IC,Technical
+394,10,Petrobras,tina.sanchez@petrobras.com,Tina,Sanchez,Software Engineer,IC,Technical
+395,10,Petrobras,andrea.reyes@petrobras.com,Andrea,Reyes,Marketing Manager,Manager,Commercial
+396,10,Petrobras,sandra.romero@petrobras.com,Sandra,Romero,Customer Success Manager,IC,Commercial
+397,10,Petrobras,natasha.shields@petrobras.com,Natasha,Shields,Director of Marketing,VP/Director,Commercial
+398,10,Petrobras,joshua.tyler@petrobras.com,Joshua,Tyler,Engineering Manager,Manager,Technical
+399,10,Petrobras,robert.villa@petrobras.com,Robert,Villa,Data Science Manager,Manager,Technical
+400,10,Petrobras,william.hoover@petrobras.com,William,Hoover,Sales Manager,Manager,Commercial
+401,10,Petrobras,justin.evans@petrobras.com,Justin,Evans,Data Scientist,IC,Technical
+402,10,Petrobras,brenda.duarte@petrobras.com,Brenda,Duarte,Data Scientist,IC,Technical
+403,10,Petrobras,tracy.hernandez@petrobras.com,Tracy,Hernandez,IT Manager,Manager,Technical
+404,10,Petrobras,amanda.reed@petrobras.com,Amanda,Reed,VP of Engineering,VP/Director,Technical
+405,10,Petrobras,andrea.daniels@petrobras.com,Andrea,Daniels,Director of Business Development,VP/Director,Commercial
+406,10,Petrobras,stanley.morris@petrobras.com,Stanley,Morris,Security Manager,Manager,Technical
+407,10,Petrobras,jacob.terry@petrobras.com,Jacob,Terry,Customer Success Manager,IC,Commercial
+408,10,Petrobras,ashley.hall@petrobras.com,Ashley,Hall,Marketing Specialist,IC,Commercial
+409,10,Petrobras,kimberly.williams@petrobras.com,Kimberly,Williams,Data Science Manager,Manager,Technical
+410,10,Petrobras,julie.thornton@petrobras.com,Julie,Thornton,Cloud Architect,IC,Technical
+411,10,Petrobras,lisa.hughes@petrobras.com,Lisa,Hughes,Systems Administrator,IC,Technical
+412,10,Petrobras,elizabeth.hoover@petrobras.com,Elizabeth,Hoover,Chief Data Officer,C-Suite,Technical
+413,10,Petrobras,tina.simpson@petrobras.com,Tina,Simpson,VP of Sales,VP/Director,Commercial
+414,10,Petrobras,benjamin.shaw@petrobras.com,Benjamin,Shaw,Systems Administrator,IC,Technical
+415,10,Petrobras,brittany.kane@petrobras.com,Brittany,Kane,Account Executive,IC,Commercial
+416,10,Petrobras,morgan.alexander@petrobras.com,Morgan,Alexander,Marketing Manager,Manager,Commercial
+417,11,Schlumberger,alicia.bryant@schlumberger.com,Alicia,Bryant,Software Engineer,IC,Technical
+418,11,Schlumberger,jennifer.ortiz@schlumberger.com,Jennifer,Ortiz,Account Manager,Manager,Commercial
+419,11,Schlumberger,diana.moore@schlumberger.com,Diana,Moore,Data Scientist,IC,Technical
+420,11,Schlumberger,terrance.costa@schlumberger.com,Terrance,Costa,Chief Operating Officer,C-Suite,Commercial
+421,11,Schlumberger,matthew.schwartz@schlumberger.com,Matthew,Schwartz,Customer Success Manager,IC,Commercial
+422,11,Schlumberger,debra.christian@schlumberger.com,Debra,Christian,Security Manager,Manager,Technical
+423,11,Schlumberger,melissa.villarreal@schlumberger.com,Melissa,Villarreal,Account Executive,IC,Commercial
+424,11,Schlumberger,norman.stewart@schlumberger.com,Norman,Stewart,Account Executive,IC,Commercial
+425,11,Schlumberger,jennifer.malone@schlumberger.com,Jennifer,Malone,Security Manager,Manager,Technical
+426,11,Schlumberger,monique.johnson@schlumberger.com,Monique,Johnson,Marketing Manager,Manager,Commercial
+427,11,Schlumberger,casey.welch@schlumberger.com,Casey,Welch,IT Manager,Manager,Technical
+428,11,Schlumberger,samantha.bright@schlumberger.com,Samantha,Bright,Systems Administrator,IC,Technical
+429,11,Schlumberger,julie.hamilton@schlumberger.com,Julie,Hamilton,VP of Sales,VP/Director,Commercial
+430,11,Schlumberger,corey.schultz@schlumberger.com,Corey,Schultz,Data Science Manager,Manager,Technical
+431,11,Schlumberger,monique.wallace@schlumberger.com,Monique,Wallace,Account Executive,IC,Commercial
+432,11,Schlumberger,heather.berger@schlumberger.com,Heather,Berger,Cloud Architect,IC,Technical
+433,11,Schlumberger,brandon.flynn@schlumberger.com,Brandon,Flynn,Chief Information Officer,C-Suite,Technical
+434,11,Schlumberger,kelly.brooks@schlumberger.com,Kelly,Brooks,Marketing Manager,Manager,Commercial
+435,11,Schlumberger,dustin.schmidt@schlumberger.com,Dustin,Schmidt,Engineering Manager,Manager,Technical
+436,11,Schlumberger,ashlee.sparks@schlumberger.com,Ashlee,Sparks,Sales Manager,Manager,Commercial
+437,11,Schlumberger,george.miller@schlumberger.com,George,Miller,Marketing Specialist,IC,Commercial
+438,11,Schlumberger,monica.harvey@schlumberger.com,Monica,Harvey,Data Scientist,IC,Technical
+439,11,Schlumberger,john.durham@schlumberger.com,John,Durham,Marketing Specialist,IC,Commercial
+440,11,Schlumberger,douglas.murray@schlumberger.com,Douglas,Murray,Cloud Architect,IC,Technical
+441,11,Schlumberger,jonathan.scott@schlumberger.com,Jonathan,Scott,Systems Administrator,IC,Technical
+442,11,Schlumberger,albert.ballard@schlumberger.com,Albert,Ballard,Sales Representative,IC,Commercial
+443,11,Schlumberger,rachel.byrd@schlumberger.com,Rachel,Byrd,Security Manager,Manager,Technical
+444,11,Schlumberger,eric.alexander@schlumberger.com,Eric,Alexander,Systems Administrator,IC,Technical
+445,11,Schlumberger,michael.matthews@schlumberger.com,Michael,Matthews,Security Manager,Manager,Technical
+446,11,Schlumberger,danielle.coleman@schlumberger.com,Danielle,Coleman,Data Scientist,IC,Technical
+447,11,Schlumberger,john.bruce@schlumberger.com,John,Bruce,Marketing Specialist,IC,Commercial
+448,11,Schlumberger,james.cruz@schlumberger.com,James,Cruz,Systems Administrator,IC,Technical
+449,11,Schlumberger,timothy.young@schlumberger.com,Timothy,Young,Software Engineer,IC,Technical
+450,11,Schlumberger,ashley.andrews@schlumberger.com,Ashley,Andrews,Software Engineer,IC,Technical
+451,11,Schlumberger,victoria.phillips@schlumberger.com,Victoria,Phillips,Account Manager,Manager,Commercial
+452,11,Schlumberger,tiffany.barrett@schlumberger.com,Tiffany,Barrett,Security Manager,Manager,Technical
+453,11,Schlumberger,joshua.knight@schlumberger.com,Joshua,Knight,Director of Business Development,VP/Director,Commercial
+454,11,Schlumberger,gina.garner@schlumberger.com,Gina,Garner,Sales Representative,IC,Commercial
+455,11,Schlumberger,brandon.obrien@schlumberger.com,Brandon,Obrien,Director of IT,VP/Director,Technical
+456,11,Schlumberger,tyler.strong@schlumberger.com,Tyler,Strong,IT Manager,Manager,Technical
+457,12,Halliburton,justin.lindsey@halliburton.com,Justin,Lindsey,Data Science Manager,Manager,Technical
+458,12,Halliburton,catherine.gomez@halliburton.com,Catherine,Gomez,Cloud Architect,IC,Technical
+459,12,Halliburton,dana.oliver@halliburton.com,Dana,Oliver,Data Scientist,IC,Technical
+460,12,Halliburton,erica.le@halliburton.com,Erica,Le,Software Engineer,IC,Technical
+461,12,Halliburton,donna.massey@halliburton.com,Donna,Massey,Data Scientist,IC,Technical
+462,12,Halliburton,courtney.berger@halliburton.com,Courtney,Berger,Systems Administrator,IC,Technical
+463,12,Halliburton,debbie.parker@halliburton.com,Debbie,Parker,VP of Data Science,VP/Director,Technical
+464,12,Halliburton,scott.riley@halliburton.com,Scott,Riley,Director of Cloud Infrastructure,VP/Director,Technical
+465,12,Halliburton,jessica.davis@halliburton.com,Jessica,Davis,Director of Business Development,VP/Director,Commercial
+466,12,Halliburton,kenneth.burgess@halliburton.com,Kenneth,Burgess,Data Scientist,IC,Technical
+467,12,Halliburton,gregory.anderson@halliburton.com,Gregory,Anderson,Software Engineer,IC,Technical
+468,12,Halliburton,amber.mata@halliburton.com,Amber,Mata,Systems Administrator,IC,Technical
+469,12,Halliburton,alyssa.mcintyre@halliburton.com,Alyssa,Mcintyre,VP of Customer Success,VP/Director,Commercial
+470,12,Halliburton,maria.scott@halliburton.com,Maria,Scott,VP of Engineering,VP/Director,Technical
+471,12,Halliburton,makayla.olson@halliburton.com,Makayla,Olson,Security Manager,Manager,Technical
+472,12,Halliburton,lindsay.francis@halliburton.com,Lindsay,Francis,Software Engineer,IC,Technical
+473,12,Halliburton,matthew.wilson@halliburton.com,Matthew,Wilson,IT Manager,Manager,Technical
+474,12,Halliburton,sydney.taylor@halliburton.com,Sydney,Taylor,Customer Success Manager,IC,Commercial
+475,12,Halliburton,tammy.dalton@halliburton.com,Tammy,Dalton,VP of Data Science,VP/Director,Technical
+476,12,Halliburton,jennifer.whitney@halliburton.com,Jennifer,Whitney,Systems Administrator,IC,Technical
+477,12,Halliburton,tammy.ballard@halliburton.com,Tammy,Ballard,Data Scientist,IC,Technical
+478,12,Halliburton,michael.gibbs@halliburton.com,Michael,Gibbs,Systems Administrator,IC,Technical
+479,12,Halliburton,alexander.herrera@halliburton.com,Alexander,Herrera,Chief Information Officer,C-Suite,Technical
+480,12,Halliburton,shawn.chambers@halliburton.com,Shawn,Chambers,Cloud Architect,IC,Technical
+481,12,Halliburton,emily.richards@halliburton.com,Emily,Richards,Sales Representative,IC,Commercial
+482,12,Halliburton,lynn.bentley@halliburton.com,Lynn,Bentley,Marketing Manager,Manager,Commercial
+483,12,Halliburton,daniel.hall@halliburton.com,Daniel,Hall,Sales Manager,Manager,Commercial
+484,12,Halliburton,angel.henson@halliburton.com,Angel,Henson,Software Engineer,IC,Technical
+485,12,Halliburton,anna.herman@halliburton.com,Anna,Herman,Systems Administrator,IC,Technical
+486,12,Halliburton,jeffrey.brown@halliburton.com,Jeffrey,Brown,Sales Representative,IC,Commercial
+487,13,Baker Hughes,madison.blankenship@bakerhughes.com,Madison,Blankenship,Systems Administrator,IC,Technical
+488,13,Baker Hughes,kevin.ortiz@bakerhughes.com,Kevin,Ortiz,Account Manager,Manager,Commercial
+489,13,Baker Hughes,donald.shah@bakerhughes.com,Donald,Shah,Account Executive,IC,Commercial
+490,13,Baker Hughes,kevin.vasquez@bakerhughes.com,Kevin,Vasquez,Marketing Manager,Manager,Commercial
+491,13,Baker Hughes,colton.clay@bakerhughes.com,Colton,Clay,Software Engineer,IC,Technical
+492,13,Baker Hughes,derek.chavez@bakerhughes.com,Derek,Chavez,Security Manager,Manager,Technical
+493,13,Baker Hughes,ellen.paul@bakerhughes.com,Ellen,Paul,Systems Administrator,IC,Technical
+494,13,Baker Hughes,sonya.barnes@bakerhughes.com,Sonya,Barnes,Data Science Manager,Manager,Technical
+495,13,Baker Hughes,julia.moore@bakerhughes.com,Julia,Moore,Software Engineer,IC,Technical
+496,13,Baker Hughes,robert.garcia@bakerhughes.com,Robert,Garcia,VP of Customer Success,VP/Director,Commercial
+497,13,Baker Hughes,tracy.russell@bakerhughes.com,Tracy,Russell,Marketing Specialist,IC,Commercial
+498,13,Baker Hughes,stephanie.johnson@bakerhughes.com,Stephanie,Johnson,Systems Administrator,IC,Technical
+499,13,Baker Hughes,mitchell.ramos@bakerhughes.com,Mitchell,Ramos,Chief Data Officer,C-Suite,Technical
+500,13,Baker Hughes,stephanie.foley@bakerhughes.com,Stephanie,Foley,Sales Manager,Manager,Commercial
+501,13,Baker Hughes,cory.jennings@bakerhughes.com,Cory,Jennings,Customer Success Manager,IC,Commercial
+502,13,Baker Hughes,amy.levine@bakerhughes.com,Amy,Levine,Marketing Manager,Manager,Commercial
+503,13,Baker Hughes,michael.sanders@bakerhughes.com,Michael,Sanders,Cloud Architect,IC,Technical
+504,13,Baker Hughes,james.martinez@bakerhughes.com,James,Martinez,IT Manager,Manager,Technical
+505,13,Baker Hughes,melanie.gibson@bakerhughes.com,Melanie,Gibson,Engineering Manager,Manager,Technical
+506,13,Baker Hughes,elizabeth.may@bakerhughes.com,Elizabeth,May,Security Manager,Manager,Technical
+507,13,Baker Hughes,carla.smith@bakerhughes.com,Carla,Smith,Business Development Manager,Manager,Commercial
+508,13,Baker Hughes,kristin.sanchez@bakerhughes.com,Kristin,Sanchez,Engineering Manager,Manager,Technical
+509,13,Baker Hughes,david.cunningham@bakerhughes.com,David,Cunningham,Business Development Manager,Manager,Commercial
+510,13,Baker Hughes,casey.hubbard@bakerhughes.com,Casey,Hubbard,Customer Success Manager,IC,Commercial
+511,13,Baker Hughes,jamie.robinson@bakerhughes.com,Jamie,Robinson,Customer Success Manager,IC,Commercial
+512,13,Baker Hughes,molly.murphy@bakerhughes.com,Molly,Murphy,Marketing Specialist,IC,Commercial
+513,13,Baker Hughes,dylan.lester@bakerhughes.com,Dylan,Lester,Software Engineer,IC,Technical
+514,13,Baker Hughes,aaron.garrison@bakerhughes.com,Aaron,Garrison,Marketing Specialist,IC,Commercial
+515,13,Baker Hughes,duane.anderson@bakerhughes.com,Duane,Anderson,Cloud Architect,IC,Technical
+516,13,Baker Hughes,john.thompson@bakerhughes.com,John,Thompson,Marketing Manager,Manager,Commercial
+517,13,Baker Hughes,donna.johnson@bakerhughes.com,Donna,Johnson,Cloud Architect,IC,Technical
+518,13,Baker Hughes,alexis.tyler@bakerhughes.com,Alexis,Tyler,Business Development Manager,Manager,Commercial
+519,13,Baker Hughes,john.morris@bakerhughes.com,John,Morris,Account Executive,IC,Commercial
+520,13,Baker Hughes,grant.williams@bakerhughes.com,Grant,Williams,VP of Engineering,VP/Director,Technical
+521,13,Baker Hughes,judy.fox@bakerhughes.com,Judy,Fox,Account Manager,Manager,Commercial
+522,13,Baker Hughes,julie.alvarez@bakerhughes.com,Julie,Alvarez,Director of Marketing,VP/Director,Commercial
+523,13,Baker Hughes,kimberly.palmer@bakerhughes.com,Kimberly,Palmer,Software Engineer,IC,Technical
+524,13,Baker Hughes,daniel.gordon@bakerhughes.com,Daniel,Gordon,Cloud Architect,IC,Technical
+525,13,Baker Hughes,sonia.williams@bakerhughes.com,Sonia,Williams,Director of IT,VP/Director,Technical
+526,13,Baker Hughes,krista.camacho@bakerhughes.com,Krista,Camacho,Account Manager,Manager,Commercial
+527,14,Weatherford,adrienne.ellis@weatherford.com,Adrienne,Ellis,Account Manager,Manager,Commercial
+528,14,Weatherford,tamara.brown@weatherford.com,Tamara,Brown,VP of Engineering,VP/Director,Technical
+529,14,Weatherford,timothy.morales@weatherford.com,Timothy,Morales,Data Scientist,IC,Technical
+530,14,Weatherford,gina.henry@weatherford.com,Gina,Henry,VP of Customer Success,VP/Director,Commercial
+531,14,Weatherford,renee.jones@weatherford.com,Renee,Jones,Software Engineer,IC,Technical
+532,14,Weatherford,christopher.franklin@weatherford.com,Christopher,Franklin,VP of Customer Success,VP/Director,Commercial
+533,14,Weatherford,cameron.hill@weatherford.com,Cameron,Hill,Sales Representative,IC,Commercial
+534,14,Weatherford,cynthia.kelley@weatherford.com,Cynthia,Kelley,Cloud Architect,IC,Technical
+535,14,Weatherford,mark.vang@weatherford.com,Mark,Vang,Data Scientist,IC,Technical
+536,14,Weatherford,alyssa.chavez@weatherford.com,Alyssa,Chavez,Customer Success Manager,IC,Commercial
+537,14,Weatherford,catherine.garcia@weatherford.com,Catherine,Garcia,Marketing Manager,Manager,Commercial
+538,14,Weatherford,jacqueline.farrell@weatherford.com,Jacqueline,Farrell,IT Manager,Manager,Technical
+539,14,Weatherford,debra.mack@weatherford.com,Debra,Mack,Data Science Manager,Manager,Technical
+540,14,Weatherford,jennifer.lewis@weatherford.com,Jennifer,Lewis,Sales Representative,IC,Commercial
+541,14,Weatherford,shannon.perez@weatherford.com,Shannon,Perez,VP of Engineering,VP/Director,Technical
+542,14,Weatherford,matthew.chavez@weatherford.com,Matthew,Chavez,Data Science Manager,Manager,Technical
+543,14,Weatherford,robert.davis@weatherford.com,Robert,Davis,Engineering Manager,Manager,Technical
+544,14,Weatherford,ronald.ortega@weatherford.com,Ronald,Ortega,Security Manager,Manager,Technical
+545,14,Weatherford,nicholas.hernandez@weatherford.com,Nicholas,Hernandez,Marketing Manager,Manager,Commercial
+546,14,Weatherford,sandra.jones@weatherford.com,Sandra,Jones,Customer Success Manager,IC,Commercial
+547,14,Weatherford,marie.davis@weatherford.com,Marie,Davis,Director of Cloud Infrastructure,VP/Director,Technical
+548,14,Weatherford,colin.rodgers@weatherford.com,Colin,Rodgers,Engineering Manager,Manager,Technical
+549,14,Weatherford,lisa.hawkins@weatherford.com,Lisa,Hawkins,Director of Cloud Infrastructure,VP/Director,Technical
+550,14,Weatherford,brenda.hoffman@weatherford.com,Brenda,Hoffman,Cloud Architect,IC,Technical
+551,14,Weatherford,mark.martinez@weatherford.com,Mark,Martinez,Chief Security Officer,C-Suite,Technical
+552,14,Weatherford,michael.ortega@weatherford.com,Michael,Ortega,Engineering Manager,Manager,Technical
+553,14,Weatherford,karen.parrish@weatherford.com,Karen,Parrish,Account Manager,Manager,Commercial
+554,14,Weatherford,jennifer.schmitt@weatherford.com,Jennifer,Schmitt,Systems Administrator,IC,Technical
+555,14,Weatherford,caroline.bell@weatherford.com,Caroline,Bell,VP of Data Science,VP/Director,Technical
+556,14,Weatherford,becky.lewis@weatherford.com,Becky,Lewis,Systems Administrator,IC,Technical
+557,14,Weatherford,diane.walker@weatherford.com,Diane,Walker,Software Engineer,IC,Technical
+558,14,Weatherford,daniel.bruce@weatherford.com,Daniel,Bruce,VP of Data Science,VP/Director,Technical
+559,15,National Oilwell Varco,michael.farmer@nationaloilwellvarco.com,Michael,Farmer,Data Scientist,IC,Technical
+560,15,National Oilwell Varco,audrey.aguirre@nationaloilwellvarco.com,Audrey,Aguirre,VP of Engineering,VP/Director,Technical
+561,15,National Oilwell Varco,megan.villegas@nationaloilwellvarco.com,Megan,Villegas,Chief Data Officer,C-Suite,Technical
+562,15,National Oilwell Varco,loretta.austin@nationaloilwellvarco.com,Loretta,Austin,Data Scientist,IC,Technical
+563,15,National Oilwell Varco,dawn.johnson@nationaloilwellvarco.com,Dawn,Johnson,Cloud Architect,IC,Technical
+564,15,National Oilwell Varco,sarah.gallegos@nationaloilwellvarco.com,Sarah,Gallegos,Systems Administrator,IC,Technical
+565,15,National Oilwell Varco,joseph.white@nationaloilwellvarco.com,Joseph,White,Customer Success Manager,IC,Commercial
+566,15,National Oilwell Varco,jacqueline.parker@nationaloilwellvarco.com,Jacqueline,Parker,Systems Administrator,IC,Technical
+567,15,National Oilwell Varco,matthew.smith@nationaloilwellvarco.com,Matthew,Smith,Software Engineer,IC,Technical
+568,15,National Oilwell Varco,molly.knight@nationaloilwellvarco.com,Molly,Knight,Business Development Manager,Manager,Commercial
+569,15,National Oilwell Varco,richard.thomas@nationaloilwellvarco.com,Richard,Thomas,Account Executive,IC,Commercial
+570,15,National Oilwell Varco,cynthia.johnson@nationaloilwellvarco.com,Cynthia,Johnson,Data Scientist,IC,Technical
+571,15,National Oilwell Varco,julie.lewis@nationaloilwellvarco.com,Julie,Lewis,Data Scientist,IC,Technical
+572,15,National Oilwell Varco,robert.peterson@nationaloilwellvarco.com,Robert,Peterson,Sales Representative,IC,Commercial
+573,15,National Oilwell Varco,mitchell.griffith@nationaloilwellvarco.com,Mitchell,Griffith,VP of Sales,VP/Director,Commercial
+574,15,National Oilwell Varco,kimberly.bradley@nationaloilwellvarco.com,Kimberly,Bradley,Marketing Specialist,IC,Commercial
+575,15,National Oilwell Varco,christopher.williams@nationaloilwellvarco.com,Christopher,Williams,Chief Information Officer,C-Suite,Technical
+576,15,National Oilwell Varco,eric.williamson@nationaloilwellvarco.com,Eric,Williamson,Security Manager,Manager,Technical
+577,15,National Oilwell Varco,emily.nelson@nationaloilwellvarco.com,Emily,Nelson,Account Executive,IC,Commercial
+578,15,National Oilwell Varco,ebony.tucker@nationaloilwellvarco.com,Ebony,Tucker,Cloud Architect,IC,Technical
+579,15,National Oilwell Varco,scott.nelson@nationaloilwellvarco.com,Scott,Nelson,Systems Administrator,IC,Technical
+580,15,National Oilwell Varco,kari.wilson@nationaloilwellvarco.com,Kari,Wilson,Data Science Manager,Manager,Technical
+581,15,National Oilwell Varco,russell.campbell@nationaloilwellvarco.com,Russell,Campbell,Customer Success Manager,IC,Commercial
+582,15,National Oilwell Varco,erika.tucker@nationaloilwellvarco.com,Erika,Tucker,Data Scientist,IC,Technical
+583,15,National Oilwell Varco,elizabeth.williams@nationaloilwellvarco.com,Elizabeth,Williams,Data Science Manager,Manager,Technical
+584,15,National Oilwell Varco,randall.greene@nationaloilwellvarco.com,Randall,Greene,Sales Representative,IC,Commercial
+585,15,National Oilwell Varco,adrian.turner@nationaloilwellvarco.com,Adrian,Turner,Data Science Manager,Manager,Technical
+586,15,National Oilwell Varco,jason.taylor@nationaloilwellvarco.com,Jason,Taylor,Security Manager,Manager,Technical
+587,15,National Oilwell Varco,jonathan.murphy@nationaloilwellvarco.com,Jonathan,Murphy,Cloud Architect,IC,Technical
+588,15,National Oilwell Varco,adrian.burgess@nationaloilwellvarco.com,Adrian,Burgess,Customer Success Manager,IC,Commercial
+589,15,National Oilwell Varco,gregory.james@nationaloilwellvarco.com,Gregory,James,Chief Executive Officer,C-Suite,Commercial
+590,15,National Oilwell Varco,jane.mason@nationaloilwellvarco.com,Jane,Mason,Data Science Manager,Manager,Technical
+591,15,National Oilwell Varco,martha.drake@nationaloilwellvarco.com,Martha,Drake,Cloud Architect,IC,Technical
+592,15,National Oilwell Varco,charles.hensley@nationaloilwellvarco.com,Charles,Hensley,Marketing Specialist,IC,Commercial
+593,15,National Oilwell Varco,bobby.smith@nationaloilwellvarco.com,Bobby,Smith,Director of Marketing,VP/Director,Commercial
+594,15,National Oilwell Varco,samantha.atkins@nationaloilwellvarco.com,Samantha,Atkins,Marketing Manager,Manager,Commercial
+595,15,National Oilwell Varco,barbara.berry@nationaloilwellvarco.com,Barbara,Berry,Systems Administrator,IC,Technical
+596,15,National Oilwell Varco,jenna.butler@nationaloilwellvarco.com,Jenna,Butler,IT Manager,Manager,Technical
+597,15,National Oilwell Varco,darius.smith@nationaloilwellvarco.com,Darius,Smith,Chief Information Officer,C-Suite,Technical
+598,15,National Oilwell Varco,mark.solis@nationaloilwellvarco.com,Mark,Solis,Business Development Manager,Manager,Commercial

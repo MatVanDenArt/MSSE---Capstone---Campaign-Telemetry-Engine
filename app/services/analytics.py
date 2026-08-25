@@ -764,22 +764,25 @@ def get_scoped_audience_data(campaign_id: str) -> dict:
         # 1. Get users interacting with the campaign across all channels
         query = '''
         WITH AllEvents AS (
-            SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
+            SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign COLLATE NOCASE = ? AND user_id IS NOT NULL
             UNION ALL
             SELECT m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
             UNION ALL
-            SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
+            SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id COLLATE NOCASE = ?
         )
         SELECT 
             c.user_id,
             c.first_name, 
             c.last_name, 
             c.company_name, 
-            c.seniority, 
+            c.seniority,
+            c.job_title,
+            c.persona_type,
+            MAX(a.timestamp) as last_active,
             COUNT(a.timestamp) as interactions
         FROM AllEvents a
         JOIN crm_users c ON a.user_id = c.user_id
-        GROUP BY c.user_id, c.first_name, c.last_name, c.company_name, c.seniority
+        GROUP BY c.user_id, c.first_name, c.last_name, c.company_name, c.seniority, c.persona_type
         '''
         cursor.execute(query, (campaign_id, f'%{campaign_id}%', campaign_id))
         all_users = cursor.fetchall()
@@ -800,30 +803,61 @@ def get_scoped_audience_data(campaign_id: str) -> dict:
         mqls = sorted(mqls, key=lambda x: x['interactions'], reverse=True)
         colds = sorted(colds, key=lambda x: x['interactions'], reverse=True)
         
-        # A realistic funnel mix (total 50)
-        rows = sqls[:15] + mqls[:20] + colds[:15]
+        # Return all users so Account Deep Dive has complete data
+        rows = sqls + mqls + colds
         
         user_ids = [str(r["user_id"]) for r in rows]
         assets_map = {}
         
         if user_ids:
             placeholders = ",".join("?" for _ in user_ids)
-            ga4_query = f'''
-            SELECT user_id, page_viewed as asset, COUNT(*) as freq
-            FROM ga4_events
-            WHERE utm_campaign = ? AND user_id IN ({placeholders}) AND page_viewed IS NOT NULL
-            GROUP BY user_id, page_viewed
+            timeline_query = f'''
+            WITH UserJourney AS (
+                SELECT user_id, 'Web' as type, page_viewed as asset, timestamp 
+                FROM ga4_events 
+                WHERE utm_campaign COLLATE NOCASE = ? AND user_id IN ({placeholders}) AND page_viewed IS NOT NULL
+                
+                UNION ALL
+                
+                SELECT u.user_id, 'Email' as type, m.campaign_id as asset, m.timestamp
+                FROM mailchimp_events m
+                JOIN crm_users u ON m.email = u.email
+                WHERE m.campaign_id LIKE ? AND u.user_id IN ({placeholders})
+                
+                UNION ALL
+                
+                SELECT g.user_id, 'LinkedIn' as type, l.ad_id as asset, l.timestamp
+                FROM linkedin_events l
+                JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id
+                WHERE l.campaign_id COLLATE NOCASE = ? AND g.user_id IN ({placeholders})
+            )
+            SELECT user_id, type, asset, timestamp FROM UserJourney ORDER BY timestamp ASC
             '''
-            params = [campaign_id] + user_ids
-            cursor.execute(ga4_query, params)
+            params = [campaign_id] + user_ids + [f'%{campaign_id}%'] + user_ids + [campaign_id] + user_ids
+            cursor.execute(timeline_query, params)
+            
             for row in cursor.fetchall():
                 uid = str(int(row["user_id"]))
                 if uid not in assets_map:
-                    assets_map[uid] = {}
-                asset_name = row["asset"].replace('/', ' ').replace('-', ' ').title().strip()
-                if not asset_name: asset_name = "Homepage"
-                asset_name += " (Web)"
-                assets_map[uid][asset_name] = assets_map[uid].get(asset_name, 0) + row["freq"]
+                    assets_map[uid] = []
+                
+                nm = row['asset'].replace('/', ' ').replace('-', ' ').title().strip()
+                if not nm: nm = 'Homepage'
+                
+                dt = row['timestamp'].split(' ')[0]
+                import datetime
+                try:
+                    dt_obj = datetime.datetime.strptime(dt, '%Y-%m-%d')
+                    fmt_date = dt_obj.strftime('%d %b %Y').upper()
+                except:
+                    fmt_date = dt
+                
+                assets_map[uid].append({
+                    'type': row['type'],
+                    'asset': nm,
+                    'date': fmt_date,
+                    'is_current': False
+                })
 
         users = []
         for row in rows:
@@ -831,28 +865,23 @@ def get_scoped_audience_data(campaign_id: str) -> dict:
             full_name = f"{row['first_name']} {row['last_name']}"
             interactions = int(row["interactions"])
             seniority = row["seniority"]
+            job_title = row["job_title"]
             company = row["company_name"]
+            persona_type = row["persona_type"]
+            last_active = row["last_active"]
             
-            user_assets_dict = assets_map.get(user_id, {})
-            sorted_assets = sorted(user_assets_dict.items(), key=lambda item: item[1], reverse=True)
+            user_timeline = assets_map.get(user_id, [])
             
-            structured_assets = []
-            for k, v in sorted_assets:
-                a_type = "Email" if " (Email)" in k else "Web"
-                clean_name = k.replace(" (Web)", "").replace(" (Email)", "")
-                structured_assets.append({
-                    "name": clean_name,
-                    "type": a_type,
-                    "count": v
-                })
-                
             users.append({
                 "id": user_id,
                 "name": full_name,
-                "company": company,
-                "seniority": seniority,
                 "interactions": interactions,
-                "assets": structured_assets
+                "seniority": seniority,
+                "title": job_title,
+                "company": company,
+                "persona_type": persona_type,
+                "last_active": last_active,
+                "timeline": user_timeline
             })
             
         conn.close()
@@ -872,7 +901,7 @@ def get_audience_network_data() -> dict:
         
         # Get top 50 users by interaction to keep the graph readable
         query = """
-        SELECT user_id, account_id, company_name, first_name, last_name, seniority, 
+        SELECT user_id, account_id, company_name, first_name, last_name, seniority, job_title,
                (IFNULL(mc_events, 0) + IFNULL(ga4_events, 0)) as interactions
         FROM master_summary
         WHERE company_name IS NOT NULL AND first_name IS NOT NULL
@@ -972,6 +1001,7 @@ def get_audience_network_data() -> dict:
             full_name = f"{row['first_name']} {row['last_name']}"
             interactions = int(row["interactions"])
             seniority = row["seniority"]
+            job_title = row["job_title"]
             
             # Format the assets list as structured objects
             user_assets_dict = assets_map.get(user_id, {})
@@ -1010,6 +1040,7 @@ def get_audience_network_data() -> dict:
                 "id": user_id,
                 "name": full_name,
                 "company": company,
+                "title": job_title,
                 "seniority": seniority,
                 "interactions": interactions,
                 "assets": structured_assets # Send all assets to the frontend modal
