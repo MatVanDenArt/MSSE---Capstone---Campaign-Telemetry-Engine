@@ -8,6 +8,26 @@ fake = Faker()
 Faker.seed(42)
 random.seed(42)
 
+def generate_job_title(seniority, persona):
+    if persona == "Technical":
+        if seniority == "C-Suite":
+            return random.choice(["Chief Technology Officer", "Chief Information Officer", "Chief Data Officer", "Chief Security Officer"])
+        elif seniority == "VP/Director":
+            return random.choice(["VP of Engineering", "Director of IT", "VP of Data Science", "Director of Cloud Infrastructure"])
+        elif seniority == "Manager":
+            return random.choice(["Engineering Manager", "IT Manager", "Data Science Manager", "Security Manager"])
+        else:
+            return random.choice(["Software Engineer", "Data Scientist", "Cloud Architect", "Systems Administrator"])
+    else:
+        if seniority == "C-Suite":
+            return random.choice(["Chief Executive Officer", "Chief Marketing Officer", "Chief Revenue Officer", "Chief Operating Officer"])
+        elif seniority == "VP/Director":
+            return random.choice(["VP of Sales", "Director of Marketing", "VP of Customer Success", "Director of Business Development"])
+        elif seniority == "Manager":
+            return random.choice(["Sales Manager", "Marketing Manager", "Account Manager", "Business Development Manager"])
+        else:
+            return random.choice(["Account Executive", "Marketing Specialist", "Customer Success Manager", "Sales Representative"])
+
 def generate_crm_users():
     print("Generating CRM Users...")
     crm_users = []
@@ -23,6 +43,7 @@ def generate_crm_users():
             email = f"{first_name.lower()}.{last_name.lower()}@{domain}"
             seniority = random.choices(SENIORITY_LEVELS, weights=[5, 15, 30, 50])[0]
             persona_type = random.choices(["Technical", "Commercial"], weights=[60, 40])[0]
+            job_title = generate_job_title(seniority, persona_type)
             
             crm_users.append({
                 "user_id": user_id_counter, 
@@ -31,6 +52,7 @@ def generate_crm_users():
                 "email": email, 
                 "first_name": first_name, 
                 "last_name": last_name, 
+                "job_title": job_title,
                 "seniority": seniority, 
                 "persona_type": persona_type
             })

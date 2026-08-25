@@ -218,6 +218,65 @@ async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
         "copilot_tasks": copilot_tasks
     })
 
+@router.get("/dashboard/audience-actions", response_class=HTMLResponse)
+async def get_audience_actions(request: Request, campaign_id: str, company: str = None):
+    from app.services.analytics import get_prioritized_sales_targets
+    import uuid
+    import urllib.parse
+    from datetime import datetime
+    
+    raw_targets = get_prioritized_sales_targets(campaign_id)
+    if company:
+        raw_targets = [t for t in raw_targets if t['company'] == company]
+    
+    raw_targets = raw_targets[:4]
+    
+    copilot_tasks = []
+    for t in raw_targets:
+        icon_col = "text-sky-400" if t['status'] == 'SQL' else "text-fuchsia-500"
+        try:
+            last_active_date = datetime.strptime(t['last_active'], "%Y-%m-%d")
+            delta = datetime.now() - last_active_date
+            if delta.days == 0:
+                relative_date = "Today"
+            elif delta.days == 1:
+                relative_date = "Yesterday"
+            else:
+                relative_date = f"{delta.days} days ago"
+        except:
+            relative_date = t['last_active']
+            
+        subtitle = f"{t['interactions']} interactions | Last active {relative_date}"
+        encoded_name = urllib.parse.quote(t['name'])
+        encoded_company = urllib.parse.quote(t['company'])
+        
+        tid = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid,
+            "icon": "fa-bullseye",
+            "icon_color": icon_col,
+            "title": f"Follow-up: {t['name']} ({t['company']})",
+            "subtitle": subtitle,
+            "is_programmatic": True,
+            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
+        })
+        
+    if not company:
+        from app.services.analytics import get_dynamic_account_anomalies
+        anomalies = get_dynamic_account_anomalies(campaign_id)
+        copilot_tasks.extend(anomalies)
+        
+    copilot_actions = [
+        {"label": "Map Committee", "command": f"Map the entire buying committee for {company or 'stalled accounts'} and identify persona blind spots.", "intent": "analyze", "icon": "fa-sitemap"},
+        {"label": "Surge Signals", "command": f"Identify intent surge signals across {company or 'target accounts'} in the last 48 hours.", "intent": "analyze", "icon": "fa-bolt"},
+        {"label": "Draft Outreach", "command": f"Draft a personalized outreach sequence for {company or 'the stalled accounts'}.", "intent": "draft", "icon": "fa-envelope"}
+    ]
+        
+    return templates.TemplateResponse(request=request, name="components/oob_copilot.html", context={
+        "copilot_actions": copilot_actions,
+        "copilot_tasks": copilot_tasks
+    })
+
 from functools import lru_cache
 
 @lru_cache(maxsize=32)
@@ -545,6 +604,45 @@ async def resolve_trigger(trigger_id: str):
     conn.commit()
     conn.close()
     return HTMLResponse(content="")
+
+@router.post("/dashboard/generate-ai-insight")
+async def generate_ai_insight(request: Request):
+    from app.services.llm_rotator import get_genai_client
+    from fastapi.responses import JSONResponse
+    import json
+    
+    try:
+        data = await request.json()
+        company = data.get("company", "Unknown")
+        
+        prompt = f"""You are an expert Strategic Account Executive.
+Analyze the following engagement data for the account '{company}'.
+Data:
+{json.dumps(data, indent=2)}
+
+Output your response strictly as a JSON object with the following keys:
+- "diagnosis": A short, single-paragraph synthesis evaluating the health of this account (committee gaps, intent topics, momentum). Don't just repeat the numbers. Identify risks (e.g. missing executives, stalled users) or momentum.
+- "signals": An array of 1 to 3 signal objects. Each object must have:
+    - "icon": A FontAwesome class (e.g., 'fa-arrow-trend-up', 'fa-triangle-exclamation', 'fa-hourglass-half', 'fa-check')
+    - "color": A Tailwind text color (e.g., 'text-emerald-400', 'text-rose-400', 'text-amber-400', 'text-slate-400')
+    - "label": A short 1-2 word label (e.g., 'Surge Signal', 'Friction Alert', 'Stall Risk', 'Status')
+    - "text": A brief 1-sentence description of the signal.
+
+Ensure valid JSON output.
+"""
+        client = get_genai_client()
+        resp = client.models.generate_content(model="gemini-3.6-flash", contents=prompt)
+        
+        try:
+            result = json.loads(resp.text)
+        except json.JSONDecodeError:
+            text = resp.text.replace("```json", "").replace("```", "").strip()
+            result = json.loads(text)
+            
+        return JSONResponse(content=result)
+    except Exception as e:
+        print(f"Error generating insight: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=400)
 
 
 @router.get('/dashboard/ui-lab/channel-roi')
