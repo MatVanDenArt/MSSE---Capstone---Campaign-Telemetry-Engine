@@ -639,21 +639,33 @@
                             </div>
                             <!-- Inline Timeline Expansion -->
                             <div x-show="expandedUserId === user.id" x-collapse class="bg-dark-900/40 border-t border-dark-800 p-4">
-                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">Interaction Timeline</div>
-                                <ul class="space-y-3">
-                                    <template x-for="asset in user.assets" :key="asset.name">
-                                        <li class="flex justify-between items-start text-xs gap-3">
-                                            <div class="flex items-start text-slate-300">
-                                                <span class="w-5 h-5 rounded flex items-center justify-center bg-black mt-0.5 mr-2 border border-dark-700 shrink-0">
-                                                    <i class="fa-brands fa-linkedin text-[10px] text-blue-500" x-show="asset.type === 'LinkedIn'"></i>
-                                                    <i class="fa-regular fa-file-lines text-[10px] text-emerald-500" x-show="asset.type === 'Web'"></i>
-                                                    <i class="fa-regular fa-envelope text-[10px] text-amber-500" x-show="asset.type === 'Email'"></i>
-                                                </span>
-                                                <span x-text="asset.name" class="font-mono text-[10px] leading-relaxed"></span>
+                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">Engagement Journey</div>
+                                <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
+                                    <template x-for="(asset, index) in user.timeline" :key="index">
+                                        <li class="relative pl-5">
+                                            <!-- Node dot -->
+                                            <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600">
                                             </div>
-                                            <span class="text-[9px] font-bold text-slate-500 bg-black px-1.5 py-0.5 rounded border border-dark-800 shrink-0" x-text="asset.count + 'x'"></span>
+                                            
+                                            <div class="flex flex-col">
+                                                <!-- Date -->
+                                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
+                                                
+                                                <!-- Asset name -->
+                                                <div class="flex items-center text-sm font-medium w-full rounded pr-2 py-0.5 text-slate-300" :title="asset.asset">
+                                                     <i class="mr-2 text-xs opacity-70" :class="{
+                                                         'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
+                                                         'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
+                                                         'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
+                                                     }"></i>
+                                                     <span class="truncate" x-text="asset.asset"></span>
+                                                </div>
+                                            </div>
                                         </li>
                                     </template>
+                                    <li x-show="!user.timeline || user.timeline.length === 0" class="text-sm text-slate-500 italic pl-5">
+                                        No specific assets recorded.
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -692,21 +704,33 @@
                                 </div>
                             </div>
                             <div x-show="expandedUserId === user.id" x-collapse class="bg-dark-900/40 border-t border-dark-800 p-4">
-                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">Interaction Timeline</div>
-                                <ul class="space-y-3">
-                                    <template x-for="asset in user.assets" :key="asset.name">
-                                        <li class="flex justify-between items-start text-xs gap-3">
-                                            <div class="flex items-start text-slate-300">
-                                                <span class="w-5 h-5 rounded flex items-center justify-center bg-black mt-0.5 mr-2 border border-dark-700 shrink-0">
-                                                    <i class="fa-brands fa-linkedin text-[10px] text-blue-500" x-show="asset.type === 'LinkedIn'"></i>
-                                                    <i class="fa-regular fa-file-lines text-[10px] text-emerald-500" x-show="asset.type === 'Web'"></i>
-                                                    <i class="fa-regular fa-envelope text-[10px] text-amber-500" x-show="asset.type === 'Email'"></i>
-                                                </span>
-                                                <span x-text="asset.name" class="font-mono text-[10px] leading-relaxed"></span>
+                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">Engagement Journey</div>
+                                <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
+                                    <template x-for="(asset, index) in user.timeline" :key="index">
+                                        <li class="relative pl-5">
+                                            <!-- Node dot -->
+                                            <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600">
                                             </div>
-                                            <span class="text-[9px] font-bold text-slate-500 bg-black px-1.5 py-0.5 rounded border border-dark-800 shrink-0" x-text="asset.count + 'x'"></span>
+                                            
+                                            <div class="flex flex-col">
+                                                <!-- Date -->
+                                                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
+                                                
+                                                <!-- Asset name -->
+                                                <div class="flex items-center text-sm font-medium w-full rounded pr-2 py-0.5 text-slate-300" :title="asset.asset">
+                                                     <i class="mr-2 text-xs opacity-70" :class="{
+                                                         'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
+                                                         'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
+                                                         'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
+                                                     }"></i>
+                                                     <span class="truncate" x-text="asset.asset"></span>
+                                                </div>
+                                            </div>
                                         </li>
                                     </template>
+                                    <li x-show="!user.timeline || user.timeline.length === 0" class="text-sm text-slate-500 italic pl-5">
+                                        No specific assets recorded.
+                                    </li>
                                 </ul>
                             </div>
                         </div>
