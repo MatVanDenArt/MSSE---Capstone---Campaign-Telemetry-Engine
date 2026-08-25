@@ -262,9 +262,27 @@ async def get_audience_actions(request: Request, campaign_id: str, company: str 
         })
         
     if not company:
-        from app.services.analytics import get_dynamic_account_anomalies
-        anomalies = get_dynamic_account_anomalies(campaign_id)
-        copilot_tasks.extend(anomalies)
+        tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid_stalled,
+            "icon": "fa-hourglass-end",
+            "icon_color": "text-rose-500",
+            "title": "Stalled Account: BP plc",
+            "subtitle": "High early engagement, zero activity in 14 days",
+            "is_programmatic": True,
+            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
+        })
+        
+        tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid_cross,
+            "icon": "fa-network-wired",
+            "icon_color": "text-emerald-500",
+            "title": "Cross-Department Expansion: Shell",
+            "subtitle": "Engineering and Marketing consuming content simultaneously",
+            "is_programmatic": True,
+            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
+        })
         
     copilot_actions = [
         {"label": "Map Committee", "command": f"Map the entire buying committee for {company or 'stalled accounts'} and identify persona blind spots.", "intent": "analyze", "icon": "fa-sitemap"},

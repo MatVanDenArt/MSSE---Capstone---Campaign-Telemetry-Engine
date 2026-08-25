@@ -1,20 +1,49 @@
 <!-- OOB Swap for Copilot Action Chips -->
-<div id="copilot-action-chips" hx-swap-oob="true" class="px-4 pb-4">
-    <div class="mb-3 flex items-center gap-2">
-        <i class="fa-solid fa-sparkles text-[10px] text-fuchsia-500"></i>
-        <span class="text-[10px] font-bold text-fuchsia-500 uppercase tracking-widest">Suggested Prompts</span>
-    </div>
-    <div class="grid grid-cols-1 gap-2">
+<div id="copilot-action-chips" hx-swap-oob="true" class="px-4">
+    <style>
+        .custom-scrollbar-hide::-webkit-scrollbar { display: none; }
+        .custom-scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <div class="flex overflow-x-auto gap-2 py-3 custom-scrollbar-hide" 
+         @wheel="if(Math.abs($event.deltaY) > Math.abs($event.deltaX)) { $event.preventDefault(); $el.scrollLeft += $event.deltaY; }">
         {% for action in copilot_actions %}
-        <button @click="activeSidebarView = 'chat'" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true"}' class="group p-3 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-all text-left flex items-start gap-3 rounded-lg backdrop-blur-sm relative overflow-hidden">
-            <div class="w-6 h-6 rounded flex items-center justify-center bg-dark-800 border border-dark-600 group-hover:bg-fuchsia-900/50 group-hover:border-fuchsia-500/50 shrink-0 mt-0.5 transition-colors">
+        <div class="relative group shrink-0" x-data="{ show: false, x: 0, y: 0 }">
+            <button @click="activeSidebarView = 'chat'; show = false" 
+                @mouseenter="
+                    let rect = $el.getBoundingClientRect();
+                    x = rect.left + (rect.width / 2);
+                    y = rect.top;
+                    show = true;
+                "
+                @mouseleave="show = false"
+                hx-post="/api/chat" 
+                hx-target="#chat-history" 
+                hx-swap="beforeend" 
+                hx-indicator="#loading-indicator" 
+                hx-vals='{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true"}' 
+                class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
+                
                 <i class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
+                <span class="text-[11px] font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{ action.label }}</span>
+            </button>
+            
+            <!-- Tooltip using Fixed positioning to escape overflow hidden -->
+            <div x-show="show" 
+                 @scroll.window="show = false"
+                 x-transition:enter="transition ease-out duration-200 delay-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-150"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 class="fixed z-[99999] -translate-x-1/2 -translate-y-full mb-2 w-48 p-2.5 bg-black border border-dark-600 rounded-lg text-[10px] leading-relaxed text-slate-300 shadow-xl pointer-events-none"
+                 :style="`left: ${x}px; top: ${y - 4}px;`"
+                 style="display: none;">
+                 {{ action.command }}
+                 <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600"></div>
+                 <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black mt-[-1px]"></div>
             </div>
-            <div>
-                <div class="text-xs font-bold text-slate-200 group-hover:text-fuchsia-300 transition-colors">{{ action.label }}</div>
-                <div class="text-[10px] text-slate-500 mt-1 leading-relaxed group-hover:text-slate-400">{{ action.command }}</div>
-            </div>
-        </button>
+        </div>
         {% endfor %}
     </div>
 </div>
@@ -35,12 +64,13 @@
              totalTasks: {{ copilot_tasks | length }},
              reviewingTaskId: null,
              init() {
-                 this.visibleTasks = this.tasks.slice(0, 3);
-                 this.queue = this.tasks.slice(3);
+                 this.visibleTasks = this.tasks.slice(0, 5);
+                 this.queue = this.tasks.slice(5);
                  
                  window.addEventListener('task-resolved', (e) => {
                      if (e.detail && e.detail.id) {
                          this.removeTask(e.detail.id, 'handoff');
+                         htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + e.detail.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
                          if (this.reviewingTaskId === e.detail.id) {
                              this.reviewingTaskId = null;
                          }
@@ -48,17 +78,17 @@
                  });
              },
              getGlowClass(task) {
-                 if (this.reviewingTaskId === task.id) {
-                     return 'border-fuchsia-500/50 bg-fuchsia-900/10 shadow-[inset_0_0_20px_rgba(217,70,239,0.05)] opacity-80';
-                 }
-                 const title = task.title || '';
-                 if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
-                     return 'border-rose-900/60 bg-rose-900/20 hover:border-rose-500/50 hover:bg-rose-900/30 shadow-[inset_0_0_15px_rgba(225,29,72,0.1)]';
-                 } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
-                     return 'border-emerald-900/60 bg-emerald-900/20 hover:border-emerald-500/50 hover:bg-emerald-900/30 shadow-[inset_0_0_15px_rgba(16,185,129,0.1)]';
-                 }
-                 return 'border-amber-900/60 bg-amber-900/20 hover:border-amber-500/50 hover:bg-amber-900/30 shadow-[inset_0_0_15px_rgba(245,158,11,0.1)]';
-             },
+                if (this.reviewingTaskId === task.id) {
+                    return 'border-fuchsia-500/50 bg-white/5 opacity-80 cursor-default';
+                }
+                const title = task.title || '';
+                if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                    return 'border-rose-900/60 bg-white/5 hover:border-rose-500/50 hover:bg-white/10 cursor-pointer';
+                } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                    return 'border-emerald-900/60 bg-white/5 hover:border-emerald-500/50 hover:bg-white/10 cursor-pointer';
+                }
+                return 'border-amber-900/60 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 cursor-pointer';
+            },
              getCategoryBadge(task) {
                  const title = task.title || '';
                  if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
@@ -69,21 +99,40 @@
                  return { label: 'INSIGHT', color: 'text-amber-400 bg-amber-950 border-amber-900' };
              },
              removeTask(id, type) {
-                 const el = document.getElementById('task-card-' + id);
-                 if (el) {
-                     if (type === 'handoff') {
-                         el.classList.add('translate-x-full', 'scale-90', 'opacity-0', 'border-fuchsia-500', 'shadow-[0_0_20px_rgba(217,70,239,0.5)]');
-                     } else {
-                         el.classList.add('-translate-x-full', 'opacity-0');
-                     }
-                 }
-                 setTimeout(() => {
-                     this.visibleTasks = this.visibleTasks.filter(t => t.id !== id);
-                     if (this.queue.length > 0) {
-                         this.visibleTasks.push(this.queue.shift());
-                     }
-                 }, 300);
-             },
+                const el = document.getElementById('task-card-' + id);
+                if (el) {
+                    el.style.transitionProperty = 'all';
+                    el.style.transitionDuration = '600ms';
+                    el.style.transitionTimingFunction = 'cubic-bezier(0.4, 0, 0.2, 1)';
+                    if (type === 'handoff') {
+                        el.classList.add('translate-x-full', 'scale-90', 'opacity-0', 'border-fuchsia-500', 'shadow-[0_0_20px_rgba(217,70,239,0.5)]');
+                    } else {
+                        el.classList.add('-translate-x-full', 'opacity-0', 'scale-95');
+                    }
+                    
+                    setTimeout(() => {
+                        el.style.transitionDuration = '400ms';
+                        el.style.height = el.offsetHeight + 'px';
+                        el.style.overflow = 'hidden';
+                        void el.offsetHeight; // force reflow
+                        el.style.height = '0px';
+                        el.style.paddingTop = '0px';
+                        el.style.paddingBottom = '0px';
+                        el.style.marginTop = '0px';
+                        el.style.marginBottom = '0px';
+                        el.style.borderWidth = '0px';
+                        el.style.opacity = '0';
+                    }, 400);
+                }
+                setTimeout(() => {
+                    this.visibleTasks = this.visibleTasks.filter(t => t.id !== id);
+                    setTimeout(() => {
+                        if (this.queue.length > 0) {
+                            this.visibleTasks.push(this.queue.shift());
+                        }
+                    }, 50);
+                }, 800);
+            },
              executeTask(task) {
                  this.reviewingTaskId = task.id;
                  this.$dispatch('open-chat');
@@ -103,7 +152,7 @@
              },
              dismissTask(task) {
                  this.removeTask(task.id, 'dismiss');
-                 htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + task.id, {target: '#chat-history', swap: 'none'});
+                 htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + task.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
              }
          }">
         
@@ -117,12 +166,13 @@
             </span>
         </div>
         
-        <div class="flex flex-col p-2 space-y-2 overflow-hidden relative min-h-[300px]">
+        <div class="flex flex-col p-2 space-y-2 overflow-y-auto custom-scrollbar relative min-h-[300px]">
             <template x-for="(task, index) in visibleTasks" :key="task.id">
-                <div class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
+                <div @click="if(reviewingTaskId !== task.id) executeTask(task)"
+                     class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
                      :class="getGlowClass(task)"
                      :id="'task-card-' + task.id"
-                     x-transition:enter="transition ease-out duration-300 transform"
+                     x-transition:enter="transition ease-out duration-500 transform"
                      x-transition:enter-start="opacity-0 translate-y-8 scale-95"
                      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                      x-transition:leave="transition ease-in duration-300 transform"
@@ -136,30 +186,29 @@
                                   :class="getCategoryBadge(task).color" 
                                   x-text="getCategoryBadge(task).label"></span>
                             <div class="flex items-center gap-2 mt-1">
-                                <div class="w-6 h-6 rounded flex items-center justify-center border border-dark-700 bg-dark-800 shrink-0 shadow-inner shadow-dark-600/20">
-                                    <i :class="'fa-solid text-[10px] ' + task.icon + ' ' + task.icon_color"></i>
-                                </div>
                                 <div class="text-xs font-bold text-slate-200 tracking-wide truncate" x-text="task.title"></div>
                             </div>
                         </div>
                         <!-- Dismiss Button -->
-                        <button @click.prevent="dismissTask(task)" class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0" title="Dismiss">
+                        <button @click.stop.prevent="dismissTask(task)" class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0" title="Dismiss">
                             <i class="fa-solid fa-times"></i>
                         </button>
                     </div>
                     
                     <!-- Context Row -->
-                    <div class="mb-4 pr-2">
-                        <div class="text-[11px] text-slate-400 uppercase tracking-wider mb-1 line-clamp-2 leading-relaxed" x-text="task.subtitle || task.message"></div>
+                    <div class="mb-2 pr-2">
+                        <div class="text-[11px] text-slate-400 uppercase tracking-wider line-clamp-2 leading-relaxed" x-text="task.subtitle || task.message"></div>
                     </div>
                     
                     <!-- Action Row -->
-                    <div class="flex justify-end w-full">
+                    <div class="flex justify-end mt-1">
                         <button @click.prevent="executeTask(task)" 
-                                class="w-full justify-center px-4 py-2 border text-[10px] font-bold transition-all uppercase tracking-widest flex items-center gap-2 rounded group-hover:border-fuchsia-500/80"
-                                :class="reviewingTaskId === task.id ? 'bg-fuchsia-900/20 border-fuchsia-500/50 text-fuchsia-400 cursor-default' : 'bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border-fuchsia-500/40 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white shadow-[0_0_15px_rgba(217,70,239,0.1)] hover:shadow-[0_0_20px_rgba(217,70,239,0.3)]'">
-                            <i class="fa-solid" :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin text-fuchsia-500' : 'fa-wand-magic-sparkles text-fuchsia-500 group-hover:animate-pulse'"></i> 
-                            <span x-text="reviewingTaskId === task.id ? 'Reviewing in Copilot...' : (task.action_payload || 'Send to Copilot')"></span>
+                                class="flex items-center gap-1.5 text-[10px] font-mono font-bold tracking-widest uppercase transition-all duration-300"
+                                :class="reviewingTaskId === task.id ? 'text-fuchsia-600 cursor-default' : 'text-fuchsia-500/80 group-hover:text-fuchsia-300'">
+                            <span class="transition-colors" 
+                                  x-text="reviewingTaskId === task.id ? 'Reviewing...' : (task.action_payload || 'Send to Copilot')"></span>
+                            <i class="fa-solid transition-transform duration-300" 
+                               :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin' : 'fa-arrow-right group-hover:translate-x-1'"></i>
                         </button>
                     </div>
                 </div>

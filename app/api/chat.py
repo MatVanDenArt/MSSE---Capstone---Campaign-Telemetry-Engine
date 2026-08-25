@@ -377,7 +377,7 @@ def chat_stream(task_id: str):
                 <div class="w-full min-w-0">
                     <div class="bg-black border border-dark-700 p-4 w-full">
                         <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
-                        {"<div class='mt-4 border-t border-dark-800 pt-4'><button onclick='window.dispatchEvent(new CustomEvent(\"task-resolved\", {{detail: {{id: \"" + trigger_id + "\"}}}}))' class='w-full py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded'><i class='fa-solid fa-check'></i> Clear Alert from Queue</button></div>" if (intent == "review" and trigger_id) else ""}
+                        {"<div class='mt-4 border-t border-dark-800 pt-4'><button onclick=\"this.innerHTML='<i class=&quot;fa-solid fa-check-double&quot;></i> Cleared'; this.disabled=true; this.classList.add('opacity-50', 'cursor-not-allowed'); window.dispatchEvent(new CustomEvent('task-resolved', {detail: {id: '" + trigger_id + "'}}));\" class='w-full py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded'><i class='fa-solid fa-check'></i> Clear Alert from Queue</button></div>" if (intent == "review" and trigger_id) else ""}
                     </div>
                 </div>
             </div>
