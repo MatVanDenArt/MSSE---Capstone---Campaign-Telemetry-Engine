@@ -319,7 +319,7 @@
                                     class="flex items-center justify-between bg-dark-900/40 rounded px-2 py-1.5 border border-white/5">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-microchip text-[10px] text-cyan-400"></i>
-                                        <span class="text-[10px] text-slate-300">Technical</span>
+                                        <span class="text-xs text-slate-300">Technical</span>
                                     </div>
                                     <span class="text-xs font-bold text-cyan-100"
                                         x-text="account.technical_users"></span>
@@ -329,7 +329,7 @@
                                     class="flex items-center justify-between bg-dark-900/40 rounded px-2 py-1.5 border border-white/5">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-handshake text-[10px] text-rose-400"></i>
-                                        <span class="text-[10px] text-slate-300">Commercial</span>
+                                        <span class="text-xs text-slate-300">Commercial</span>
                                     </div>
                                     <span class="text-xs font-bold text-rose-100"
                                         x-text="account.commercial_users"></span>
@@ -528,7 +528,7 @@
                             class="bg-dark-900/80 border border-dark-700 px-2.5 py-1 rounded-lg flex items-center gap-2">
                             <i class="fa-solid fa-users text-slate-500"></i>
                             <span class="text-white font-bold" x-text="accountUsers.length"></span>
-                            <span class="text-slate-400">Total Users Engaged</span>
+                            <span class="text-xs text-slate-400">Total Users Engaged</span>
                         </div>
                         <div
                             class="bg-emerald-900/30 border border-emerald-900/50 px-2.5 py-1 rounded-lg flex items-center gap-2 text-emerald-300">
@@ -667,7 +667,7 @@
                 <!-- Loaded Content -->
                 <div x-show="!isGeneratingDiagnosis" x-transition.opacity class="space-y-5">
                     <div>
-                        <p class="text-[11px] text-slate-300 font-mono leading-relaxed" x-text="insightDiagnosis"></p>
+                        <p class="text-xs text-slate-300 font-mono leading-relaxed" x-text="insightDiagnosis"></p>
                     </div>
 
                     <div class="pt-4 border-t border-dark-800">
@@ -680,7 +680,7 @@
                                     <div>
                                         <span class="text-[9px] font-bold uppercase tracking-widest block mb-0.5"
                                             :class="sig.color" x-text="sig.label"></span>
-                                        <span class="text-[11px] text-slate-300 font-mono leading-snug"
+                                        <span class="text-xs text-slate-300 font-mono leading-snug"
                                             x-text="sig.text"></span>
                                     </div>
                                 </div>

@@ -24,7 +24,7 @@
                 class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
                 
                 <i class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
-                <span class="text-[11px] font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{ action.label }}</span>
+                <span class="text-xs font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{ action.label }}</span>
             </button>
             
             <!-- Tooltip using Fixed positioning to escape overflow hidden -->
@@ -157,8 +157,8 @@
          }">
         
         <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
-            <span class="text-[10px] font-bold text-fuchsia-500 uppercase tracking-widest">Priority Actions</span>
-            <span class="text-[10px] text-slate-500 font-mono flex items-center gap-2">
+            <span class="text-xs font-bold text-fuchsia-500 uppercase tracking-widest">Priority Actions</span>
+            <span class="text-xs text-slate-500 font-mono flex items-center gap-2">
                 <span x-show="queue.length > 0" class="animate-pulse text-fuchsia-400">
                     <i class="fa-solid fa-layer-group"></i> <span x-text="queue.length"></span> Queued
                 </span>
@@ -203,7 +203,7 @@
                     <!-- Action Row -->
                     <div class="flex justify-end mt-1">
                         <button @click.prevent="executeTask(task)" 
-                                class="flex items-center gap-1.5 text-[10px] font-mono font-bold tracking-widest uppercase transition-all duration-300"
+                                class="flex items-center gap-1.5 text-xs font-mono font-bold tracking-widest uppercase transition-all duration-300"
                                 :class="reviewingTaskId === task.id ? 'text-fuchsia-600 cursor-default' : 'text-fuchsia-500/80 group-hover:text-fuchsia-300'">
                             <span class="transition-colors" 
                                   x-text="reviewingTaskId === task.id ? 'Reviewing...' : (task.action_payload || 'Send to Copilot')"></span>
