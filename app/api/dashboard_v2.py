@@ -23,7 +23,7 @@ async def get_sidebar(request: Request):
     return templates.TemplateResponse(request=request, name="components/sidebar.html", context={"campaigns": campaigns})
 
 @router.get("/dashboard/overview", response_class=HTMLResponse)
-async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
@@ -37,6 +37,8 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
     campaigns = get_all_campaigns()
     campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
     
+    tldr_html = cached_generate_strategic_tldr(campaign_id, timeframe)
+
     return templates.TemplateResponse(request=request, name="components/overview_v2.html", context={
         "campaign_id": campaign_id,
         "campaign_data": campaign_data,
@@ -44,6 +46,7 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
         "benchmarks": benchmarks,
         "assets": assets,
         "tam": tam,
+        "tldr_html": tldr_html,
         "sov": sov,
         "copilot_context_name": "Executive Overview",
         "copilot_actions": [

@@ -491,6 +491,10 @@ def generate_strategic_tldr(metrics: dict) -> str:
         from app.services.llm_rotator import get_genai_client
         
         prompt = f"You are an AI Analyst. Review these campaign metrics: {metrics}. Write a strict 2-3 sentence executive summary. Highlight pipeline generated and CPA anomalies. Format it in plain text without markdown."
+        import hashlib
+        h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+        print(f"TLDR Prompt Hash: {h}")
+        print(f"TLDR Prompt: {prompt}")
         response = None
         last_err = None
         for _ in range(3):
