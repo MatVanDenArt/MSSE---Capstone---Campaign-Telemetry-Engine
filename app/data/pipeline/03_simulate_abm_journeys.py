@@ -7,8 +7,8 @@ from config import OUTPUT_DIR, TARGET_ACCOUNTS
 
 random.seed(42)
 
-START_DATE = datetime(2025, 1, 1)
-END_DATE = datetime(2026, 6, 30)
+END_DATE = datetime.now()
+START_DATE = END_DATE - timedelta(days=545)
 
 def random_date(start, end):
     return start + timedelta(seconds=random.randint(0, int((end - start).total_seconds())))
