@@ -295,5 +295,19 @@ LLM inference is the application's most significant bottleneck regarding both la
 ### 3. HTMX Fragment Caching (Presentation Layer)
 Since the architecture relies heavily on Server-Side Rendering (SSR) via FastAPI and Jinja2, the server bears the load of generating HTML strings.
 - **Strategy**: For components that are universally identical across all users (such as the base layout of the Matrix or the Strategic TLDR structure), FastAPI can cache the fully rendered HTML fragments. When HTMX requests the fragment, FastAPI serves it directly from memory rather than executing the Jinja2 template engine.
- 
- 
+
+## 11. Technical Debt & Future Architectural Roadmap
+
+While the current MVP prioritizes speed of delivery and R&D for the MCP-style Generative UI, several deliberate architectural shortcuts were taken to meet milestone deadlines. To elevate the application to production-grade enterprise software, the following structural refactoring is planned for the V3 roadmap:
+
+### 1. Abstracting Data Access via the Repository Pattern
+The core `app/services/analytics_v2.py` service currently acts as a monolithic "God Object." It mixes raw SQLite queries (Data Access), Python mathematical aggregations (Business Logic), and dictionary formatting for the frontend charts (Presentation Logic). This violates the Single Responsibility Principle (SRP). 
+- **Roadmap Action:** We plan to implement the **Repository Pattern** to abstract all raw SQL queries into a dedicated `repository.py` layer. The analytics service will act strictly as an orchestrator, retrieving clean objects from the repository and applying business logic.
+
+### 2. Dependency Injection for Database Sessions
+Currently, database connections are hardcoded and instantiated manually within individual service functions (`conn = get_db_connection()`). This is a fragile pattern that risks connection leaks if unhandled exceptions occur before closure.
+- **Roadmap Action:** We will leverage FastAPI's native `Depends()` system to yield database connections at the route level and pass them down into the service layer. This enforces the **Unit of Work** pattern, guarantees safe connection closure via `finally` blocks, and drastically improves Unit Testing capabilities by enabling easy injection of mock databases.
+
+### 3. Centralizing API State with Redis
+Caching is currently handled by local file I/O (`llm_cache.json`) or in-memory decorators (`@lru_cache`). In a multi-worker production environment (e.g., Uvicorn with multiple processes), these approaches lead to race conditions, file-locking errors, and fragmented memory limits.
+- **Roadmap Action:** We will replace all local state management with a centralized, thread-safe **Redis** instance. This will handle both the heavy mathematical aggregation caching and the prompt-hashed LLM response caching, ensuring thread safety and horizontal scalability.
