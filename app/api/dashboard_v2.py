@@ -299,7 +299,7 @@ from functools import lru_cache
 
 @lru_cache(maxsize=32)
 def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
-    from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr
+    from app.services.analytics_v2 import get_kpi_benchmarks, generate_strategic_tldr
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     return generate_strategic_tldr(benchmarks)
 
