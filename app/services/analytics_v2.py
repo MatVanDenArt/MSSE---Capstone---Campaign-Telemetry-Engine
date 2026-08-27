@@ -222,7 +222,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
 
         live_metrics = fetch_metrics(campaign_id, timeframe)
         
-        date_filter = f"AND timestamp < datetime('2026-06-30', '-{timeframe} days')"
+        date_filter = f"AND timestamp < datetime('now', '-{timeframe} days')"
         
         cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE 1=1 {date_filter}")
         baseline_spend = cursor.fetchone()["spend"] or 0.0
@@ -255,8 +255,8 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         def get_sparkline(metric_type):
             data = []
             for i in range(13, -1, -1):
-                day_start = f"datetime('2026-06-30', '-{i+1} days')"
-                day_end = f"datetime('2026-06-30', '-{i} days')"
+                day_start = f"datetime('now', '-{i+1} days')"
+                day_end = f"datetime('now', '-{i} days')"
                 val = 0
                 if metric_type == "spend":
                     cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp >= {day_start} AND timestamp < {day_end}")
@@ -518,7 +518,7 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         cursor = conn.cursor()
         
         # Determine grouping and timeframe conditions
-        tf_condition = f"AND timestamp >= datetime('2026-06-30', '-{timeframe} days')" if timeframe > 0 else ""
+        tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
         date_format = "'%Y-%m-%d'"
         
         # Group traffic
@@ -581,11 +581,11 @@ def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
             if asset_name == "/": asset_name = "/home"
             
             # Get last 30 days sparkline
-            cursor.execute(f"SELECT date(timestamp) as dt, COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('2026-06-30', '-30 days') GROUP BY dt ORDER BY dt")
+            cursor.execute(f"SELECT date(timestamp) as dt, COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('now', '-30 days') GROUP BY dt ORDER BY dt")
             recent_rows = cursor.fetchall()
             
             # Get prior 30 days sum
-            cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('2026-06-30', '-60 days') AND timestamp < date('2026-06-30', '-30 days')")
+            cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND page_viewed = '{p['page_viewed']}' AND timestamp >= date('now', '-60 days') AND timestamp < date('now', '-30 days')")
             prior_count = cursor.fetchone()["c"] or 0
             
             sparkline = [0] * 30
