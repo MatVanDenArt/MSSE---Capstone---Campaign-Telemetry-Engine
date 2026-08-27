@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file automatically
 load_dotenv()
 
-from app.data.generator import generate_b2b_data
-from app.data.etl import run_etl
+
 from app.api import chat, dashboard, dashboard_v2
 
 @asynccontextmanager
