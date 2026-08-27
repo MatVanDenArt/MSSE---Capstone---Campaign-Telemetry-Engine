@@ -27,15 +27,18 @@
             animation: tldr-breathe 4s ease-in-out infinite;
         }
     </style>
-    <!-- Top-Line AI TL;DR (V2 styled) -->
-    <div class="animate-tldr-breathe border rounded-lg mb-6 p-4 md:p-6 flex flex-col md:flex-row items-start gap-4">
-        <div>
-            <h2 class="text-xs uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
-            <p class="text-xs font-mono text-slate-300 leading-relaxed" hx-get="/api/v1/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
-                <i class="fa-solid fa-circle-notch fa-spin text-fuchsia-500 mr-2"></i> Generating Strategic Insight...
-            </p>
-        </div>
-    </div>
+      <!-- Top-Line AI TL;DR (V1 styled with V2 breathing) -->
+      <div class="animate-tldr-breathe bg-black p-4 md:p-6 border border-dark-800 border-l-4 border-l-fuchsia-500 flex flex-col md:flex-row items-start gap-4 mb-6">
+          <div class="mt-1 w-8 h-8 bg-fuchsia-900 border border-fuchsia-500/50 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-sparkles text-fuchsia-400 text-sm"></i>
+          </div>
+          <div>
+              <h2 class="text-xs uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
+              <p class="text-sm md:text-base text-slate-300 leading-relaxed font-mono" hx-get="/api/v2/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
+                  <i class="fa-solid fa-terminal fa-fade text-fuchsia-500 mr-2"></i> Generating Strategic Insight...
+              </p>
+          </div>
+      </div>
 
     <!-- V2 North Star Metric Cards -->
     {% include 'components/overview_cards_v2.html' %}
