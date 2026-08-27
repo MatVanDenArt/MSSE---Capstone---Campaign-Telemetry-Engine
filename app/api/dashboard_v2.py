@@ -304,7 +304,7 @@ def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
     return generate_strategic_tldr(benchmarks)
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
-async def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     tldr = cached_generate_strategic_tldr(campaign_id, timeframe)
     return HTMLResponse(content=tldr)
 
