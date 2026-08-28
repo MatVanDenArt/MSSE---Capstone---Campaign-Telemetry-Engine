@@ -37,8 +37,6 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
     sov = calculate_share_of_voice(campaign_id)
     campaigns = get_all_campaigns()
     campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
-    
-    tldr_html = cached_generate_strategic_tldr(campaign_id, timeframe)
 
     return templates.TemplateResponse(request=request, name="components/overview_v2.html", context={
         "campaign_id": campaign_id,
@@ -47,7 +45,6 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
         "benchmarks": benchmarks,
         "assets": assets,
         "tam": tam,
-        "tldr_html": tldr_html,
         "sov": sov,
         "copilot_context_name": "Executive Overview",
         "copilot_actions": [
