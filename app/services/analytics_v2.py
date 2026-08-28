@@ -492,10 +492,15 @@ def generate_strategic_tldr(metrics: dict) -> str:
         from app.services.llm_rotator import get_genai_client
         
         prompt = f"You are an AI Analyst. Review these campaign metrics: {metrics}. Write a strict 2-3 sentence executive summary. Highlight pipeline generated and CPA anomalies. Format it in plain text without markdown."
+        
+        from app.services.llm_rotator import get_cached_response, set_cached_response
+        cached = get_cached_response(prompt)
+        if cached:
+            return cached
+            
         import hashlib
         h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
         print(f"TLDR Prompt Hash: {h}")
-        print(f"TLDR Prompt: {prompt}")
         response = None
         last_err = None
         for _ in range(3):
@@ -512,6 +517,8 @@ def generate_strategic_tldr(metrics: dict) -> str:
                 
         if not response:
             raise last_err
+            
+        set_cached_response(prompt, response.text)
         return response.text
     except Exception as e:
         return "AI Insight temporarily unavailable. Please verify API Key configuration."
