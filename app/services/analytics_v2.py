@@ -37,8 +37,7 @@ def calculate_blended_cpa() -> dict:
             "blended_cpa": round(cpa, 2)
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def get_account_penetration(campaign_id: str) -> dict:
     """
     Group users by company_name and seniority to return a summarized dictionary.
@@ -71,8 +70,7 @@ def get_account_penetration(campaign_id: str) -> dict:
         conn.close()
         return {"account_penetration": result}
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def evaluate_trickle_threshold(campaign_id: str) -> dict:
     """
     Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days.
@@ -114,8 +112,7 @@ def evaluate_trickle_threshold(campaign_id: str) -> dict:
             "status": "Active" if is_active else "Past (Trickle Traffic Detected)"
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def simulate_budget_shift(channel: str, budget: float) -> dict:
     """
     Use historical baseline conversion rates to mathematically project new pipeline volume based on the new budget.
@@ -150,8 +147,7 @@ def simulate_budget_shift(channel: str, budget: float) -> dict:
             "projected_pipeline_value": round(projected_pipeline, 2)
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def get_all_campaigns() -> list:
     try:
         conn = get_db_connection()
@@ -186,9 +182,7 @@ def get_all_campaigns() -> list:
         campaigns.sort(key=lambda x: (not x["is_active"], x["name"]))
         return campaigns
     except Exception as e:
-        print(f"Error fetching campaigns: {e}")
-        return []
-
+        raise e
 @lru_cache(maxsize=128)
 def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
     try:
@@ -303,19 +297,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
             "sparklines": sparklines
         }
     except Exception as e:
-        print(f"Error in benchmarks: {e}")
-        return {
-            "live": {"spend": 0, "accounts": 0, "cpa": 0, "conversions": 0}, 
-            "comparisons": {}, 
-            "sparklines": {
-                "spend": [0]*14,
-                "accounts": [0]*14,
-                "cpa": [0]*14,
-                "conversions": [0]*14
-            }
-        }
-
-
+        raise e
 def get_campaign_start_date(campaign_id: str) -> str:
     try:
         conn = get_db_connection()
@@ -334,9 +316,7 @@ def get_campaign_start_date(campaign_id: str) -> str:
         conn.close()
         return str(res['start_date']).split(" ")[0] if res and res['start_date'] else "Unknown"
     except Exception as e:
-        print(e)
-        return "Unknown"
-
+        raise e
 def format_pipeline(val: float) -> str:
     if not val:
         return "$0"
@@ -482,9 +462,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         conn.close()
         return assets
     except Exception as e:
-        print(f"Error in impact matrix: {e}")
-        return []
-
+        raise e
 def generate_strategic_tldr(metrics: dict) -> str:
     from google import genai
     from google.genai import types
@@ -521,8 +499,7 @@ def generate_strategic_tldr(metrics: dict) -> str:
         set_cached_response(prompt, response.text)
         return response.text
     except Exception as e:
-        return "AI Insight temporarily unavailable. Please verify API Key configuration."
-
+        raise e
 # --- Advanced Analytics for Sprint B ---
 def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
     try:
@@ -575,9 +552,7 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
             "email": [data_map[p]["email"] for p in sorted_periods]
         }
     except Exception as e:
-        print(e)
-        return {"labels": [], "traffic": [], "opps": [], "ads": [], "email": []}
-
+        raise e
 def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
     try:
         conn = get_db_connection()
@@ -634,9 +609,7 @@ def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
         conn.close()
         return assets
     except Exception as e:
-        print(e)
-        return []
-
+        raise e
 def generate_next_best_actions(campaign_id: str) -> list:
     try:
         import uuid
@@ -745,9 +718,7 @@ def generate_next_best_actions(campaign_id: str) -> list:
         conn.close()
         return actions
     except Exception as e:
-        print(f"Error generating actions: {e}")
-        return []
-
+        raise e
 # --- Gemini MCP Tool Schemas ---
 mcp_tools = [
     {
@@ -911,9 +882,7 @@ def get_scoped_audience_data(campaign_id: str) -> dict:
         conn.close()
         return {"users": users}
     except Exception as e:
-        print("Error in scoped audience:", e)
-        return {"users": []}
-
+        raise e
 def get_audience_network_data() -> dict:
     """
     Returns nodes and links for a D3 force-directed graph, as well as a list of users for card view.
@@ -1070,8 +1039,7 @@ def get_audience_network_data() -> dict:
             
         return {"nodes": nodes, "links": links, "users": users}
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 @lru_cache(maxsize=128)
 def get_sankey_data(campaign_id: str) -> dict:
     try:
@@ -1154,10 +1122,7 @@ def get_sankey_data(campaign_id: str) -> dict:
         
         return {"nodes": nodes, "links": links}
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return {"error": str(e)}
-
+        raise e
 def get_asset_timeline_data(campaign_id: str = None) -> list:
     try:
         conn = get_db_connection()
@@ -1245,12 +1210,7 @@ def get_asset_timeline_data(campaign_id: str = None) -> list:
         
         return final_list
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return []
-
-
-
+        raise e
 def get_channel_roi_data(campaign_id: str) -> dict:
     try:
         conn = get_db_connection()
@@ -1315,10 +1275,7 @@ def get_channel_roi_data(campaign_id: str) -> dict:
             'web': {'accounts_identified': web_accounts, 'total_pageviews': web_views, 'accounts': web_list}
         }
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return {'error': str(e)}
-
+        raise e
 def get_ui_lab_funnel_data(campaign_id: str) -> dict:
     try:
         conn = get_db_connection()
@@ -1342,8 +1299,7 @@ def get_ui_lab_funnel_data(campaign_id: str) -> dict:
         conn.close()
         return {'visitors': visitors, 'engaged': engaged, 'known': known, 'activated': activated, 'pipeline': pipeline}
     except Exception as e:
-        return {'error': str(e)}
-
+        raise e
 def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
     try:
         conn = get_db_connection()
@@ -1364,8 +1320,7 @@ def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
         conn.close()
         return {'heatmap': days_data}
     except Exception as e:
-        return {'error': str(e)}
-
+        raise e
 def get_prioritized_sales_targets(campaign_id: str) -> list:
     try:
         conn = get_db_connection()
@@ -1512,12 +1467,7 @@ def get_prioritized_sales_targets(campaign_id: str) -> list:
             
         return targets
     except Exception as e:
-        import traceback
-        print(f"Error fetching prioritized targets: {e}")
-        traceback.print_exc()
-        return []
-
-
+        raise e
 def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str) -> list:
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -1693,8 +1643,7 @@ def get_executive_pipeline_kpis(timeframe: int = 0) -> dict:
             "roi_percentage": round((total_pipeline / total_spend * 100), 2) if total_spend > 0 else 0
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def get_budget_pacing(channel: str = 'all', campaign_id: str = None) -> dict:
     '''Query spend data vs. pipeline creation.'''
     try:
@@ -1707,8 +1656,7 @@ def get_budget_pacing(channel: str = 'all', campaign_id: str = None) -> dict:
             "projected_shortfall": 0
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def run_attribution_model(model_type: str = 'linear', timeframe: int = 0) -> dict:
     '''Query ga4_events to distribute pipeline credit across touches.'''
     try:
@@ -1730,8 +1678,7 @@ def run_attribution_model(model_type: str = 'linear', timeframe: int = 0) -> dic
             "touch_distribution": attribution
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def compare_asset_baselines(asset_a: str, asset_b: str) -> dict:
     '''Query ga4_events to isolate performance gaps between two assets.'''
     try:
@@ -1751,8 +1698,7 @@ def compare_asset_baselines(asset_a: str, asset_b: str) -> dict:
             "winner": asset_a if a_hits > b_hits else asset_b if b_hits > a_hits else "tie"
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def map_buying_committee(account_identifier: str) -> dict:
     '''Query crm_users and ga4_events for a specific account to highlight engaged vs. unengaged personas.'''
     try:
@@ -1790,8 +1736,7 @@ def map_buying_committee(account_identifier: str) -> dict:
             "committee_members": committee
         }
     except Exception as e:
-        return {"error": str(e)}
-
+        raise e
 def get_intent_surge_signals(account_identifier: str) -> dict:
     '''Query ga4_events for 48-hour velocity spikes.'''
     try:
@@ -1810,9 +1755,7 @@ def get_intent_surge_signals(account_identifier: str) -> dict:
             "top_topics": ["Decarbonization", "Asset Optimization"]
         }
     except Exception as e:
-        return {"error": str(e)}
-
-
+        raise e
 def get_user_journey(name: str, company: str) -> dict:
     from datetime import datetime
     conn = get_db_connection()
