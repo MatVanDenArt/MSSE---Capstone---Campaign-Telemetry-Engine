@@ -12,13 +12,13 @@ DB_PATH = "capstone.db"
 
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
-async def get_workspace(request: Request, campaign_id: str):
+def get_workspace(request: Request, campaign_id: str):
     from app.services.analytics_v2 import get_campaign_start_date
     start_date = get_campaign_start_date(campaign_id)
     return templates.TemplateResponse(request=request, name="workspace_v2.html", context={"campaign_id": campaign_id, "start_date": start_date})
 
 @router.get("/dashboard/sidebar", response_class=HTMLResponse)
-async def get_sidebar(request: Request):
+def get_sidebar(request: Request):
     campaigns = get_all_campaigns()
     return templates.TemplateResponse(request=request, name="components/sidebar.html", context={"campaigns": campaigns})
 
@@ -57,7 +57,7 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
         "copilot_tasks": generate_next_best_actions(campaign_id)
     })
 @router.get("/dashboard/performance", response_class=HTMLResponse)
-async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     
@@ -141,7 +141,7 @@ async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBO
     })
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
-async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     from app.services.analytics import get_prioritized_sales_targets
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
@@ -222,7 +222,7 @@ async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
     })
 
 @router.get("/dashboard/audience-actions", response_class=HTMLResponse)
-async def get_audience_actions(request: Request, campaign_id: str, company: str = None):
+def get_audience_actions(request: Request, campaign_id: str, company: str = None):
     from app.services.analytics import get_prioritized_sales_targets
     import uuid
     import urllib.parse
@@ -312,7 +312,7 @@ def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_2
     return HTMLResponse(content=tldr)
 
 @router.get("/dashboard/investigate-target", response_class=HTMLResponse)
-async def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None):
+def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -460,7 +460,7 @@ async def investigate_target(campaign_id: str, name: str, company: str, trigger_
     return HTMLResponse(content=html_content)
 
 @router.get("/dashboard/investigate-asset", response_class=HTMLResponse)
-async def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None):
+def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None):
     matrix = get_asset_impact_matrix(campaign_id, 0)
     asset = next((m for m in matrix if m['asset_name'] == asset_name), None)
     
@@ -515,7 +515,7 @@ async def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str =
         
     return HTMLResponse(content=html_content)
 
-async def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
+def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
     return templates.TemplateResponse(request=request, name="components/account_penetration.html", context={
@@ -524,7 +524,7 @@ async def get_account_penetration_view(request: Request, campaign_id: str = "CMP
     })
 
 @router.get("/dashboard/penetration-details", response_class=HTMLResponse)
-async def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str):
+def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -556,7 +556,7 @@ async def get_penetration_details(request: Request, campaign_id: str, company: s
     """)
 
 @router.get("/dashboard/timeline", response_class=HTMLResponse)
-async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/timeline.html", context={
@@ -566,7 +566,7 @@ async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECAR
     })
 
 @router.get("/dashboard/asset-fatigue", response_class=HTMLResponse)
-async def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
+def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     assets = get_asset_fatigue(campaign_id)
     return templates.TemplateResponse(request=request, name="components/asset_fatigue.html", context={
         "campaign_id": campaign_id,
@@ -574,7 +574,7 @@ async def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_
     })
 
 @router.get("/dashboard/alerts", response_class=HTMLResponse)
-async def get_alerts_view(request: Request, campaign_id: str):
+def get_alerts_view(request: Request, campaign_id: str):
     actions = generate_next_best_actions(campaign_id)
     if not actions:
         return HTMLResponse(content="") # Empty response if no alerts
@@ -583,12 +583,12 @@ async def get_alerts_view(request: Request, campaign_id: str):
     })
 
 @router.post("/dashboard/execute-action", response_class=HTMLResponse)
-async def execute_action(request: Request, type: str, campaign_id: str):
+def execute_action(request: Request, type: str, campaign_id: str):
     # Mock execution endpoint
     return HTMLResponse(content=f"<span class='text-emerald-400 font-bold'><i class='fa-solid fa-check mr-2'></i>Action Executed</span>")
 
 @router.get("/dashboard/data-model")
-async def get_data_model_view(request: Request, campaign_id: str):
+def get_data_model_view(request: Request, campaign_id: str):
     from app.services.analytics import get_asset_fatigue
     assets = get_asset_fatigue(campaign_id, 90)
     return templates.TemplateResponse(request=request, name="components/data_model.html", context={
@@ -597,28 +597,28 @@ async def get_data_model_view(request: Request, campaign_id: str):
     })
 
 @router.get("/dashboard/audience-data-scoped")
-async def get_audience_data_scoped(campaign_id: str):
+def get_audience_data_scoped(campaign_id: str):
     from app.services.analytics import get_scoped_audience_data
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_scoped_audience_data(campaign_id))
 
 @router.get("/dashboard/audience-data")
-async def get_audience_data(campaign_id: str = None):
+def get_audience_data(campaign_id: str = None):
     data = get_audience_network_data() # We will update this later if needed
     return JSONResponse(content=data)
 
 @router.get("/dashboard/sankey-data")
-async def get_sankey_data_route(campaign_id: str):
+def get_sankey_data_route(campaign_id: str):
     data = get_sankey_data(campaign_id)
     return JSONResponse(content=data)
 
 @router.get("/dashboard/asset-timeline")
-async def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
+def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
     data = get_asset_timeline_data(campaign_id, timeframe)
     return JSONResponse(content=data)
 
 @router.delete("/dashboard/trigger/{trigger_id}", response_class=HTMLResponse)
-async def resolve_trigger(trigger_id: str):
+def resolve_trigger(trigger_id: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("UPDATE action_triggers SET resolved_status = 1 WHERE id = ?", (trigger_id,))
@@ -652,7 +652,8 @@ Output your response strictly as a JSON object with the following keys:
 Ensure valid JSON output.
 """
         client = get_genai_client()
-        resp = client.models.generate_content(model="gemini-3.6-flash", contents=prompt)
+        from starlette.concurrency import run_in_threadpool
+        resp = await run_in_threadpool(client.models.generate_content, model="gemini-3.6-flash", contents=prompt)
         
         try:
             result = json.loads(resp.text)
@@ -667,23 +668,23 @@ Ensure valid JSON output.
 
 
 @router.get('/dashboard/ui-lab/channel-roi')
-async def ui_lab_channel_roi(campaign_id: str):
+def ui_lab_channel_roi(campaign_id: str):
     matrix = get_asset_impact_matrix(campaign_id, 0)
     return templates.TemplateResponse(request=Request({"type": "http"}), name="components/mod_channel_roi.html", context={"matrix": matrix})
 
 @router.get('/dashboard/ui-lab/channel-roi-data')
-async def ui_lab_channel_roi_data(campaign_id: str):
+def ui_lab_channel_roi_data(campaign_id: str):
     from app.services.analytics import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))
 
 @router.get("/dashboard/target-accounts-modal", response_class=HTMLResponse)
-async def get_target_accounts_modal(request: Request, campaign_id: str):
+def get_target_accounts_modal(request: Request, campaign_id: str):
     from app.services.analytics import get_prioritized_sales_targets
     targets = get_prioritized_sales_targets(campaign_id)
     return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
 
 @router.get("/dashboard/abm-data")
-async def get_abm_data(campaign_id: str):
+def get_abm_data(campaign_id: str):
     from app.services.analytics import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -743,23 +744,23 @@ async def get_abm_data(campaign_id: str):
     return {"accounts": sorted_accounts, "topics": topics}
 
 @router.get("/v2/api/targets")
-async def v2_api_targets(campaign_id: str):
+def v2_api_targets(campaign_id: str):
     from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
 @router.get('/dashboard/ui-lab/funnel')
-async def ui_lab_funnel(campaign_id: str):
+def ui_lab_funnel(campaign_id: str):
     from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
 @router.get('/dashboard/ui-lab/heatmap')
-async def ui_lab_heatmap(campaign_id: str):
+def ui_lab_heatmap(campaign_id: str):
     from app.services.analytics import get_ui_lab_heatmap_data
     return JSONResponse(content=get_ui_lab_heatmap_data(campaign_id))
 
 
 @router.get('/dashboard/sales-alerts')
-async def get_sales_alerts(campaign_id: str):
+def get_sales_alerts(campaign_id: str):
     from app.services.analytics import get_prioritized_sales_targets
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_prioritized_sales_targets(campaign_id))
@@ -768,12 +769,12 @@ async def get_sales_alerts(campaign_id: str):
 from app.services.analytics import get_asset_personas
 
 @router.get("/asset-personas")
-async def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str):
+def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str):
     users = get_asset_personas(campaign_id, asset_name, type)
     return JSONResponse(content=users)
 
 @router.get("/telemetry/ai-calls")
-async def get_ai_telemetry():
+def get_ai_telemetry():
     from app.services.llm_rotator import get_telemetry
     data = get_telemetry()
     return JSONResponse(content=data)
