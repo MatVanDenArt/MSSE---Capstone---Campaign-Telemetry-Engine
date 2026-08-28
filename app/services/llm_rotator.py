@@ -82,8 +82,27 @@ def increment_telemetry(is_cache_hit=False):
     with open(TELEMETRY_FILE, 'w') as f:
         json.dump(t, f)
 
+import redis
+
+REDIS_URL = os.getenv("REDIS_URL")
+redis_client = None
+if REDIS_URL:
+    try:
+        redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+        redis_client.ping()
+    except Exception as e:
+        print(f"Redis connection failed: {e}")
+        redis_client = None
+
 def get_cached_response(prompt: str):
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+    if redis_client:
+        try:
+            return redis_client.get(f"llm_cache:{h}")
+        except:
+            pass
+    
+    # Fallback to local JSON
     if os.path.exists(CACHE_FILE):
         try:
             with open(CACHE_FILE, 'r') as f:
@@ -96,6 +115,14 @@ def get_cached_response(prompt: str):
 
 def set_cached_response(prompt: str, response_text: str):
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
+    if redis_client:
+        try:
+            redis_client.setex(f"llm_cache:{h}", 86400, response_text) # 24 hr cache
+            return
+        except:
+            pass
+            
+    # Fallback to local JSON
     cache = {}
     if os.path.exists(CACHE_FILE):
         try:
@@ -104,8 +131,11 @@ def set_cached_response(prompt: str, response_text: str):
         except:
             pass
     cache[h] = response_text
-    with open(CACHE_FILE, 'w') as f:
-        json.dump(cache, f)
+    try:
+        with open(CACHE_FILE, 'w') as f:
+            json.dump(cache, f)
+    except:
+        pass
 
 class MockResponse:
     def __init__(self, text):
