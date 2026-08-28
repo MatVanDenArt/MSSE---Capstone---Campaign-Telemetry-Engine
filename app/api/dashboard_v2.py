@@ -11,6 +11,15 @@ templates = Jinja2Templates(directory="app/templates")
 import os
 DB_PATH = os.getenv("DATABASE_URL", "capstone.db")
 
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
 def get_workspace(request: Request, campaign_id: str):
@@ -310,10 +319,10 @@ def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_2
     return HTMLResponse(content=tldr)
 
 @router.get("/dashboard/investigate-target", response_class=HTMLResponse)
-def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+from fastapi import Depends
+
+def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
     
     if name == 'Unknown':
         query = f"""
@@ -336,7 +345,6 @@ def investigate_target(campaign_id: str, name: str, company: str, trigger_id: st
         """
         cursor.execute(query, (campaign_id, name, company))
     rows = cursor.fetchall()
-    conn.close()
     
     if not rows:
         history_items = "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"
@@ -522,10 +530,8 @@ def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_
     })
 
 @router.get("/dashboard/penetration-details", response_class=HTMLResponse)
-def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
     
     query = f"""
         SELECT DISTINCT page_viewed 
@@ -536,7 +542,6 @@ def get_penetration_details(request: Request, campaign_id: str, company: str, se
     """
     cursor.execute(query, (campaign_id, company, seniority))
     rows = cursor.fetchall()
-    conn.close()
     
     assets_html = "".join([f"<li><i class='fa-solid fa-file-pdf text-rose-400 mr-2'></i> {r['page_viewed'].replace('/', '')}</li>" for r in rows]) if rows else "<li class='text-slate-500'>No specific assets consumed</li>"
     
@@ -616,12 +621,10 @@ def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
     return JSONResponse(content=data)
 
 @router.delete("/dashboard/trigger/{trigger_id}", response_class=HTMLResponse)
-def resolve_trigger(trigger_id: str):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+def resolve_trigger(trigger_id: str, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
     cursor.execute("UPDATE action_triggers SET resolved_status = 1 WHERE id = ?", (trigger_id,))
-    conn.commit()
-    conn.close()
+    db.commit()
     return HTMLResponse(content="")
 
 @router.post("/dashboard/generate-ai-insight")
