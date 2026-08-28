@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from app.services.analytics_v2 import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice
@@ -319,8 +319,6 @@ def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_2
     return HTMLResponse(content=tldr)
 
 @router.get("/dashboard/investigate-target", response_class=HTMLResponse)
-from fastapi import Depends
-
 def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None, db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     
