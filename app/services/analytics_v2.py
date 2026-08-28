@@ -2,7 +2,8 @@ import sqlite3
 import json
 from functools import lru_cache
 
-DB_PATH = "capstone.db"
+import os
+DB_PATH = os.getenv("DATABASE_URL", "capstone.db")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)

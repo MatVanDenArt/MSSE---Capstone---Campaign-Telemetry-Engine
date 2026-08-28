@@ -8,7 +8,8 @@ import urllib.parse
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-DB_PATH = "capstone.db"
+import os
+DB_PATH = os.getenv("DATABASE_URL", "capstone.db")
 
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
