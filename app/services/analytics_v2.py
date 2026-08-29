@@ -332,8 +332,8 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # If timeframe is 0 or large, treat it as All Time. Using 10000 for all time.
-        tf_condition = "IS NOT NULL"  # Always show all-time impact in the matrix to reflect full asset performance
+        # Timeframe filter logic
+        tf_condition = f">= datetime('now', '-{timeframe} days')" if timeframe > 0 else "IS NOT NULL"
         
         query = f"""
         WITH AssetDrops AS (

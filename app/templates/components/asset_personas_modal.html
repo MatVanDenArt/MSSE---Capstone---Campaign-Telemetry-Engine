@@ -2,7 +2,48 @@
     showAccountsModal: false,
     selectedAsset: null,
     selectedCellUsers: null,
+    allCompanies: [],
     campaignId: document.getElementById('current_campaign').value,
+    companyFilter: '',
+    seniorityFilter: '',
+    
+    get filteredUsers() {
+        if (!this.selectedCellUsers) return [];
+        return this.selectedCellUsers.filter(user => {
+            const matchesCompany = this.companyFilter === '' || user.company === this.companyFilter;
+            const matchesSeniority = this.seniorityFilter === '' || user.seniority === this.seniorityFilter;
+            return matchesCompany && matchesSeniority;
+        });
+    },
+    
+    get availableCompanies() {
+        if (!this.selectedCellUsers) return [];
+        const baseCompanies = this.allCompanies.length > 0 
+            ? this.allCompanies 
+            : Array.from(new Set(this.selectedCellUsers.map(u => u.company))).sort();
+            
+        return baseCompanies.map(comp => {
+            const count = this.selectedCellUsers.filter(u => {
+                const matchComp = u.company === comp;
+                const matchSen = this.seniorityFilter === '' || u.seniority === this.seniorityFilter;
+                return matchComp && matchSen;
+            }).length;
+            return { name: comp, count: count, label: `${comp} (${count})` };
+        });
+    },
+
+    get availableSeniorities() {
+        if (!this.selectedCellUsers) return [];
+        const seniorities = Array.from(new Set(this.selectedCellUsers.map(u => u.seniority))).sort();
+        return seniorities.map(sen => {
+            const count = this.selectedCellUsers.filter(u => {
+                const matchSen = u.seniority === sen;
+                const matchComp = this.companyFilter === '' || u.company === this.companyFilter;
+                return matchSen && matchComp;
+            }).length;
+            return { name: sen, count: count, label: `${sen} (${count})` };
+        });
+    },
     
     initModal() {
         window.addEventListener('open-asset-modal', (e) => {
@@ -11,12 +52,21 @@
             
             this.selectedAsset = { asset_name: assetName, type: assetType };
             this.selectedCellUsers = null;
+            this.companyFilter = '';
+            this.seniorityFilter = '';
             this.showAccountsModal = true;
             
             fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + `/asset-personas?campaign_id=${encodeURIComponent(this.campaignId)}&asset_name=${encodeURIComponent(assetName)}&type=${encodeURIComponent(assetType)}`)
                 .then(r => r.json())
-                .then(users => {
-                    this.selectedCellUsers = users;
+                .then(data => {
+                    if (data.users) {
+                        this.selectedCellUsers = data.users;
+                        this.allCompanies = data.all_companies || [];
+                    } else {
+                        // Fallback just in case
+                        this.selectedCellUsers = data;
+                        this.allCompanies = [];
+                    }
                 });
         });
     }
@@ -61,10 +111,43 @@
                 
                 <template x-if="selectedCellUsers && selectedCellUsers.length > 0">
                     <div class="flex-1 flex flex-col overflow-hidden">
+                        
+                        <!-- Dynamic Filters -->
+                        <div class="px-6 pt-4 pb-3 border-b border-dark-700 bg-dark-800/80 flex gap-4">
+                            <div class="flex-1">
+                                <label class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1 block">Company</label>
+                                <select x-model="companyFilter" class="w-full bg-dark-900 border border-dark-600 text-slate-200 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-brand-500">
+                                    <option value="">All Companies</option>
+                                    <template x-for="comp in availableCompanies" :key="comp.name">
+                                        <option :value="comp.name" x-text="comp.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1 block">Seniority</label>
+                                <select x-model="seniorityFilter" class="w-full bg-dark-900 border border-dark-600 text-slate-200 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-brand-500">
+                                    <option value="">All Seniorities</option>
+                                    <template x-for="sen in availableSeniorities" :key="sen.name">
+                                        <option :value="sen.name" x-text="sen.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- User Timelines -->
                         <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-3">
-                            <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Accounts Engaged</div>
-                            <template x-for="user in selectedCellUsers" :key="user.id">
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Accounts Engaged</div>
+                                <div class="text-[10px] text-brand-400 font-bold bg-brand-900/20 px-2 py-0.5 rounded border border-brand-500/30" x-text="filteredUsers.length + ' Results'"></div>
+                            </div>
+                            
+                            <template x-if="filteredUsers.length === 0">
+                                <div class="text-slate-500 text-sm italic text-center py-8 bg-dark-900/50 rounded-lg border border-dark-700 border-dashed">
+                                    No accounts match the selected filters.
+                                </div>
+                            </template>
+
+                            <template x-for="user in filteredUsers" :key="user.id">
                                 <div x-data="{ expanded: false }" class="bg-dark-900 border border-dark-700 rounded-lg p-4 shadow-sm hover:border-dark-500 transition-colors cursor-pointer" @click="expanded = !expanded">
                                     <div class="flex justify-between items-center">
                                         <div>
