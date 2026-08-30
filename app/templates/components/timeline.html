@@ -444,7 +444,7 @@
                             <div class="flex flex-col w-[30%] pr-4 shrink-0 overflow-hidden">
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1 min-w-0 grid">
-                                        <h5 class="col-start-1 row-start-1 text-xs font-bold text-slate-200 truncate transition-opacity duration-300 group-hover:opacity-0" :title="getCleanName(m.asset_name)" x-text="getCleanName(m.asset_name)"></h5>
+                                        <h5 class="col-start-1 row-start-1 text-xs font-bold text-slate-200 truncate transition-opacity duration-300 group-hover:opacity-0" :title="m.title" x-text="m.title"></h5>
                                         <h5 class="col-start-1 row-start-1 text-xs font-bold font-mono text-brand-400 truncate transition-opacity duration-300 opacity-0 group-hover:opacity-100" :title="m.asset_name" x-text="m.asset_name"></h5>
                                     </div>
                                     <template x-if="['Fatigued', 'Action Required'].includes(m.health)">

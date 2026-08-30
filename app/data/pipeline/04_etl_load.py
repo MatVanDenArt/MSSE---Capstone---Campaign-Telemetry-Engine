@@ -80,25 +80,31 @@ def etl_load():
     # 6. Build Content Metadata Table
     print("Building Content Metadata table...")
     if not ga4_df.empty:
+        import json
+        catalogue_path = os.path.join(os.path.dirname(__file__), "content_catalogue.json")
+        with open(catalogue_path, "r") as f:
+            CONTENT_CATALOGUE = json.load(f)
+            
+        catalogue_records = []
+        for campaign, assets in CONTENT_CATALOGUE.items():
+            for asset in assets:
+                catalogue_records.append(asset)
+                
+        catalogue_urls = [r["url"] for r in catalogue_records]
+        
         distinct_urls = ga4_df['page_viewed'].dropna().unique()
-        metadata_records = []
         for url in distinct_urls:
-            url_lower = url.lower()
-            if 'decarbonization' in url_lower: topic = "Decarbonization"
-            elif 'digital_twin' in url_lower or 'digital' in url_lower: topic = "Digital Twin"
-            elif 'decommissioning' in url_lower or 'decom' in url_lower: topic = "Decommissioning"
-            elif 'hydrogen' in url_lower: topic = "Hydrogen & CCUS"
-            elif 'carbon' in url_lower or 'ccus' in url_lower: topic = "Hydrogen & CCUS"
-            else: topic = "General Engineering"
-            
-            if 'case-studies' in url_lower: asset_type = "Case Study"
-            elif 'insights' in url_lower or 'report' in url_lower: asset_type = "Report"
-            elif 'webinar' in url_lower: asset_type = "Webinar"
-            else: asset_type = "Web Page"
-            
-            metadata_records.append({"url": url, "intent_topic": topic, "asset_type": asset_type})
-            
-        pd.DataFrame(metadata_records).to_sql("content_metadata", conn, if_exists="replace", index=False)
+            if url not in catalogue_urls and "http" not in url:
+                title = url.strip("/").replace("-", " ").title()
+                if not title: title = "Home"
+                catalogue_records.append({
+                    "url": url,
+                    "title": title,
+                    "intent_topic": "General Engineering",
+                    "asset_type": "Web Page"
+                })
+                
+        pd.DataFrame(catalogue_records).to_sql("content_metadata", conn, if_exists="replace", index=False)
         print("Loaded content_metadata")
 
     # 7. Build Master Summary Table
