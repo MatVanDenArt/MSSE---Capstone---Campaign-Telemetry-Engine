@@ -338,26 +338,38 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         query = f"""
         WITH AssetDrops AS (
             -- Web Assets
-            SELECT 'Web' as type, page_viewed as asset_name, MIN(timestamp) as release_date, COUNT(*) as engagement, 'ga4' as source
-            FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND timestamp {tf_condition}
+            SELECT 'Web' as type, 
+                   page_viewed as asset_name, 
+                   MIN(timestamp) as release_date, 
+                   SUM(CASE WHEN timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
+                   'ga4' as source
+            FROM ga4_events WHERE utm_campaign = '{campaign_id}' 
             AND page_viewed NOT IN ('/services/consulting', '/solutions/asset-performance-optimization', '/contact-sales', '/about/sustainability')
             GROUP BY page_viewed
             
             UNION ALL
             
             -- LinkedIn Ads
-            SELECT 'LinkedIn' as type, ad_id as asset_name, MIN(timestamp) as release_date, COUNT(*) as engagement, 'linkedin' as source
-            FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition}
+            SELECT 'LinkedIn' as type, 
+                   ad_id as asset_name, 
+                   MIN(timestamp) as release_date, 
+                   SUM(CASE WHEN timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
+                   'linkedin' as source
+            FROM linkedin_events WHERE campaign_id = '{campaign_id}' 
             GROUP BY ad_id
             
             UNION ALL
             
             -- Mailchimp Emails
-            SELECT 'Email' as type, campaign_id as asset_name, MIN(timestamp) as release_date, COUNT(*) as engagement, 'mailchimp' as source
-            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND action = 'Open' AND timestamp {tf_condition}
-            GROUP BY campaign_id
+            SELECT 'Email' as type, 
+                   REPLACE(REPLACE(url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') as asset_name, 
+                   MIN(timestamp) as release_date, 
+                   SUM(CASE WHEN timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
+                   'mailchimp' as source
+            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND action = 'Open' 
+            GROUP BY url_clicked
         )
-        SELECT * FROM AssetDrops ORDER BY release_date ASC
+        SELECT * FROM AssetDrops WHERE engagement > 0 ORDER BY release_date ASC
         """
         cursor.execute(query)
         assets = [dict(row) for row in cursor.fetchall()]
@@ -382,11 +394,11 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
             GROUP BY l.ad_id
         """
         email_metrics_query = f"""
-            SELECT m.campaign_id as asset_name, COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds,
+            SELECT REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') as asset_name, COUNT(DISTINCT u.account_id) as accts, COUNT(DISTINCT u.user_id) as inds,
                    SUM(CASE WHEN u.seniority = 'C-Suite' THEN 20 WHEN u.seniority = 'VP/Director' THEN 10 WHEN u.seniority = 'Manager' THEN 5 ELSE 1 END) as score
             FROM mailchimp_events m JOIN crm_users u ON m.email = u.email
             WHERE m.campaign_id = '{campaign_id}' AND m.timestamp {tf_condition}
-            GROUP BY m.campaign_id
+            GROUP BY m.url_clicked
         """
         
         metrics_map = {}
@@ -403,8 +415,8 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
             SELECT 'LinkedIn' as type, ad_id as asset_name, strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c 
             FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition} GROUP BY ad_id, day
             UNION ALL
-            SELECT 'Email' as type, campaign_id as asset_name, strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c 
-            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition} GROUP BY campaign_id, day
+            SELECT 'Email' as type, REPLACE(REPLACE(url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') as asset_name, strftime('%Y-%m-%d', timestamp) as day, COUNT(*) as c 
+            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND timestamp {tf_condition} GROUP BY url_clicked, day
         """
         cursor.execute(spark_query)
         spark_map = {}
@@ -443,6 +455,7 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
             
             s_dict = spark_map.get(f"{a['type']}_{a['asset_name']}", {})
             a['sparkline'] = [s_dict.get(day, 0) for day in all_days]
+            a['sparkline_dates'] = all_days
             
             # AI Fatigue Detection
             non_zero_days = [x for x in a['sparkline'] if x > 0]

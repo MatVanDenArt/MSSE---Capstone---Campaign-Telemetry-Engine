@@ -80,7 +80,7 @@ def evaluate_trickle_threshold(campaign_id: str) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        query = """
+        query = f"""
         SELECT date(timestamp) as day, COUNT(*) as daily_visits
         FROM ga4_events
         WHERE utm_campaign = ?
@@ -901,7 +901,7 @@ def get_audience_network_data() -> dict:
         cursor = conn.cursor()
         
         # Get top 50 users by interaction to keep the graph readable
-        query = """
+        query = f"""
         SELECT user_id, account_id, company_name, first_name, last_name, seniority, job_title,
                (IFNULL(mc_events, 0) + IFNULL(ga4_events, 0)) as interactions
         FROM master_summary
@@ -1496,33 +1496,34 @@ def get_prioritized_sales_targets(campaign_id: str) -> list:
         return []
 
 
-def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str) -> list:
+def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timeframe: int = 0) -> list:
     conn = get_db_connection()
     cursor = conn.cursor()
+    tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
     # first find users who interacted with the asset
     if asset_type == 'Web':
-        query = """
+        query = f"""
         SELECT u.user_id, u.first_name, u.last_name, u.company_name, u.seniority, COUNT(g.session_id) as asset_interactions
         FROM crm_users u
         JOIN ga4_events g ON u.user_id = g.user_id
-        WHERE g.utm_campaign = ? AND g.page_viewed = ?
+        WHERE g.utm_campaign = ? AND g.page_viewed = ? {tf_condition.replace('timestamp', 'g.timestamp')}
         GROUP BY u.user_id
         """
     elif asset_type == 'Email':
-        query = """
+        query = f"""
         SELECT u.user_id, u.first_name, u.last_name, u.company_name, u.seniority, COUNT(m.timestamp) as asset_interactions
         FROM crm_users u
         JOIN mailchimp_events m ON u.email = m.email
-        WHERE m.campaign_id LIKE ? AND m.url_clicked = ?
+        WHERE m.campaign_id LIKE ? AND m.url_clicked = ? {tf_condition.replace('timestamp', 'm.timestamp')}
         GROUP BY u.user_id
         """
     elif asset_type == 'LinkedIn':
-        query = """
+        query = f"""
         SELECT u.user_id, u.first_name, u.last_name, u.company_name, u.seniority, COUNT(l.timestamp) as asset_interactions
         FROM crm_users u
         JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON u.user_id = g.user_id
         JOIN linkedin_events l ON g.cookie_id = l.cookie_id
-        WHERE l.campaign_id = ? AND l.ad_id = ?
+        WHERE l.campaign_id = ? AND l.ad_id = ? {tf_condition.replace('timestamp', 'l.timestamp')}
         GROUP BY u.user_id
         """
     
