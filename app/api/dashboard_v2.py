@@ -768,8 +768,8 @@ def get_sales_alerts(campaign_id: str):
 from app.services.analytics import get_asset_personas
 
 @router.get("/asset-personas")
-def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str):
-    users = get_asset_personas(campaign_id, asset_name, type)
+def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str, timeframe: int = 0):
+    users = get_asset_personas(campaign_id, asset_name, type, timeframe)
     return JSONResponse(content=users)
 
 @router.get("/telemetry/ai-calls")
