@@ -450,8 +450,72 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
             except:
                 a['formatted_date'] = a['date']
 
+        # -----------------------------
+        # CRM Attribution Logic (Sprint 1)
+        # -----------------------------
+        # Get all opps for this campaign
+        cursor.execute('SELECT o.event_id, o.account_id, o.pipeline_value, o.timestamp, u.company_name FROM crm_opps o JOIN (SELECT DISTINCT account_id, company_name FROM crm_users) u ON o.account_id = u.account_id WHERE o.utm_campaign = ?', (campaign_id,))
+        opps = [dict(r) for r in cursor.fetchall()]
+
+        # Map account_id -> list of (asset_name, first_touch)
+        q = f'''
+        WITH AllEvents AS (
+            SELECT 'Web' as type, page_viewed as asset_name, timestamp, user_id FROM ga4_events WHERE user_id IS NOT NULL AND utm_campaign = '{campaign_id}'
+            UNION ALL
+            SELECT 'Email' as type, REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') as asset_name, m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id = '{campaign_id}'
+            UNION ALL
+            SELECT 'LinkedIn' as type, l.ad_id as asset_name, l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = '{campaign_id}'
+        )
+        SELECT u.account_id, a.asset_name, MIN(a.timestamp) as first_touch
+        FROM AllEvents a
+        JOIN crm_users u ON a.user_id = u.user_id
+        GROUP BY u.account_id, a.asset_name
+        '''
+        cursor.execute(q)
+        touches = [dict(r) for r in cursor.fetchall()]
+
+        touch_map = {}
+        for t in touches:
+            if t['asset_name']:
+                acc = t['account_id']
+                if acc not in touch_map:
+                    touch_map[acc] = []
+                touch_map[acc].append({'asset_name': t['asset_name'], 'first_touch': t['first_touch']})
+
+        asset_attribution = {}
+        for opp in opps:
+            acc = opp['account_id']
+            opp_val = float(opp['pipeline_value'] or 0)
+            opp_time = opp['timestamp']
+            
+            touched_assets = []
+            if acc in touch_map:
+                for t in touch_map[acc]:
+                    if t['first_touch'] <= opp_time:
+                        touched_assets.append(t['asset_name'])
+                        
+            if touched_assets:
+                fractional = opp_val / len(touched_assets)
+                for asset in touched_assets:
+                    if asset not in asset_attribution:
+                        asset_attribution[asset] = {'pipeline_influenced': 0.0, 'fractional_pipeline': 0.0, 'opps': []}
+                    
+                    asset_attribution[asset]['pipeline_influenced'] += opp_val
+                    asset_attribution[asset]['fractional_pipeline'] += fractional
+                    asset_attribution[asset]['opps'].append({
+                        'company': opp['company_name'],
+                        'date': str(opp_time).split(' ')[0],
+                        'value': opp_val
+                    })
+
         for a in assets:
             a['pipeline_share'] = round((a['impact_score'] / max_score) * 100) if max_score > 0 else 0
+            
+            # Attach attribution
+            attr = asset_attribution.get(a['asset_name'], {'pipeline_influenced': 0.0, 'fractional_pipeline': 0.0, 'opps': []})
+            a['pipeline_influenced'] = attr['pipeline_influenced']
+            a['fractional_pipeline'] = attr['fractional_pipeline']
+            a['influenced_opps'] = sorted(attr['opps'], key=lambda x: x['date'], reverse=True)
             
             s_dict = spark_map.get(f"{a['type']}_{a['asset_name']}", {})
             a['sparkline'] = [s_dict.get(day, 0) for day in all_days]
@@ -527,9 +591,24 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM ga4_events WHERE utm_campaign = '{campaign_id}' {tf_condition} GROUP BY period ORDER BY period")
         traffic_rows = cursor.fetchall()
         
-        # Group CRM opps
-        cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM crm_opps WHERE utm_campaign = '{campaign_id}' {tf_condition} GROUP BY period ORDER BY period")
+        # Group CRM opps (Only Opportunity Created for the green line)
+        cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM crm_opps WHERE utm_campaign = '{campaign_id}' AND event_type = 'Opportunity Created' {tf_condition} GROUP BY period ORDER BY period")
         opps_rows = cursor.fetchall()
+        
+        # Get specific CRM opp details (Sprint 3)
+        cursor.execute(f"SELECT o.event_type as type, strftime({date_format}, o.timestamp) as period, o.pipeline_value, u.company_name FROM crm_opps o JOIN (SELECT DISTINCT account_id, company_name FROM crm_users) u ON o.account_id = u.account_id WHERE o.utm_campaign = '{campaign_id}' {tf_condition}")
+        opps_details_rows = cursor.fetchall()
+        
+        opps_details_map = {}
+        for r in opps_details_rows:
+            p = r["period"]
+            if p not in opps_details_map:
+                opps_details_map[p] = []
+            opps_details_map[p].append({
+                "company": r["company_name"],
+                "value": r["pipeline_value"] or 0,
+                "type": r["type"]
+            })
         
         # Group LinkedIn Ad Clicks
         cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM linkedin_events WHERE campaign_id = '{campaign_id}' {tf_condition} GROUP BY period ORDER BY period")
@@ -562,7 +641,8 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
             "traffic": [data_map[p]["traffic"] for p in sorted_periods],
             "opps": [data_map[p]["opps"] for p in sorted_periods],
             "ads": [data_map[p]["ads"] for p in sorted_periods],
-            "email": [data_map[p]["email"] for p in sorted_periods]
+            "email": [data_map[p]["email"] for p in sorted_periods],
+            "opps_details": {p: opps_details_map.get(p, []) for p in sorted_periods}
         }
     except Exception as e:
         raise e

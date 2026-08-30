@@ -302,17 +302,41 @@
 
                         <!-- Header Section -->
                         <div class="mb-4 relative z-10 flex-1">
+                            <h3 class="text-base font-bold text-white group-hover:text-emerald-300 transition-colors truncate mb-3"
+                                x-text="account.company"></h3>
+                            
+                            <!-- Badges Row -->
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <template x-if="account.won_value > 0">
+                                    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 shrink-0">
+                                        <i class="fa-solid fa-trophy text-[9px] text-emerald-400"></i>
+                                        <span class="text-[9px] text-emerald-300 font-bold uppercase tracking-wider">
+                                            Won: $<span x-text="(account.won_value / 1000000).toFixed(1) + 'M'"></span>
+                                        </span>
+                                    </div>
+                                </template>
+                                <template x-if="!account.won_value && !account.active_opp_value">
+                                    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-500/10 border border-slate-500/20 shrink-0">
+                                        <i class="fa-solid fa-crosshairs text-[9px] text-slate-400"></i>
+                                        <span class="text-[9px] text-slate-300 font-bold uppercase tracking-wider">Target</span>
+                                    </div>
+                                </template>
+                                
+                                <template x-if="account.active_opp_value > 0">
+                                    <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/30 shrink-0">
+                                        <i class="fa-solid fa-briefcase text-[9px] text-amber-400"></i>
+                                        <span class="text-[9px] text-amber-300 font-bold uppercase tracking-wider">
+                                            Opp: $<span x-text="(account.active_opp_value / 1000000).toFixed(1) + 'M'"></span>
+                                        </span>
+                                    </div>
+                                </template>
 
-                            <!-- Middle Row: Company & Interactions -->
-                            <div class="flex justify-between items-end mt-1">
-                                <h3 class="text-base font-bold text-white group-hover:text-emerald-300 transition-colors truncate pr-2"
-                                    x-text="account.company"></h3>
-                                <div
-                                    class="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/20">
-                                    <i class="fa-solid fa-chart-line text-[9px] text-emerald-400"></i>
-                                    <span class="text-[10px] text-emerald-300"><strong
-                                            class="font-bold text-emerald-400"
-                                            x-text="account.total_interactions"></strong> interactions</span>
+                                <!-- Interactions Tag -->
+                                <div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-dark-800/50 border border-dark-700 shrink-0 ml-auto">
+                                    <i class="fa-solid fa-chart-line text-[9px] text-slate-400"></i>
+                                    <span class="text-[10px] text-slate-400"><strong
+                                            class="font-bold text-slate-300"
+                                            x-text="account.total_interactions"></strong> int.</span>
                                 </div>
                             </div>
                         </div>
@@ -634,6 +658,27 @@
                                 Comm</button>
                         </div>
                     </div>
+
+                    <!-- CRM Opportunities (Sprint 2) -->
+                    <template x-if="selectedAccount && selectedAccount.opportunities && selectedAccount.opportunities.length > 0">
+                        <div class="mt-4 pt-4 border-t border-dark-800">
+                            <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-500 mb-3 block">CRM Pipeline</span>
+                            <div class="space-y-2">
+                                <template x-for="opp in selectedAccount.opportunities" :key="opp.date + opp.value">
+                                    <div class="flex justify-between items-center bg-dark-900/50 border border-dark-700 px-3 py-2 rounded">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-bold text-white" x-text="'$' + (opp.value / 1000000).toFixed(1) + 'M'"></span>
+                                            <span class="text-[10px] text-slate-400" x-text="opp.date"></span>
+                                        </div>
+                                        <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded"
+                                            :class="opp.type === 'Closed Won' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'"
+                                            x-text="opp.type">
+                                        </span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
 

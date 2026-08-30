@@ -51,7 +51,7 @@
             const assetType = e.detail.type;
             const tf = e.detail.timeframe || 0;
             
-            this.selectedAsset = { asset_name: assetName, type: assetType };
+            this.selectedAsset = e.detail; // Capture full object (including attribution)
             this.selectedCellUsers = null;
             this.companyFilter = '';
             this.seniorityFilter = '';
@@ -97,6 +97,42 @@
                     </button>
                 </div>
 
+                <!-- Pipeline Attribution Overview (Sprint 3) -->
+                <template x-if="selectedAsset?.pipeline_influenced">
+                    <div class="px-6 py-4 border-b border-dark-700 bg-emerald-900/10" x-data="{ showOpps: false }">
+                        <div class="flex justify-between gap-4">
+                            <div class="flex-1">
+                                <span class="text-[9px] uppercase tracking-widest text-emerald-500 font-bold mb-1 block">Pipeline Influenced</span>
+                                <span class="text-xl font-black text-emerald-400" x-text="'$' + (selectedAsset.pipeline_influenced / 1000000).toFixed(2) + 'M'"></span>
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-1 block">Fractional Value</span>
+                                <span class="text-xl font-black text-white" x-text="'$' + (selectedAsset.fractional_pipeline / 1000000).toFixed(2) + 'M'"></span>
+                            </div>
+                        </div>
+
+                        <!-- Expandable Drill Down -->
+                        <div class="mt-3">
+                            <button @click="showOpps = !showOpps" class="w-full text-left flex justify-between items-center text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors py-1">
+                                <span><i class="fa-solid fa-file-contract mr-1.5"></i> <span x-text="selectedAsset.influenced_opps?.length"></span> Opportunities</span>
+                                <i class="fa-solid fa-chevron-down text-[10px] transition-transform" :class="showOpps ? 'rotate-180' : ''"></i>
+                            </button>
+                            
+                            <div x-show="showOpps" x-collapse class="mt-2 space-y-2">
+                                <template x-for="opp in selectedAsset.influenced_opps" :key="opp.company + opp.date">
+                                    <div class="flex justify-between items-center bg-dark-900 border border-dark-700 rounded p-2">
+                                        <div>
+                                            <span class="text-[10px] font-bold text-white block truncate w-32" x-text="opp.company"></span>
+                                            <span class="text-[9px] text-slate-400" x-text="opp.date"></span>
+                                        </div>
+                                        <span class="text-xs font-black text-emerald-400" x-text="'$' + (opp.value / 1000000).toFixed(1) + 'M'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
                 <template x-if="!selectedCellUsers">
                     <div class="p-10 flex justify-center items-center h-full">
                         <i class="fa-solid fa-circle-notch fa-spin text-brand-500 text-3xl"></i>
@@ -118,7 +154,7 @@
                             <div class="flex-1">
                                 <label class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1 block">Company</label>
                                 <select x-model="companyFilter" class="w-full bg-dark-900 border border-dark-600 text-slate-200 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-brand-500">
-                                    <option value="">All Companies</option>
+                                    <option value="">All companies</option>
                                     <template x-for="comp in availableCompanies" :key="comp.name">
                                         <option :value="comp.name" x-text="comp.label"></option>
                                     </template>
@@ -127,7 +163,7 @@
                             <div class="flex-1">
                                 <label class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mb-1 block">Seniority</label>
                                 <select x-model="seniorityFilter" class="w-full bg-dark-900 border border-dark-600 text-slate-200 text-xs rounded px-2 py-1.5 focus:outline-none focus:border-brand-500">
-                                    <option value="">All Seniorities</option>
+                                    <option value="">All seniorities</option>
                                     <template x-for="sen in availableSeniorities" :key="sen.name">
                                         <option :value="sen.name" x-text="sen.label"></option>
                                     </template>
