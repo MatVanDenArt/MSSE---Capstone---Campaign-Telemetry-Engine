@@ -81,7 +81,7 @@
                         }
                     };
 
-                    const buildConfig = (data, color, type='line', isLast=false, fill=false, dashed=false) => ({
+                    const buildConfig = (data, color, type='line', isLast=false, fill=false, dashed=false, oppsDetailsMap=null) => ({
                         type: type,
                         data: {
                             labels: this.chartData.labels,
@@ -106,7 +106,38 @@
                                 legend: { display: false }, 
                                 tooltip: { 
                                     backgroundColor: 'rgba(0,0,0,1)', titleColor: '#f8fafc', bodyColor: '#cbd5e1', borderColor: 'rgba(51,65,85,1)', borderWidth: 1,
-                                    callbacks: { title: tooltipTitleCallback }
+                                    callbacks: { 
+                                        title: tooltipTitleCallback,
+                                        label: function(context) {
+                                            if (context.dataset.label === 'Closed Won') {
+                                                return null; // Hide the default '(date, value)' label
+                                            }
+                                            return undefined; // Use default for others
+                                        },
+                                        afterBody: function(context) {
+                                            if (!oppsDetailsMap) return null;
+                                            const label = context[0].label;
+                                            const datasetIndex = context[0].datasetIndex; // 0 for Created, 1 for Won
+                                            const allOpps = oppsDetailsMap[label];
+                                            if (allOpps && allOpps.length > 0) {
+                                                const filteredOpps = allOpps.filter(o => 
+                                                    (datasetIndex === 1 && o.type === 'Closed Won') || 
+                                                    (datasetIndex === 0 && o.type === 'Opportunity Created')
+                                                );
+                                                
+                                                if (filteredOpps.length > 0) {
+                                                    let lines = [' '];
+                                                    filteredOpps.forEach(opp => {
+                                                        const val = (opp.value / 1000000).toFixed(1) + 'M';
+                                                        const icon = opp.type === 'Closed Won' ? '⚡' : '🌱';
+                                                        lines.push(`${icon} ${opp.company}: $${val} (${opp.type})`);
+                                                    });
+                                                    return lines;
+                                                }
+                                            }
+                                            return null;
+                                        }
+                                    }
                                 } 
                             },
                             scales: {
@@ -124,7 +155,32 @@
                     this.wChart = new Chart(this.$refs.wCanvas, buildConfig(this.chartData.traffic, 'rgba(6, 182, 212, 1)', 'line', false, true, false));
                     this.eChart = new Chart(this.$refs.eCanvas, buildConfig(this.chartData.email, 'rgba(139, 92, 246, 1)', 'line', false, true, false));
                     this.sChart = new Chart(this.$refs.sCanvas, buildConfig(this.chartData.ads, 'rgba(59, 130, 246, 1)', 'line', false, true, false));
-                    this.oChart = new Chart(this.$refs.oCanvas, buildConfig(this.chartData.opps, 'rgba(16, 185, 129, 1)', 'line', false, true, false));
+                    
+                    const oppsConfig = buildConfig(this.chartData.opps, 'rgba(16, 185, 129, 1)', 'line', false, true, false, this.chartData.opps_details);
+                    
+                    // Override interaction so tooltip snaps to the nearest point (golden circle or green line) vertically
+                    oppsConfig.options.interaction = { mode: 'nearest', intersect: false, axis: 'xy' };
+
+                    const wonData = this.chartData.labels.map((label, index) => {
+                        const opps = this.chartData.opps_details[label];
+                        if (opps) {
+                            const wonCount = opps.filter(o => o.type === 'Closed Won').length;
+                            if (wonCount > 0) return wonCount;
+                        }
+                        return null;
+                    });
+                    oppsConfig.data.datasets.push({
+                        label: 'Closed Won',
+                        type: 'scatter',
+                        data: wonData,
+                        pointBackgroundColor: '#fbbf24', // Golden color
+                        pointBorderColor: '#fbbf24',
+                        pointRadius: 6,
+                        pointHoverRadius: 9,
+                        pointStyle: 'circle'
+                    });
+                    
+                    this.oChart = new Chart(this.$refs.oCanvas, oppsConfig);
 
                     // BOTTOM CHART: Categorical Dot Plot Track
                     new Chart(ctxTimeline, {
@@ -208,16 +264,20 @@
         <div class="mt-8 border-t border-dark-800 pt-8">
             <div x-data="{ 
                 currentTab: 'Web',
-                sortBy: 'impact', // 'impact', 'views', 'individuals', 'recency'
+                sortBy: 'recency', // 'recency', 'impact', 'pipeline', 'views', 'individuals', 'accounts'
                 matrixDataRaw: {{ matrix | tojson | forceescape }},
                 get sortedMatrix() {
                     let arr = this.matrixDataRaw.filter(m => m.type === this.currentTab);
                     if (this.sortBy === 'impact') {
                         arr.sort((a, b) => b.impact_score - a.impact_score);
+                    } else if (this.sortBy === 'pipeline') {
+                        arr.sort((a, b) => (b.fractional_pipeline || 0) - (a.fractional_pipeline || 0));
                     } else if (this.sortBy === 'views') {
                         arr.sort((a, b) => b.engagement - a.engagement);
                     } else if (this.sortBy === 'individuals') {
                         arr.sort((a, b) => b.individuals_engaged - a.individuals_engaged);
+                    } else if (this.sortBy === 'accounts') {
+                        arr.sort((a, b) => b.accounts_activated - a.accounts_activated);
                     } else if (this.sortBy === 'recency') {
                         arr.sort((a, b) => new Date(b.date) - new Date(a.date));
                     }
@@ -236,6 +296,9 @@
                 },
                 getLineColor(health) {
                     return ['Fatigued', 'Action Required'].includes(health) ? '#f43f5e' : ['Warning', 'At Risk'].includes(health) ? '#f59e0b' : '#10b981';
+                },
+                getImpactColor(score) {
+                    return score >= 500 ? '#10b981' : score >= 200 ? '#f59e0b' : '#64748b';
                 },
                 formatNumber(num) {
                     return num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0';
@@ -257,10 +320,12 @@
                     <div class="flex items-center gap-3 mb-2 md:mb-0 lg:mb-0">
                         <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sort by:</span>
                         <select x-model="sortBy" class="bg-dark-900 border border-dark-700 text-xs font-bold text-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer">
-                            <option value="impact">Impact score</option>
+                            <option value="recency">Recency</option>
                             <option value="views">Viewership</option>
                             <option value="individuals">Individuals engaged</option>
-                            <option value="recency">Recency</option>
+                            <option value="accounts">Accounts activated</option>
+                            <option value="pipeline">Fractional pipeline</option>
+                            <option value="impact">Impact score</option>
                         </select>
                     </div>
                 </div>
@@ -269,7 +334,7 @@
                 <div class="space-y-3">
                     <template x-for="(m, index) in sortedMatrix" :key="m.asset_name">
                         <div class="relative bg-dark-900 border border-dark-800 hover:border-emerald-500/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 py-3 px-5 group flex items-center justify-between cursor-pointer rounded" 
-                             @click="$dispatch('open-asset-modal', { asset_name: m.asset_name, type: m.type, timeframe: typeof activeTimeframe !== 'undefined' ? activeTimeframe : 0 })"
+                             @click="$dispatch('open-asset-modal', { ...m, timeframe: typeof activeTimeframe !== 'undefined' ? activeTimeframe : 0 })"
                              x-data="{
                                 sparkline: m.sparkline || [],
                                 sparklineDates: m.sparkline_dates || [],
@@ -342,16 +407,20 @@
                                                         }
                                                         
                                                         if (tooltip.body) {
-                                                            let title = tooltip.title || [''];
-                                                            title = Array.isArray(title) ? title[0] : title;
-                                                            if (title && title.includes('-')) {
+                                                            let rawTitle = tooltip.title || [''];
+                                                            rawTitle = Array.isArray(rawTitle) ? rawTitle[0] : rawTitle;
+                                                            let displayTitle = rawTitle;
+                                                            if (displayTitle && displayTitle.includes('-')) {
                                                                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                                                const p = title.split('-');
-                                                                if (p.length === 3) title = parseInt(p[2], 10) + ' ' + months[parseInt(p[1], 10) - 1];
+                                                                const p = displayTitle.split('-');
+                                                                if (p.length === 3) displayTitle = parseInt(p[2], 10) + ' ' + months[parseInt(p[1], 10) - 1];
                                                             }
                                                             const body = tooltip.body[0].lines[0];
                                                             const val = body.split(':').pop().trim();
-                                                            tooltipEl.innerHTML = `<div class='text-[9px] text-slate-500 font-sans tracking-widest uppercase mb-0.5'>${title}</div><div class='font-bold text-slate-200 text-sm'>${val} <span class='text-[10px] text-slate-400 font-sans font-normal ml-1'>Views</span></div>`;
+                                                            
+                                                            let html = `<div class='text-[9px] text-slate-500 font-sans tracking-widest uppercase mb-0.5'>${displayTitle}</div><div class='font-bold text-slate-200 text-sm'>${val} <span class='text-[10px] text-slate-400 font-sans font-normal ml-1'>Views</span></div>`;
+                                                            
+                                                            tooltipEl.innerHTML = html;
                                                         }
                                                         
                                                         const canvasRect = chart.canvas.getBoundingClientRect();
@@ -411,13 +480,17 @@
                                         <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
                                         <div class="text-base font-bold text-slate-200 font-mono" x-text="formatNumber(m.accounts_activated)"></div>
                                     </div>
+                                    <div class="w-px h-6 bg-dark-800 hidden md:block"></div>
+                                    <div class="text-center hidden md:block">
+                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Pipeline</div>
+                                        <div class="text-base font-bold text-slate-200 font-mono" x-text="m.fractional_pipeline ? '$' + (m.fractional_pipeline / 1000000).toFixed(1) + 'M' : '$0'"></div>
+                                    </div>
                                     <div class="w-px h-6 bg-dark-800 hidden sm:block"></div>
                                     <div class="text-center">
                                         <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Impact</div>
-                                        <div class="text-base font-bold font-mono" :style="`color: ${getLineColor(m.health)}`" x-text="m.impact_score"></div>
+                                        <div class="text-base font-bold font-mono" :style="`color: ${getImpactColor(m.impact_score)}`" x-text="m.impact_score"></div>
                                     </div>
                                 </div>
-                                
                             </div>
                         </div>
                     </template>

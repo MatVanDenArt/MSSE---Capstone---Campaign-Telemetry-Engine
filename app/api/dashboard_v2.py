@@ -715,7 +715,17 @@ def get_abm_data(campaign_id: str):
     for row in accounts:
         comp = row['company_name']
         if comp not in account_map:
-            account_map[comp] = {'company': comp, 'total_interactions': 0, 'technical_users': 0, 'commercial_users': 0}
+            account_map[comp] = {
+                'company': comp, 
+                'total_interactions': 0, 
+                'technical_users': 0, 
+                'commercial_users': 0,
+                'crm_status': 'Target',
+                'pipeline_value': 0.0,
+                'won_value': 0.0,
+                'active_opp_value': 0.0,
+                'opportunities': []
+            }
         
         account_map[comp]['total_interactions'] += row['interactions']
         if row['persona_type'] == 'Technical':
@@ -723,6 +733,36 @@ def get_abm_data(campaign_id: str):
         elif row['persona_type'] == 'Commercial':
             account_map[comp]['commercial_users'] += row['user_count']
             
+    # Add CRM Opportunities data
+    opps_query = '''
+    SELECT c.company_name, o.event_type, o.pipeline_value, o.timestamp
+    FROM crm_opps o
+    JOIN (SELECT DISTINCT account_id, company_name FROM crm_users) c ON o.account_id = c.account_id
+    WHERE o.utm_campaign = ?
+    ORDER BY o.timestamp DESC
+    '''
+    cursor.execute(opps_query, (campaign_id,))
+    for row in cursor.fetchall():
+        comp = row['company_name']
+        if comp in account_map:
+            val = float(row['pipeline_value'] or 0)
+            account_map[comp]['opportunities'].append({
+                'date': str(row['timestamp']).split(' ')[0],
+                'type': row['event_type'],
+                'value': val
+            })
+            account_map[comp]['pipeline_value'] += val
+            
+            # Update CRM status and specific values
+            current = account_map[comp]['crm_status']
+            if row['event_type'] == 'Closed Won':
+                account_map[comp]['crm_status'] = 'Customer'
+                account_map[comp]['won_value'] += val
+            elif row['event_type'] == 'Opportunity Created':
+                if current != 'Customer':
+                    account_map[comp]['crm_status'] = 'Active Opp'
+                account_map[comp]['active_opp_value'] += val
+                
     sorted_accounts = sorted(list(account_map.values()), key=lambda x: x['total_interactions'], reverse=True)[:10]
 
     # 2. Intent Topic Clusters
