@@ -339,35 +339,44 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         WITH AssetDrops AS (
             -- Web Assets
             SELECT 'Web' as type, 
-                   page_viewed as asset_name, 
-                   MIN(timestamp) as release_date, 
-                   SUM(CASE WHEN timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
+                   g.page_viewed as asset_name, 
+                   COALESCE(c.title, g.page_viewed) as title,
+                   MIN(g.timestamp) as release_date, 
+                   SUM(CASE WHEN g.timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
                    'ga4' as source
-            FROM ga4_events WHERE utm_campaign = '{campaign_id}' 
-            AND page_viewed NOT IN ('/services/consulting', '/solutions/asset-performance-optimization', '/contact-sales', '/about/sustainability')
-            GROUP BY page_viewed
+            FROM ga4_events g
+            LEFT JOIN content_metadata c ON g.page_viewed = c.url
+            WHERE g.utm_campaign = '{campaign_id}' 
+            AND g.page_viewed NOT IN ('/services/consulting', '/solutions/asset-performance-optimization', '/contact-sales', '/about/sustainability', '/')
+            GROUP BY g.page_viewed
             
             UNION ALL
             
             -- LinkedIn Ads
             SELECT 'LinkedIn' as type, 
-                   ad_id as asset_name, 
-                   MIN(timestamp) as release_date, 
-                   SUM(CASE WHEN timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
+                   l.ad_id as asset_name, 
+                   COALESCE(c.title, l.ad_id) as title,
+                   MIN(l.timestamp) as release_date, 
+                   SUM(CASE WHEN l.timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
                    'linkedin' as source
-            FROM linkedin_events WHERE campaign_id = '{campaign_id}' 
-            GROUP BY ad_id
+            FROM linkedin_events l 
+            LEFT JOIN content_metadata c ON l.ad_id = c.url
+            WHERE l.campaign_id = '{campaign_id}' 
+            GROUP BY l.ad_id
             
             UNION ALL
             
             -- Mailchimp Emails
             SELECT 'Email' as type, 
-                   REPLACE(REPLACE(url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') as asset_name, 
-                   MIN(timestamp) as release_date, 
-                   SUM(CASE WHEN timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
+                   REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') as asset_name, 
+                   COALESCE(c.title, REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '')) as title,
+                   MIN(m.timestamp) as release_date, 
+                   SUM(CASE WHEN m.timestamp {tf_condition} THEN 1 ELSE 0 END) as engagement, 
                    'mailchimp' as source
-            FROM mailchimp_events WHERE campaign_id = '{campaign_id}' AND action = 'Open' 
-            GROUP BY url_clicked
+            FROM mailchimp_events m 
+            LEFT JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
+            WHERE m.campaign_id = '{campaign_id}' AND m.action = 'Open' 
+            GROUP BY m.url_clicked
         )
         SELECT * FROM AssetDrops WHERE engagement > 0 ORDER BY release_date ASC
         """

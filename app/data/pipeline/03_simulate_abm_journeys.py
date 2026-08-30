@@ -1,6 +1,7 @@
 import random
 import uuid
 import pandas as pd
+import json
 from datetime import datetime, timedelta
 import os
 from config import OUTPUT_DIR, TARGET_ACCOUNTS
@@ -46,40 +47,87 @@ for campaign in WOOD_CAMPAIGNS:
             current_burst += timedelta(days=random.randint(30, 60))
         if current_burst > END_DATE: break
 
+# Load Content Catalogue
+catalogue_path = os.path.join(os.path.dirname(__file__), "content_catalogue.json")
+with open(catalogue_path, "r") as f:
+    CONTENT_CATALOGUE = json.load(f)
+
 TRANSIENT_BURST_MAP = {}
 EMAIL_PAGE_MAP = {}
 AD_PAGE_MAP = {}
 
 for campaign in WOOD_CAMPAIGNS:
     TRANSIENT_BURST_MAP[campaign] = {}
+    
+    # Pre-split catalogue assets by type for this campaign
+    campaign_assets = CONTENT_CATALOGUE.get(campaign, [])
+    case_studies = [a['url'] for a in campaign_assets if a['asset_type'] == 'Case Study']
+    reports = [a['url'] for a in campaign_assets if a['asset_type'] == 'Report']
+    webinars = [a['url'] for a in campaign_assets if a['asset_type'] == 'Webinar']
+    emails = [a['url'] for a in campaign_assets if a['asset_type'] == 'Email']
+    ads = [a['url'] for a in campaign_assets if a['asset_type'] == 'LinkedIn Ad']
+    
+    # We will just cycle through them
+    cs_idx = 0
+    rep_idx = 0
+    web_idx = 0
+    email_idx = 0
+    ad_idx = 0
+    
     for burst_idx, burst_date in enumerate(BURST_DATES[campaign]):
-        c_prefix = campaign.split('_')[-1].lower()
         
         # Case Studies
         for i in range(random.randint(1, 2)):
-            asset = f"/case-studies/{c_prefix}-b{burst_idx}-cs-{i+1}"
+            if cs_idx < len(case_studies):
+                asset = case_studies[cs_idx]
+                cs_idx += 1
+            else:
+                asset = f"/case-studies/{campaign.lower()}-b{burst_idx}-cs-{i+1}"
             drop = burst_date + timedelta(days=random.randint(0, 14))
             TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
             
-        # Insights
+        # Insights (Reports & Webinars combined for this block)
         for i in range(2):
-            asset = f"/insights/{c_prefix}-b{burst_idx}-report-{i+1}"
+            if rep_idx < len(reports):
+                asset = reports[rep_idx]
+                rep_idx += 1
+            elif web_idx < len(webinars):
+                asset = webinars[web_idx]
+                web_idx += 1
+            else:
+                asset = f"/insights/{campaign.lower()}-b{burst_idx}-report-{i+1}"
             drop = burst_date + timedelta(days=random.randint(0, 14))
             TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
             
         # Emails
         for i in range(1):
-            asset = f"https://woodplc.com?utm_campaign={campaign}_BURST_{burst_idx}_EMAIL_{i+1}"
+            if email_idx < len(emails):
+                asset = emails[email_idx]
+                email_idx += 1
+            else:
+                asset = f"email_{campaign.lower()}_b{burst_idx}_{i+1}"
+            
+            # The click tracker needs a fully qualified URL for Mailchimp
+            mailchimp_url = f"https://example.com?utm_source=mailchimp&utm_campaign={asset}"
             drop = burst_date + timedelta(days=random.randint(0, 14))
-            TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
-            EMAIL_PAGE_MAP[asset] = f"/insights/{c_prefix}-b{burst_idx}-report-1"
+            TRANSIENT_BURST_MAP[campaign][mailchimp_url] = min(drop, END_DATE)
+            # Pick a random report/webinar for the email click
+            insights_list = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if ('/insights/' in k or '/webinars/' in k) and 'http' not in k]
+            EMAIL_PAGE_MAP[mailchimp_url] = random.choice(insights_list) if insights_list else "/contact-sales"
             
         # LinkedIn Ads
         for i in range(random.randint(1, 2)):
-            asset = f"LI_AD_{campaign}_BURST_{burst_idx}_PROMO_{i+1}"
+            if ad_idx < len(ads):
+                asset = ads[ad_idx]
+                ad_idx += 1
+            else:
+                asset = f"li_ad_{campaign.lower()}_b{burst_idx}_{i+1}"
+                
             drop = burst_date + timedelta(days=random.randint(0, 14))
             TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
-            AD_PAGE_MAP[asset] = f"/case-studies/{c_prefix}-b{burst_idx}-cs-1"
+            # Pick a random case study for the ad click
+            cs_list = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if '/case-studies/' in k and 'http' not in k and 'li-ad' not in k]
+            AD_PAGE_MAP[asset] = random.choice(cs_list) if cs_list else "/contact-sales"
 
 def get_asset_timestamp(campaign, asset, is_core):
     if is_core:
@@ -153,7 +201,7 @@ def simulate_abm_journeys():
                 })
 
             elif channel == 'Email':
-                campaign_emails = [k for k in TRANSIENT_BURST_MAP[user_campaign].keys() if 'EMAIL' in k and k not in seen_campaign_assets]
+                campaign_emails = [k for k in TRANSIENT_BURST_MAP[user_campaign].keys() if 'email' in k.lower() and k not in seen_campaign_assets]
                 if not campaign_emails: continue
                 asset = random.choice(campaign_emails)
                 seen_campaign_assets.add(asset)
@@ -175,7 +223,7 @@ def simulate_abm_journeys():
                     })
 
             elif channel == 'LinkedIn':
-                campaign_ads = [k for k in TRANSIENT_BURST_MAP[user_campaign].keys() if 'LI_AD' in k and k not in seen_campaign_assets]
+                campaign_ads = [k for k in TRANSIENT_BURST_MAP[user_campaign].keys() if 'li-ad' in k.lower() and k not in seen_campaign_assets]
                 if not campaign_ads: continue
                 ad = random.choice(campaign_ads)
                 seen_campaign_assets.add(ad)
@@ -232,12 +280,12 @@ def simulate_abm_journeys():
         utm_source = random.choices(['linkedin', 'direct', 'email'], weights=[60, 30, 10])[0]
         
         if utm_source == 'linkedin':
-            campaign_ads = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if 'LI_AD' in k]
+            campaign_ads = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if 'li-ad' in k.lower()]
             ad = random.choice(campaign_ads) if campaign_ads else 'NO_AD'
             page = AD_PAGE_MAP.get(ad, "/contact-sales")
             t_stamp = get_asset_timestamp(campaign, ad, False) if ad != 'NO_AD' else get_asset_timestamp(campaign, "/contact-sales", True)
         elif utm_source == 'email':
-            campaign_emails = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if 'EMAIL' in k]
+            campaign_emails = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if 'email' in k.lower()]
             asset = random.choice(campaign_emails) if campaign_emails else 'NO_EMAIL'
             page = EMAIL_PAGE_MAP.get(asset, "/contact-sales")
             t_stamp = get_asset_timestamp(campaign, asset, False) if asset != 'NO_EMAIL' else get_asset_timestamp(campaign, "/contact-sales", True)
