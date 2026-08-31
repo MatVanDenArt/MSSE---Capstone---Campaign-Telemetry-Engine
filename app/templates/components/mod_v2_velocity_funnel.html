@@ -15,7 +15,7 @@
         drilldownHtml: '',
         openDrilldown(stageId) {
             if (!stageId) return;
-            fetch(`/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
+            fetch(`/api/v2/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
                 .then(res => res.text())
                 .then(html => {
                     this.drilldownHtml = html;
@@ -55,7 +55,7 @@
 
             <template x-for="(stage, index) in stages" :key="index">
                 <div class="relative mb-12 last:mb-0 transition-transform duration-300" 
-                     :class="stage.id ? 'cursor-pointer hover:translate-x-1 group' : ''"
+                     :class="stage.id ? 'cursor-pointer hover:-translate-y-1 group' : ''"
                      @click="openDrilldown(stage.id)">
                      
                     <!-- The Glowing Dot -->
