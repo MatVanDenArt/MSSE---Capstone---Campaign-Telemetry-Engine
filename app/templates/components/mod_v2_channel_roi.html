@@ -1,8 +1,8 @@
-<div class="bg-black border border-dark-800 p-6 h-full flex flex-col">
+<div class="col-span-12 lg:col-span-5 bg-black border border-dark-800 p-6 h-full flex flex-col">
     <div class="flex justify-between items-center mb-6">
         <div>
-            <h3 class="text-sm font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-chart-area mr-2 text-emerald-400"></i> Omnichannel ROI Impact</h3>
-            <p class="text-[10px] text-slate-400 mt-1">Channel Spend vs Attributed Pipeline Generated</p>
+            <h3 class="text-sm font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-chart-bar mr-2 text-emerald-400"></i> Channel ROI Multiplier</h3>
+            <p class="text-[10px] text-slate-400 mt-1">Pipeline Generated per $1 of Channel Spend</p>
         </div>
         <button class="w-8 h-8 rounded bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
             <i class="fa-solid fa-expand text-slate-400 text-xs"></i>
@@ -10,7 +10,7 @@
     </div>
 
     <!-- The actual chart wrapper -->
-    <div class="flex-grow w-full relative min-h-[250px]" x-data="{
+    <div class="flex-grow w-full relative min-h-[250px] flex items-center justify-center" x-data="{
         initChart() {
             const campaignId = document.getElementById('current_campaign').value;
             fetch(`/api/v2/dashboard/v2/channel-roi-data?campaign_id=${campaignId}`)
@@ -18,118 +18,66 @@
                 .then(data => {
                     const ctx = this.$refs.roiCanvas.getContext('2d');
                     
-                    // Create Gradients
-                    const emeraldGradient = ctx.createLinearGradient(0, 0, 0, 300);
-                    emeraldGradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
-                    emeraldGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
-                    
-                    const cyanGradient = ctx.createLinearGradient(0, 0, 0, 300);
-                    cyanGradient.addColorStop(0, 'rgba(6, 182, 212, 0.3)');
-                    cyanGradient.addColorStop(1, 'rgba(6, 182, 212, 0)');
-
                     const labels = ['LinkedIn Ads', 'Email Campaigns', 'Web Traffic'];
-                    const spendData = [
-                        data.linkedin ? data.linkedin.spend : 0, 
-                        data.email ? data.email.spend : 0, 
-                        data.web ? data.web.spend : 0
-                    ];
                     const roiData = [
-                        data.linkedin ? data.linkedin.pipeline : 0,
-                        data.email ? data.email.pipeline : 0,
-                        data.web ? data.web.pipeline : 0
+                        data.linkedin ? data.linkedin.roi_multiplier : 0,
+                        data.email ? data.email.roi_multiplier : 0,
+                        data.web ? data.web.roi_multiplier : 0
                     ];
 
                     new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
-                            datasets: [
-                                {
-                                    type: 'line',
-                                    label: 'Pipeline Generated ($)',
-                                    data: roiData,
-                                    borderColor: '#10b981', // emerald-500
-                                    backgroundColor: emeraldGradient,
-                                    borderWidth: 2,
-                                    tension: 0.4,
-                                    fill: true,
-                                    yAxisID: 'y1'
-                                },
-                                {
-                                    type: 'bar',
-                                    label: 'Channel Spend ($)',
-                                    data: spendData,
-                                    borderColor: '#06b6d4', // cyan-500
-                                    backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                                    borderWidth: 1,
-                                    borderRadius: 4,
-                                    yAxisID: 'y'
-                                }
-                            ]
+                            datasets: [{
+                                label: 'ROI Multiplier',
+                                data: roiData,
+                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                hoverBackgroundColor: 'rgba(52, 211, 153, 1)',
+                                borderRadius: 4,
+                                barThickness: 24
+                            }]
                         },
                         options: {
+                            indexAxis: 'y',
                             responsive: true,
                             maintainAspectRatio: false,
-                            interaction: {
-                                mode: 'index',
-                                intersect: false,
-                            },
                             plugins: {
-                                legend: {
-                                    display: true,
-                                    labels: { color: '#94a3b8', boxWidth: 12, usePointStyle: true }
-                                },
+                                legend: { display: false },
                                 tooltip: {
-                                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                    titleColor: '#fff',
-                                    bodyColor: '#cbd5e1',
-                                    borderColor: 'rgba(255,255,255,0.1)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#94a3b8',
+                                    bodyColor: '#fff',
+                                    borderColor: '#334155',
                                     borderWidth: 1,
-                                    padding: 10,
+                                    padding: 12,
+                                    displayColors: false,
                                     callbacks: {
                                         label: function(context) {
-                                            let label = context.dataset.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.parsed.y !== null) {
-                                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.parsed.y);
-                                            }
-                                            return label;
+                                            return context.parsed.x + 'x ROI';
                                         }
                                     }
                                 }
                             },
                             scales: {
                                 x: {
-                                    grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                                    ticks: { color: '#64748b' }
+                                    grid: { color: '#1e293b', drawBorder: false },
+                                    ticks: {
+                                        color: '#64748b',
+                                        font: { size: 10, family: 'Inter' },
+                                        callback: function(value) {
+                                            return value + 'x';
+                                        }
+                                    },
+                                    border: { display: false }
                                 },
                                 y: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'left',
-                                    grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                                    ticks: { 
-                                        color: '#64748b',
-                                        callback: function(value, index, values) {
-                                            return '$' + value;
-                                        }
-                                    }
-                                },
-                                y1: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'right',
-                                    grid: { drawOnChartArea: false },
-                                    ticks: { 
-                                        color: '#10b981',
-                                        callback: function(value, index, values) {
-                                            if (value >= 1000000) return '$' + (value / 1000000) + 'M';
-                                            if (value >= 1000) return '$' + (value / 1000) + 'K';
-                                            return '$' + value;
-                                        }
-                                    }
+                                    grid: { display: false, drawBorder: false },
+                                    ticks: {
+                                        color: '#94a3b8',
+                                        font: { size: 11, family: 'Inter', weight: 'bold' }
+                                    },
+                                    border: { display: false }
                                 }
                             }
                         }
