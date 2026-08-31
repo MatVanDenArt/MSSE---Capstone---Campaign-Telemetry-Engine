@@ -15,17 +15,20 @@
         drilldownHtml: '',
         openDrilldown(stageId) {
             if (!stageId) return;
-            fetch(`/api/v2/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
-                .then(res => res.text())
-                .then(html => {
-                    this.drilldownHtml = html;
-                    // Execute Alpine on the new HTML
-                    setTimeout(() => {
-                        if (window.Alpine) {
-                            window.Alpine.initTree(document.getElementById('funnel-drilldown-container'));
-                        }
-                    }, 50);
-                });
+            this.drilldownHtml = ''; // Clear to force Alpine x-data re-initialization
+            setTimeout(() => {
+                fetch(`/api/v2/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
+                    .then(res => res.text())
+                    .then(html => {
+                        this.drilldownHtml = html;
+                        // Execute Alpine on the new HTML
+                        setTimeout(() => {
+                            if (window.Alpine) {
+                                window.Alpine.initTree(document.getElementById('funnel-drilldown-container'));
+                            }
+                        }, 50);
+                    });
+            }, 10);
         },
         init() {
             fetch(`/api/v2/dashboard/ui-lab/funnel?campaign_id=${document.getElementById('current_campaign').value}`)
