@@ -1,5 +1,5 @@
 <div id="funnel-modal" class="fixed inset-0 z-[100]" x-data="{ 
-        open: true,
+        open: false,
         companyFilter: '',
         seniorityFilter: '',
         users: {{ data | tojson | forceescape }},
@@ -45,7 +45,7 @@
             if (!val) return '';
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
         }
-    }" x-show="open" @keydown.escape.window="open = false" style="display: none;">
+    }" x-init="$nextTick(() => open = true)" x-show="open" @keydown.escape.window="open = false" style="display: none;">
     
     <!-- Backdrop -->
     <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="open = false" x-show="open" x-transition.opacity></div>
