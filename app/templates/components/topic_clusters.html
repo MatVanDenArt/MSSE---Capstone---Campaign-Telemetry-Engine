@@ -1,0 +1,149 @@
+<div class="mt-8 border-t border-dark-800 pt-8">
+    <div class="flex items-center gap-3 mb-6">
+        <div class="w-6 h-6 bg-fuchsia-900 border border-fuchsia-500/50 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-diagram-project text-[10px] text-fuchsia-400"></i>
+        </div>
+        <div>
+            <h3 class="text-xs font-bold text-slate-100 uppercase tracking-widest">Topic Performance & Share of Voice</h3>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Share of Voice Doughnut Chart -->
+        <div class="col-span-1 bg-black border border-dark-700 rounded-lg p-6 flex flex-col items-center justify-center relative min-h-[300px]"
+             x-data="{
+                initChart() {
+                    setTimeout(() => {
+                        const canvas = document.getElementById('topicSovChart');
+                        if (!canvas) return;
+                        const ctx = canvas.getContext('2d');
+                        
+                        if(window.topicChartInst) {
+                            window.topicChartInst.destroy();
+                        }
+                        
+                        const rawTopics = {{ topics | tojson | forceescape }};
+                        const labels = rawTopics.map(t => t.intent_topic);
+                        const data = rawTopics.map(t => t.total_engagements);
+                        
+                        const colors = [
+                            'rgba(217, 70, 239, 0.8)',
+                            'rgba(6, 182, 212, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ];
+                        
+                        window.topicChartInst = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    data: data,
+                                    backgroundColor: colors,
+                                    borderColor: '#000',
+                                    borderWidth: 2,
+                                    hoverOffset: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '75%',
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0,0,0,0.9)',
+                                        titleColor: '#cbd5e1',
+                                        bodyColor: '#fff',
+                                        borderColor: 'rgba(255,255,255,0.1)',
+                                        borderWidth: 1,
+                                        padding: 10,
+                                        callbacks: {
+                                            label: function(context) {
+                                                let label = context.label || '';
+                                                if (label) label += ': ';
+                                                if (context.parsed !== null) label += context.parsed.toLocaleString() + ' Engagements';
+                                                return label;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }, 150);
+                }
+             }"
+             x-init="initChart()">
+            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest absolute top-4 left-4">Share of Voice</h4>
+            <div class="w-full h-full max-h-[250px] relative mt-4">
+                <canvas id="topicSovChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Topic Accordion Table -->
+        <div class="col-span-2 bg-black border border-dark-700 rounded-lg overflow-hidden flex flex-col">
+            <!-- Table Header -->
+            <div class="grid grid-cols-12 gap-4 p-4 border-b border-dark-700 bg-dark-900 text-[10px] font-bold text-slate-500 uppercase tracking-widest shrink-0">
+                <div class="col-span-8">Intent Topic Cluster</div>
+                <div class="col-span-4 text-right">Total Engagements</div>
+            </div>
+            
+            <!-- Table Body -->
+            <div class="divide-y divide-dark-800 overflow-y-auto custom-scrollbar flex-1" style="max-height: 400px;">
+                {% for topic in topics %}
+                <div x-data="{ expanded: false }" class="group">
+                    <!-- Topic Row (Clickable) -->
+                    <div @click="expanded = !expanded" class="grid grid-cols-12 gap-4 p-4 cursor-pointer hover:bg-white/5 transition-colors items-center">
+                        <div class="col-span-8 flex items-center gap-3">
+                            <i class="fa-solid fa-chevron-right text-[10px] text-slate-600 transition-transform duration-200" :class="expanded ? 'rotate-90' : ''"></i>
+                            <span class="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">{{ topic.intent_topic }}</span>
+                        </div>
+                        <div class="col-span-4 text-right flex justify-end items-center gap-4">
+                            <div class="w-full max-w-[100px] h-1.5 bg-dark-800 rounded-full overflow-hidden hidden sm:block">
+                                <div class="h-full bg-slate-500 rounded-full" style="width: {{ (topic.total_engagements / topics[0].total_engagements * 100) }}%"></div>
+                            </div>
+                            <span class="text-sm font-mono font-bold text-white min-w-[50px]">{{ "{:,}".format(topic.total_engagements) }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Expanded Assets Sub-Table -->
+                    <div x-show="expanded" x-collapse>
+                        <div class="bg-dark-900/50 border-t border-dark-800 px-6 sm:px-12 py-4">
+                            <div class="grid grid-cols-12 gap-4 pb-2 border-b border-dark-800 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                <div class="col-span-7 text-xs">Asset Title</div>
+                                <div class="col-span-3 text-xs hidden sm:block">Channel</div>
+                                <div class="col-span-5 sm:col-span-2 text-right text-xs">Count</div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                {% for asset in topic.assets %}
+                                <div class="grid grid-cols-12 gap-4 text-xs items-center">
+                                    <div class="col-span-7 text-slate-300 truncate pr-4" title="{{ asset.title }}">{{ asset.title }}</div>
+                                    <div class="col-span-3 hidden sm:flex items-center gap-2 truncate">
+                                        {% if asset.type == 'LinkedIn Ad' %}
+                                            <i class="fa-brands fa-linkedin text-sky-500 text-[10px]"></i>
+                                            <span class="text-slate-400">LinkedIn</span>
+                                        {% elif asset.type == 'Email' %}
+                                            <i class="fa-solid fa-envelope text-purple-400 text-[10px]"></i>
+                                            <span class="text-slate-400">Email</span>
+                                        {% else %}
+                                            <i class="fa-solid fa-file-lines text-emerald-400 text-[10px]"></i>
+                                            <span class="text-slate-400">{{ asset.type }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-span-5 sm:col-span-2 text-right font-mono text-slate-400">
+                                        {{ "{:,}".format(asset.engagements) }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
