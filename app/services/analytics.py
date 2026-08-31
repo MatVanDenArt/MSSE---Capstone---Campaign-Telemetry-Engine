@@ -1611,6 +1611,58 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
     conn.close()
     return users
 
+
+def _fetch_user_timeline(cursor, campaign_id, user_id):
+    cursor.execute('''
+        WITH UserJourney AS (
+            SELECT 'Web' as type, COALESCE(c.title, g.page_viewed) as asset, g.timestamp 
+            FROM ga4_events g
+            LEFT JOIN content_metadata c ON g.page_viewed = c.url
+            WHERE g.utm_campaign = ? AND g.user_id = ? AND g.page_viewed IS NOT NULL
+            
+            UNION ALL
+            
+            SELECT 'Email' as type, COALESCE(c.title, m.campaign_id) as asset, m.timestamp
+            FROM mailchimp_events m
+            LEFT JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
+            WHERE m.campaign_id LIKE ? AND m.email = (SELECT email FROM crm_users WHERE user_id = ?)
+            
+            UNION ALL
+            
+            SELECT 'LinkedIn' as type, COALESCE(c.title, l.ad_id) as asset, l.timestamp
+            FROM linkedin_events l
+            JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id
+            LEFT JOIN content_metadata c ON l.ad_id = c.url
+            WHERE l.campaign_id = ? AND g.user_id = ?
+        )
+        SELECT type, asset, timestamp FROM UserJourney ORDER BY timestamp ASC
+    ''', (campaign_id, user_id, f'%{campaign_id}%', user_id, campaign_id, user_id))
+    
+    assets_rows = cursor.fetchall()
+    
+    timeline = []
+    for ar in assets_rows:
+        nm = ar['asset']
+        if not nm: nm = 'Homepage'
+        elif nm.startswith('/') or nm.startswith('email-') or nm.startswith('li-'):
+            nm = nm.replace('/', ' ').replace('-', ' ').title().strip()
+        
+        dt = ar['timestamp'].split(' ')[0]
+        import datetime
+        try:
+            dt_obj = datetime.datetime.strptime(dt, '%Y-%m-%d')
+            fmt_date = dt_obj.strftime('%d %b %Y')
+        except:
+            fmt_date = dt
+            
+        timeline.append({
+            'type': ar['type'],
+            'asset': nm,
+            'date': fmt_date,
+            'is_current': False
+        })
+    return timeline
+
 def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
     try:
         conn = get_db_connection()
@@ -1619,7 +1671,7 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
         data = []
         if stage == 'known_users':
             cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority 
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, u.user_id
                 FROM ga4_events e 
                 JOIN crm_users u ON e.user_id = u.user_id 
                 WHERE e.utm_campaign = ? AND e.user_id IS NOT NULL
@@ -1627,17 +1679,21 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
             """, (campaign_id,))
             rows = cursor.fetchall()
             for r in rows:
+                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[5]))
                 data.append({
                     "company_name": r[0],
                     "first_name": r[1],
                     "last_name": r[2],
                     "job_title": r[3],
                     "seniority": r[4],
-                    "value": None
+                    "value": None,
+                    "interactions": len(timeline),
+                    "timeline": timeline,
+                    "id": str(r[5])
                 })
         elif stage == 'opportunities':
             cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value, u.user_id
                 FROM crm_opps o 
                 JOIN crm_users u ON o.user_id = u.user_id 
                 WHERE o.utm_campaign = ?
@@ -1646,17 +1702,21 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
             """, (campaign_id,))
             rows = cursor.fetchall()
             for r in rows:
+                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[6]))
                 data.append({
                     "company_name": r[0],
                     "first_name": r[1],
                     "last_name": r[2],
                     "job_title": r[3],
                     "seniority": r[4],
-                    "value": r[5]
+                    "value": r[5],
+                    "interactions": len(timeline),
+                    "timeline": timeline,
+                    "id": str(r[6])
                 })
         elif stage == 'contracts':
             cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value, u.user_id
                 FROM crm_opps o 
                 JOIN crm_users u ON o.user_id = u.user_id 
                 WHERE o.utm_campaign = ? AND o.event_type = 'Closed Won'
@@ -1665,13 +1725,17 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
             """, (campaign_id,))
             rows = cursor.fetchall()
             for r in rows:
+                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[6]))
                 data.append({
                     "company_name": r[0],
                     "first_name": r[1],
                     "last_name": r[2],
                     "job_title": r[3],
                     "seniority": r[4],
-                    "value": r[5]
+                    "value": r[5],
+                    "interactions": len(timeline),
+                    "timeline": timeline,
+                    "id": str(r[6])
                 })
         
         conn.close()
