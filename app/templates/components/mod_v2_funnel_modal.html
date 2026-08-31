@@ -1,7 +1,37 @@
 <div id="funnel-modal" class="fixed inset-0 z-[100]" x-data="{ 
         open: true,
         companyFilter: '',
-        seniorityFilter: ''
+        seniorityFilter: '',
+        users: {{ data | tojson | forceescape }},
+        
+        get filteredUsers() {
+            return this.users.filter(u => {
+                const matchCompany = this.companyFilter === '' || u.company_name === this.companyFilter;
+                const matchSeniority = this.seniorityFilter === '' || u.seniority === this.seniorityFilter;
+                return matchCompany && matchSeniority;
+            });
+        },
+        
+        get availableCompanies() {
+            const allComps = Array.from(new Set(this.users.map(u => u.company_name))).sort();
+            return allComps.map(comp => {
+                const count = this.users.filter(u => u.company_name === comp && (this.seniorityFilter === '' || u.seniority === this.seniorityFilter)).length;
+                return { name: comp, count: count };
+            });
+        },
+
+        get availableSeniorities() {
+            const allSens = Array.from(new Set(this.users.map(u => u.seniority))).sort();
+            return allSens.map(sen => {
+                const count = this.users.filter(u => u.seniority === sen && (this.companyFilter === '' || u.company_name === this.companyFilter)).length;
+                return { name: sen, count: count };
+            });
+        },
+        
+        formatMoney(val) {
+            if (!val) return '';
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+        }
     }" x-show="open" @keydown.escape.window="open = false" style="display: none;">
     
     <!-- Backdrop -->
@@ -36,50 +66,39 @@
                 <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Company</label>
                 <select x-model="companyFilter" class="w-full bg-dark-900 border border-dark-700 rounded p-1.5 text-xs text-slate-300 focus:border-cyan-500 focus:ring-0">
                     <option value="">All Companies</option>
-                    {% set comps = [] %}
-                    {% for r in data %}
-                        {% if r.company_name not in comps %}
-                            <option value="{{ r.company_name }}">{{ r.company_name }}</option>
-                            {% set _ = comps.append(r.company_name) %}
-                        {% endif %}
-                    {% endfor %}
+                    <template x-for="comp in availableCompanies" :key="comp.name">
+                        <option :value="comp.name" x-text="comp.name + ' (' + comp.count + ')'"></option>
+                    </template>
                 </select>
             </div>
             <div>
                 <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Seniority</label>
                 <select x-model="seniorityFilter" class="w-full bg-dark-900 border border-dark-700 rounded p-1.5 text-xs text-slate-300 focus:border-cyan-500 focus:ring-0">
                     <option value="">All Roles</option>
-                    <option value="Director">Director</option>
-                    <option value="VP">VP</option>
-                    <option value="C-Level">C-Level</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Individual Contributor">IC</option>
+                    <template x-for="sen in availableSeniorities" :key="sen.name">
+                        <option :value="sen.name" x-text="(sen.name || 'Unknown') + ' (' + sen.count + ')'"></option>
+                    </template>
                 </select>
             </div>
         </div>
         
         <!-- Body -->
         <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-black space-y-2">
-            {% if data %}
-                {% for row in data %}
-                    <div class="bg-dark-900/40 border border-dark-800 p-4 rounded flex justify-between items-center hover:bg-dark-800/60 transition-colors"
-                         x-show="(companyFilter === '' || companyFilter === '{{ row.company_name }}') && (seniorityFilter === '' || seniorityFilter === '{{ row.seniority }}')">
-                        <div>
-                            <h4 class="font-bold text-slate-200 text-sm">{{ row.company_name }}</h4>
-                            <p class="text-[10px] text-slate-500 mt-1"><span class="text-slate-300">{{ row.first_name }} {{ row.last_name }}</span> &bull; {{ row.job_title }}</p>
-                        </div>
-                        {% if row.value %}
-                            <div class="text-right">
-                                <div class="text-sm font-black text-emerald-400 tracking-tight">${{ "{:,.0f}".format(row.value) }}</div>
-                            </div>
-                        {% endif %}
+            <template x-for="row in filteredUsers" :key="row.company_name + row.first_name + row.last_name">
+                <div class="bg-dark-900/40 border border-dark-800 p-4 rounded flex justify-between items-center hover:bg-dark-800/60 transition-colors">
+                    <div>
+                        <h4 class="font-bold text-slate-200 text-sm" x-text="row.company_name"></h4>
+                        <p class="text-[10px] text-slate-500 mt-1"><span class="text-slate-300" x-text="row.first_name + ' ' + row.last_name"></span> &bull; <span x-text="row.job_title"></span></p>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-center p-10 text-slate-500 text-xs">
-                    No accounts found in this stage.
+                    <div class="text-right" x-show="row.value">
+                        <div class="text-sm font-black text-amber-400 tracking-tight" x-text="formatMoney(row.value)"></div>
+                    </div>
                 </div>
-            {% endif %}
+            </template>
+            
+            <div x-show="filteredUsers.length === 0" class="text-center p-10 text-slate-500 text-xs">
+                No accounts match your filters.
+            </div>
         </div>
     </div>
 </div>
