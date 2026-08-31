@@ -13,14 +13,17 @@
     <div class="flex-grow flex flex-col justify-center px-4" x-data="{
         stages: [],
         drilldownHtml: '',
+        isLoading: null,
         openDrilldown(stageId) {
             if (!stageId) return;
+            this.isLoading = stageId;
             this.drilldownHtml = ''; // Clear to force Alpine x-data re-initialization
             setTimeout(() => {
                 fetch(`/api/v2/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
                     .then(res => res.text())
                     .then(html => {
                         this.drilldownHtml = html;
+                        this.isLoading = null;
                         // Execute Alpine on the new HTML
                         setTimeout(() => {
                             if (window.Alpine) {
@@ -77,7 +80,8 @@
                     <div class="pl-2">
                         <div class="flex items-center gap-2 mb-0.5">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="stage.name"></h4>
-                            <i x-show="stage.id" class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            <i x-show="stage.id && isLoading !== stage.id" class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                            <i x-show="isLoading === stage.id" class="fa-solid fa-circle-notch fa-spin text-[9px] text-brand-500"></i>
                         </div>
                         <div class="flex items-baseline gap-2">
                             <template x-if="stage.val">
