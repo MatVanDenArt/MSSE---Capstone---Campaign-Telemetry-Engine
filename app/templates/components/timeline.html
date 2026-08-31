@@ -503,9 +503,11 @@
                     </template>
                 </div>
             </div>
-        </div>
+            
+            <!-- Topic Performance Clusters (Inside the same boundary) -->
+            <div hx-get="/api/v2/dashboard/topic-clusters?campaign_id={{ campaign_id }}" hx-trigger="load"></div>
 
         </div>
-        
+
     </div>
 </div>

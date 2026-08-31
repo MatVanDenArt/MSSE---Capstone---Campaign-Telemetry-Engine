@@ -682,6 +682,72 @@ def get_target_accounts_modal(request: Request, campaign_id: str):
     targets = get_prioritized_sales_targets(campaign_id)
     return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
 
+@router.get("/dashboard/topic-clusters", response_class=HTMLResponse)
+def get_topic_clusters(request: Request, campaign_id: str):
+    from app.services.analytics import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Base query for all engagements mapped to topics and assets
+    query = '''
+    WITH AllEngagements AS (
+        SELECT g.timestamp, c.intent_topic, c.title, c.asset_type
+        FROM ga4_events g
+        JOIN content_metadata c ON g.page_viewed = c.url
+        WHERE g.utm_campaign = ?
+        
+        UNION ALL
+        
+        SELECT m.timestamp, c.intent_topic, c.title, c.asset_type
+        FROM mailchimp_events m
+        JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
+        WHERE m.campaign_id = ? AND m.action = 'Open'
+        
+        UNION ALL
+        
+        SELECT l.timestamp, c.intent_topic, c.title, c.asset_type
+        FROM linkedin_events l
+        JOIN content_metadata c ON l.ad_id = c.url
+        WHERE l.campaign_id = ?
+    )
+    SELECT 
+        intent_topic,
+        title,
+        asset_type,
+        COUNT(timestamp) as engagements
+    FROM AllEngagements
+    GROUP BY intent_topic, title, asset_type
+    ORDER BY intent_topic, engagements DESC
+    '''
+    cursor.execute(query, (campaign_id, campaign_id, campaign_id))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Process into hierarchical dictionary
+    topic_map = {}
+    for row in rows:
+        topic = row['intent_topic']
+        if topic not in topic_map:
+            topic_map[topic] = {
+                'intent_topic': topic,
+                'total_engagements': 0,
+                'assets': []
+            }
+        topic_map[topic]['assets'].append({
+            'title': row['title'],
+            'type': row['asset_type'],
+            'engagements': row['engagements']
+        })
+        topic_map[topic]['total_engagements'] += row['engagements']
+        
+    # Sort topics by total engagements
+    sorted_topics = sorted(list(topic_map.values()), key=lambda x: x['total_engagements'], reverse=True)
+    
+    return templates.TemplateResponse(request=request, name="components/topic_clusters.html", context={
+        "campaign_id": campaign_id,
+        "topics": sorted_topics
+    })
+
 @router.get("/dashboard/abm-data")
 def get_abm_data(campaign_id: str):
     from app.services.analytics import get_db_connection
@@ -765,22 +831,8 @@ def get_abm_data(campaign_id: str):
                 
     sorted_accounts = sorted(list(account_map.values()), key=lambda x: x['total_interactions'], reverse=True)[:10]
 
-    # 2. Intent Topic Clusters
-    topic_query = '''
-    SELECT 
-        cm.intent_topic,
-        COUNT(g.timestamp) as interactions
-    FROM ga4_events g
-    JOIN content_metadata cm ON g.page_viewed = cm.url
-    WHERE g.utm_campaign = ?
-    GROUP BY cm.intent_topic
-    ORDER BY interactions DESC
-    '''
-    cursor.execute(topic_query, (campaign_id,))
-    topics = cursor.fetchall()
-    
     conn.close()
-    return {"accounts": sorted_accounts, "topics": topics}
+    return {"accounts": sorted_accounts}
 
 @router.get("/v2/api/targets")
 def v2_api_targets(campaign_id: str):
