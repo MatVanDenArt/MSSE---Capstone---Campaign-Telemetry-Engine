@@ -682,7 +682,7 @@ def v2_channel_roi_data(campaign_id: str):
     li_spend = cursor.fetchone()[0] or 0
     
     cursor.execute('''
-        SELECT SUM(o.pipeline_value), COUNT(o.opportunity_id)
+        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
         FROM crm_opps o
         WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM linkedin_events WHERE campaign_id = ?)
     ''', (campaign_id, campaign_id))
@@ -696,7 +696,7 @@ def v2_channel_roi_data(campaign_id: str):
     em_spend = em_clicks * 1.50 # Simulated CPC
     
     cursor.execute('''
-        SELECT SUM(o.pipeline_value), COUNT(o.opportunity_id)
+        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
         FROM crm_opps o
         WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%')
     ''', (campaign_id, campaign_id))
@@ -710,7 +710,7 @@ def v2_channel_roi_data(campaign_id: str):
     web_spend = web_views * 0.80 # Simulated CPC
     
     cursor.execute('''
-        SELECT SUM(o.pipeline_value), COUNT(o.opportunity_id)
+        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
         FROM crm_opps o
         WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = ?)
     ''', (campaign_id, campaign_id))
