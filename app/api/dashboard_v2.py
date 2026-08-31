@@ -671,7 +671,58 @@ def ui_lab_channel_roi(campaign_id: str):
     matrix = get_asset_impact_matrix(campaign_id, 0)
     return templates.TemplateResponse(request=Request({"type": "http"}), name="components/mod_channel_roi.html", context={"matrix": matrix})
 
-@router.get('/dashboard/ui-lab/channel-roi-data')
+@router.get('/dashboard/v2/channel-roi-data')
+def v2_channel_roi_data(campaign_id: str):
+    from app.services.analytics import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # LinkedIn
+    cursor.execute('''
+        SELECT SUM(spend_consumed) FROM linkedin_events WHERE campaign_id = ?
+    ''', (campaign_id,))
+    li_spend = cursor.fetchone()[0] or 0
+    
+    cursor.execute('''
+        SELECT SUM(o.pipeline_value) 
+        FROM crm_opps o
+        WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM linkedin_events WHERE campaign_id = ?)
+    ''', (campaign_id, campaign_id))
+    li_pipe = cursor.fetchone()[0] or 0.0
+    
+    # Email
+    cursor.execute('''
+        SELECT COUNT(event_id) FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%'
+    ''', (campaign_id,))
+    em_clicks = cursor.fetchone()[0] or 0
+    em_spend = em_clicks * 1.50 # Simulated CPC
+    
+    cursor.execute('''
+        SELECT SUM(o.pipeline_value) 
+        FROM crm_opps o
+        WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%')
+    ''', (campaign_id, campaign_id))
+    em_pipe = cursor.fetchone()[0] or 0.0
+    
+    # Web
+    cursor.execute('''
+        SELECT COUNT(session_id) FROM ga4_events WHERE utm_campaign = ?
+    ''', (campaign_id,))
+    web_views = cursor.fetchone()[0] or 0
+    web_spend = web_views * 0.80 # Simulated CPC
+    
+    cursor.execute('''
+        SELECT SUM(o.pipeline_value) 
+        FROM crm_opps o
+        WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = ?)
+    ''', (campaign_id, campaign_id))
+    web_pipe = cursor.fetchone()[0] or 0.0
+    
+    return JSONResponse(content={
+        "linkedin": {"spend": li_spend, "pipeline": li_pipe},
+        "email": {"spend": em_spend, "pipeline": em_pipe},
+        "web": {"spend": web_spend, "pipeline": web_pipe}
+    })
 def ui_lab_channel_roi_data(campaign_id: str):
     from app.services.analytics import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))

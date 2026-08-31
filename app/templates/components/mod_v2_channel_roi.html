@@ -2,7 +2,7 @@
     <div class="flex justify-between items-center mb-6">
         <div>
             <h3 class="text-sm font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-chart-area mr-2 text-emerald-400"></i> Omnichannel ROI Impact</h3>
-            <p class="text-[10px] text-slate-400 mt-1">Cross-channel engagement vs Cost Per Acquisition trend</p>
+            <p class="text-[10px] text-slate-400 mt-1">Channel Spend vs Attributed Pipeline Generated</p>
         </div>
         <button class="w-8 h-8 rounded bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
             <i class="fa-solid fa-expand text-slate-400 text-xs"></i>
@@ -13,7 +13,7 @@
     <div class="flex-grow w-full relative min-h-[250px]" x-data="{
         initChart() {
             const campaignId = document.getElementById('current_campaign').value;
-            fetch(`/api/v2/dashboard/ui-lab/channel-roi-data?campaign_id=${campaignId}`)
+            fetch(`/api/v2/dashboard/v2/channel-roi-data?campaign_id=${campaignId}`)
                 .then(res => res.json())
                 .then(data => {
                     const ctx = this.$refs.roiCanvas.getContext('2d');
@@ -29,14 +29,14 @@
 
                     const labels = ['LinkedIn Ads', 'Email Campaigns', 'Web Traffic'];
                     const spendData = [
-                        data.linkedin ? data.linkedin.total_spend : 0, 
-                        data.email ? data.email.total_clicks : 0, 
-                        data.web ? data.web.total_pageviews : 0
+                        data.linkedin ? data.linkedin.spend : 0, 
+                        data.email ? data.email.spend : 0, 
+                        data.web ? data.web.spend : 0
                     ];
                     const roiData = [
-                        data.linkedin ? data.linkedin.accounts_reached : 0,
-                        data.email ? data.email.accounts_engaged : 0,
-                        data.web ? data.web.accounts_identified : 0
+                        data.linkedin ? data.linkedin.pipeline : 0,
+                        data.email ? data.email.pipeline : 0,
+                        data.web ? data.web.pipeline : 0
                     ];
 
                     new Chart(ctx, {
@@ -46,7 +46,7 @@
                             datasets: [
                                 {
                                     type: 'line',
-                                    label: 'Accounts Engaged',
+                                    label: 'Pipeline Generated ($)',
                                     data: roiData,
                                     borderColor: '#10b981', // emerald-500
                                     backgroundColor: emeraldGradient,
@@ -57,7 +57,7 @@
                                 },
                                 {
                                     type: 'bar',
-                                    label: 'Engagement Volume (Spend/Clicks/Views)',
+                                    label: 'Channel Spend ($)',
                                     data: spendData,
                                     borderColor: '#06b6d4', // cyan-500
                                     backgroundColor: 'rgba(6, 182, 212, 0.2)',
@@ -85,7 +85,19 @@
                                     bodyColor: '#cbd5e1',
                                     borderColor: 'rgba(255,255,255,0.1)',
                                     borderWidth: 1,
-                                    padding: 10
+                                    padding: 10,
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed.y !== null) {
+                                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.parsed.y);
+                                            }
+                                            return label;
+                                        }
+                                    }
                                 }
                             },
                             scales: {
@@ -98,14 +110,26 @@
                                     display: true,
                                     position: 'left',
                                     grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                                    ticks: { color: '#64748b' }
+                                    ticks: { 
+                                        color: '#64748b',
+                                        callback: function(value, index, values) {
+                                            return '$' + value;
+                                        }
+                                    }
                                 },
                                 y1: {
                                     type: 'linear',
                                     display: true,
                                     position: 'right',
                                     grid: { drawOnChartArea: false },
-                                    ticks: { color: '#10b981' }
+                                    ticks: { 
+                                        color: '#10b981',
+                                        callback: function(value, index, values) {
+                                            if (value >= 1000000) return '$' + (value / 1000000) + 'M';
+                                            if (value >= 1000) return '$' + (value / 1000) + 'K';
+                                            return '$' + value;
+                                        }
+                                    }
                                 }
                             }
                         }
