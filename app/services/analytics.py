@@ -1606,3 +1606,69 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
         
     conn.close()
     return users
+
+def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        data = []
+        if stage == 'known_users':
+            cursor.execute("""
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title 
+                FROM ga4_events e 
+                JOIN crm_users u ON e.user_id = u.user_id 
+                WHERE e.utm_campaign = ? AND e.user_id IS NOT NULL
+                LIMIT 50
+            """, (campaign_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                data.append({
+                    "company_name": r[0],
+                    "first_name": r[1],
+                    "last_name": r[2],
+                    "job_title": r[3],
+                    "value": None
+                })
+        elif stage == 'opportunities':
+            cursor.execute("""
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, SUM(o.pipeline_value) as value
+                FROM crm_opps o 
+                JOIN crm_users u ON o.user_id = u.user_id 
+                WHERE o.utm_campaign = ?
+                GROUP BY u.user_id
+                ORDER BY value DESC
+            """, (campaign_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                data.append({
+                    "company_name": r[0],
+                    "first_name": r[1],
+                    "last_name": r[2],
+                    "job_title": r[3],
+                    "value": r[4]
+                })
+        elif stage == 'contracts':
+            cursor.execute("""
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, SUM(o.pipeline_value) as value
+                FROM crm_opps o 
+                JOIN crm_users u ON o.user_id = u.user_id 
+                WHERE o.utm_campaign = ? AND o.event_type = 'Closed Won'
+                GROUP BY u.user_id
+                ORDER BY value DESC
+            """, (campaign_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                data.append({
+                    "company_name": r[0],
+                    "first_name": r[1],
+                    "last_name": r[2],
+                    "job_title": r[3],
+                    "value": r[4]
+                })
+        
+        conn.close()
+        return data
+    except Exception as e:
+        print(f"Error in drilldown: {e}")
+        return []

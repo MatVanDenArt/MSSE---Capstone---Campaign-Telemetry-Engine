@@ -12,6 +12,21 @@
     <!-- Funnel Visualization (Vertical Stepper) -->
     <div class="flex-grow flex flex-col justify-center px-4" x-data="{
         stages: [],
+        drilldownHtml: '',
+        openDrilldown(stageId) {
+            if (!stageId) return;
+            fetch(`/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
+                .then(res => res.text())
+                .then(html => {
+                    this.drilldownHtml = html;
+                    // Execute Alpine on the new HTML
+                    setTimeout(() => {
+                        if (window.Alpine) {
+                            window.Alpine.initTree(document.getElementById('funnel-drilldown-container'));
+                        }
+                    }, 50);
+                });
+        },
         init() {
             fetch(`/api/v2/dashboard/ui-lab/funnel?campaign_id=${document.getElementById('current_campaign').value}`)
                 .then(res => res.json())
@@ -24,11 +39,11 @@
                     };
                     
                     this.stages = [
-                        { name: 'Total sessions', count: data.visitors, rate: null, val: null, valColor: '', dot: 'bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.5)]', countLabel: '' },
-                        { name: 'Engaged sessions', count: data.engaged, rate: ((data.engaged/Math.max(data.visitors, 1))*100).toFixed(1)+'%', val: null, valColor: '', dot: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]', countLabel: '' },
-                        { name: 'Known users', count: data.known, rate: ((data.known/Math.max(data.engaged, 1))*100).toFixed(1)+'%', val: null, valColor: '', dot: 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]', countLabel: '' },
-                        { name: 'Opportunities (SQL)', count: data.pipeline, rate: ((data.pipeline/Math.max(data.known, 1))*100).toFixed(1)+'%', val: formatMoney(data.pipeline_val), valColor: 'text-amber-400', dot: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]', countLabel: 'Opps' },
-                        { name: 'Closed contracts', count: data.won, rate: ((data.won/Math.max(data.pipeline, 1))*100).toFixed(1)+'%', val: formatMoney(data.won_val), valColor: 'text-emerald-400', dot: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]', countLabel: 'Contracts' }
+                        { name: 'Total sessions', id: null, count: data.visitors, rate: null, val: null, valColor: '', dot: 'bg-slate-400 shadow-[0_0_8px_rgba(148,163,184,0.5)]', countLabel: '' },
+                        { name: 'Engaged sessions', id: null, count: data.engaged, rate: ((data.engaged/Math.max(data.visitors, 1))*100).toFixed(1)+'%', val: null, valColor: '', dot: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]', countLabel: '' },
+                        { name: 'Known users', id: 'known_users', count: data.known, rate: ((data.known/Math.max(data.engaged, 1))*100).toFixed(1)+'%', val: null, valColor: '', dot: 'bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]', countLabel: '' },
+                        { name: 'Opportunities (SQL)', id: 'opportunities', count: data.pipeline, rate: ((data.pipeline/Math.max(data.known, 1))*100).toFixed(1)+'%', val: formatMoney(data.pipeline_val), valColor: 'text-amber-400', dot: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]', countLabel: 'Opps' },
+                        { name: 'Closed contracts', id: 'contracts', count: data.won, rate: ((data.won/Math.max(data.pipeline, 1))*100).toFixed(1)+'%', val: formatMoney(data.won_val), valColor: 'text-emerald-400', dot: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]', countLabel: 'Contracts' }
                     ];
                 });
         }
@@ -39,10 +54,13 @@
             <div class="absolute left-[20px] top-4 bottom-4 w-px bg-dark-700"></div>
 
             <template x-for="(stage, index) in stages" :key="index">
-                <div class="relative mb-12 last:mb-0">
+                <div class="relative mb-12 last:mb-0 transition-transform duration-300" 
+                     :class="stage.id ? 'cursor-pointer hover:translate-x-1 group' : ''"
+                     @click="openDrilldown(stage.id)">
+                     
                     <!-- The Glowing Dot -->
                     <!-- Dot is 8px wide. Left offset of -24px relative to child's 40px padding = 16px. Center = 20px. Perfect alignment. -->
-                    <div :class="`absolute -left-[24px] top-2.5 w-2 h-2 rounded-full ${stage.dot} z-10`"></div>
+                    <div :class="`absolute -left-[24px] top-2.5 w-2 h-2 rounded-full ${stage.dot} z-10 transition-transform ${stage.id ? 'group-hover:scale-150' : ''}`"></div>
 
                     <!-- Conversion Pill -->
                     <!-- Centered precisely over the line -->
@@ -54,7 +72,10 @@
 
                     <!-- Content -->
                     <div class="pl-2">
-                        <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5" x-text="stage.name"></h4>
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="stage.name"></h4>
+                            <i x-show="stage.id" class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                        </div>
                         <div class="flex items-baseline gap-2">
                             <template x-if="stage.val">
                                 <div class="flex items-baseline gap-2">
@@ -70,5 +91,8 @@
                 </div>
             </template>
         </div>
+
+        <!-- Modal Container -->
+        <div id="funnel-drilldown-container" x-html="drilldownHtml"></div>
     </div>
 </div>

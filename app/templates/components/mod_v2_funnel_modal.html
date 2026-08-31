@@ -1,0 +1,42 @@
+<div id="funnel-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" x-data="{ open: true }" x-show="open" @keydown.escape.window="open = false">
+    <div class="bg-black border border-dark-700 rounded-xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden" @click.outside="open = false">
+        
+        <!-- Header -->
+        <div class="p-5 border-b border-dark-800 flex justify-between items-center bg-dark-900/30">
+            <div>
+                <h3 class="text-sm font-bold text-white tracking-widest uppercase">
+                    <i class="fa-solid fa-users mr-2 text-sky-400"></i> Funnel Drilldown: {{ stage }}
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Viewing accounts in this stage of the buying journey.</p>
+            </div>
+            <button @click="open = false" class="text-slate-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-5 overflow-y-auto custom-scrollbar flex-1 bg-black">
+            <div class="space-y-2">
+                {% if data %}
+                    {% for row in data %}
+                        <div class="bg-dark-900/20 border border-dark-800 p-4 rounded-lg flex justify-between items-center hover:bg-dark-900/50 transition-colors">
+                            <div>
+                                <h4 class="font-bold text-slate-200 text-sm">{{ row.company_name }}</h4>
+                                <p class="text-xs text-slate-500 mt-0.5">{{ row.first_name }} {{ row.last_name }} &bull; {{ row.job_title }}</p>
+                            </div>
+                            {% if row.value %}
+                                <div class="text-right">
+                                    <div class="text-lg font-black text-emerald-400 tracking-tight">${{ "{:,.0f}".format(row.value) }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center p-10 text-slate-500 text-sm">
+                        No accounts found in this stage.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
