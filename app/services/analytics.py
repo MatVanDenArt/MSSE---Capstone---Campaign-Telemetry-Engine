@@ -1549,22 +1549,24 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
         uid = str(r['user_id'])
         cursor.execute("""
             WITH UserJourney AS (
-                SELECT 'Web' as type, page_viewed as asset, timestamp 
-                FROM ga4_events 
-                WHERE utm_campaign = ? AND user_id = ? AND page_viewed IS NOT NULL
+                SELECT 'Web' as type, COALESCE(c.title, g.page_viewed) as asset, g.timestamp 
+                FROM ga4_events g
+                LEFT JOIN content_metadata c ON g.page_viewed = c.url
+                WHERE g.utm_campaign = ? AND g.user_id = ? AND g.page_viewed IS NOT NULL
                 
                 UNION ALL
                 
-                SELECT 'Email' as type, m.campaign_id as asset, m.timestamp
+                SELECT 'Email' as type, COALESCE(c.title, m.campaign_id) as asset, m.timestamp
                 FROM mailchimp_events m
-                JOIN crm_users u ON m.email = u.email
-                WHERE m.campaign_id LIKE ? AND u.user_id = ?
+                LEFT JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
+                WHERE m.campaign_id LIKE ? AND m.email = (SELECT email FROM crm_users WHERE user_id = ?)
                 
                 UNION ALL
                 
-                SELECT 'LinkedIn' as type, l.ad_id as asset, l.timestamp
+                SELECT 'LinkedIn' as type, COALESCE(c.title, l.ad_id) as asset, l.timestamp
                 FROM linkedin_events l
                 JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id
+                LEFT JOIN content_metadata c ON l.ad_id = c.url
                 WHERE l.campaign_id = ? AND g.user_id = ?
             )
             SELECT type, asset, timestamp FROM UserJourney ORDER BY timestamp ASC
@@ -1573,8 +1575,10 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
         
         timeline = []
         for ar in assets_rows:
-            nm = ar['asset'].replace('/', ' ').replace('-', ' ').title().strip()
+            nm = ar['asset']
             if not nm: nm = 'Homepage'
+            elif nm.startswith('/') or nm.startswith('email-') or nm.startswith('li-'):
+                nm = nm.replace('/', ' ').replace('-', ' ').title().strip()
             
             # format date
             dt = ar['timestamp'].split(' ')[0]

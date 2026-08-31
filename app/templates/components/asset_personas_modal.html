@@ -195,7 +195,7 @@
                                         </div>
                                         <div class="text-right">
                                             <div class="bg-black border border-dark-700 px-2 py-1 rounded flex items-center gap-1.5 shadow-inner" title="Interactions with this asset">
-                                                <i class="fa-solid fa-bullseye text-[9px] text-brand-500"></i> <span class="text-[10px] text-slate-300 font-bold" x-text="user.interactions + ' interactions'"></span>
+                                                <i class="fa-solid fa-chart-line text-[9px] text-brand-500"></i> <span class="text-[10px] text-slate-300 font-bold" x-text="user.interactions + ' interactions'"></span>
                                                 <i class="fa-solid fa-chevron-down text-slate-500 text-[9px] ml-1 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''"></i>
                                             </div>
                                         </div>
@@ -213,16 +213,16 @@
                                             <template x-for="(asset, index) in user.timeline" :key="index">
                                                 <li class="relative pl-4">
                                                     <!-- Node dot -->
-                                                    <div class="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full z-10 transition-colors"
+                                                    <div class="absolute -left-[4.5px] top-1.5 w-2 h-2 rounded-full z-10 transition-colors"
                                                          :class="asset.is_current ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-slate-600 border border-dark-900'">
                                                     </div>
                                                     
                                                     <div class="flex flex-col">
                                                         <!-- Date -->
-                                                        <span class="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
+                                                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
                                                         
                                                         <!-- Asset name inside a badge-like card for efficiency -->
-                                                        <div class="flex items-center text-[11px] font-medium w-full rounded pr-2 py-0.5" 
+                                                        <div class="flex items-center text-xs font-medium w-full rounded pr-2 py-0.5" 
                                                              :class="asset.is_current ? 'text-cyan-300' : 'text-slate-300'"
                                                              :title="asset.asset">
                                                              <i class="mr-2 text-[10px]" :class="{
