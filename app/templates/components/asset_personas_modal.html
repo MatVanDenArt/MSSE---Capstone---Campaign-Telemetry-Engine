@@ -209,23 +209,23 @@
                                             </div>
                                         </div>
                                         
-                                        <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
+                                        <ul class="relative border-l border-dark-700 ml-2 space-y-3 pt-2 pb-2">
                                             <template x-for="(asset, index) in user.timeline" :key="index">
-                                                <li class="relative pl-5">
+                                                <li class="relative pl-4">
                                                     <!-- Node dot -->
-                                                    <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors"
-                                                         :class="asset.is_current ? 'bg-brand-500 shadow-[0_0_8px_rgba(56,189,248,0.6)]' : 'bg-dark-600'">
+                                                    <div class="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full z-10 transition-colors"
+                                                         :class="asset.is_current ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]' : 'bg-slate-600 border border-dark-900'">
                                                     </div>
                                                     
                                                     <div class="flex flex-col">
                                                         <!-- Date -->
-                                                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
+                                                        <span class="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
                                                         
                                                         <!-- Asset name inside a badge-like card for efficiency -->
-                                                        <div class="flex items-center text-sm font-medium w-full rounded pr-2 py-0.5" 
-                                                             :class="asset.is_current ? 'text-brand-300 bg-brand-900/10' : 'text-slate-300'"
+                                                        <div class="flex items-center text-[11px] font-medium w-full rounded pr-2 py-0.5" 
+                                                             :class="asset.is_current ? 'text-cyan-300' : 'text-slate-300'"
                                                              :title="asset.asset">
-                                                             <i class="mr-2 text-xs" :class="{
+                                                             <i class="mr-2 text-[10px]" :class="{
                                                                  'opacity-100 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]': asset.is_current,
                                                                  'opacity-70': !asset.is_current,
                                                                  'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
