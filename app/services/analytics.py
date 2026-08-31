@@ -1615,7 +1615,7 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
         data = []
         if stage == 'known_users':
             cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title 
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority 
                 FROM ga4_events e 
                 JOIN crm_users u ON e.user_id = u.user_id 
                 WHERE e.utm_campaign = ? AND e.user_id IS NOT NULL
@@ -1628,11 +1628,12 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
                     "first_name": r[1],
                     "last_name": r[2],
                     "job_title": r[3],
+                    "seniority": r[4],
                     "value": None
                 })
         elif stage == 'opportunities':
             cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, SUM(o.pipeline_value) as value
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value
                 FROM crm_opps o 
                 JOIN crm_users u ON o.user_id = u.user_id 
                 WHERE o.utm_campaign = ?
@@ -1646,11 +1647,12 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
                     "first_name": r[1],
                     "last_name": r[2],
                     "job_title": r[3],
-                    "value": r[4]
+                    "seniority": r[4],
+                    "value": r[5]
                 })
         elif stage == 'contracts':
             cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, SUM(o.pipeline_value) as value
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value
                 FROM crm_opps o 
                 JOIN crm_users u ON o.user_id = u.user_id 
                 WHERE o.utm_campaign = ? AND o.event_type = 'Closed Won'
@@ -1664,7 +1666,8 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
                     "first_name": r[1],
                     "last_name": r[2],
                     "job_title": r[3],
-                    "value": r[4]
+                    "seniority": r[4],
+                    "value": r[5]
                 })
         
         conn.close()
