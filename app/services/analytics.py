@@ -1302,23 +1302,35 @@ def get_ui_lab_funnel_data(campaign_id: str) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT COUNT(*) FROM ga4_events WHERE utm_campaign = ?", (campaign_id,))
+        cursor.execute("SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ?", (campaign_id,))
         visitors = cursor.fetchone()[0] or 0
         
-        cursor.execute("SELECT COUNT(*) FROM ga4_events WHERE utm_campaign = ? AND bounce_flag = 0", (campaign_id,))
+        cursor.execute("SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ? AND bounce_flag = 0", (campaign_id,))
         engaged = cursor.fetchone()[0] or 0
         
         cursor.execute("SELECT COUNT(DISTINCT user_id) FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL", (campaign_id,))
         known = cursor.fetchone()[0] or 0
         
-        cursor.execute("SELECT COUNT(DISTINCT user_id) FROM crm_opps WHERE utm_campaign = ?", (campaign_id,))
-        pipeline = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(DISTINCT user_id), SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ?", (campaign_id,))
+        pipe_row = cursor.fetchone()
+        pipeline = pipe_row[0] or 0
+        pipeline_val = pipe_row[1] or 0.0
         
-        # Activated is roughly midway between known and pipeline
-        activated = int((known + pipeline) / 2) if known > 0 else 0
+        cursor.execute("SELECT COUNT(DISTINCT user_id), SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ? AND event_type = 'Closed Won'", (campaign_id,))
+        won_row = cursor.fetchone()
+        won = won_row[0] or 0
+        won_val = won_row[1] or 0.0
         
         conn.close()
-        return {'visitors': visitors, 'engaged': engaged, 'known': known, 'activated': activated, 'pipeline': pipeline}
+        return {
+            'visitors': visitors, 
+            'engaged': engaged, 
+            'known': known, 
+            'pipeline': pipeline, 
+            'pipeline_val': pipeline_val,
+            'won': won,
+            'won_val': won_val
+        }
     except Exception as e:
         return {'error': str(e)}
 
