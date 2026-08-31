@@ -21,7 +21,20 @@
         },
 
         get availableSeniorities() {
-            const allSens = Array.from(new Set(this.users.map(u => u.seniority))).sort();
+            const hierarchy = {
+                'C-Level': 1,
+                'VP': 2,
+                'Director': 3,
+                'Manager': 4,
+                'Individual Contributor': 5
+            };
+            
+            const allSens = Array.from(new Set(this.users.map(u => u.seniority))).sort((a, b) => {
+                const rankA = hierarchy[a] || 99;
+                const rankB = hierarchy[b] || 99;
+                return rankA - rankB;
+            });
+            
             return allSens.map(sen => {
                 const count = this.users.filter(u => u.seniority === sen && (this.companyFilter === '' || u.company_name === this.companyFilter)).length;
                 return { name: sen, count: count };
@@ -65,7 +78,7 @@
             <div>
                 <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Company</label>
                 <select x-model="companyFilter" class="w-full bg-dark-900 border border-dark-700 rounded p-1.5 text-xs text-slate-300 focus:border-cyan-500 focus:ring-0">
-                    <option value="">All Companies</option>
+                    <option value="">All companies</option>
                     <template x-for="comp in availableCompanies" :key="comp.name">
                         <option :value="comp.name" x-text="comp.name + ' (' + comp.count + ')'"></option>
                     </template>
@@ -74,7 +87,7 @@
             <div>
                 <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Seniority</label>
                 <select x-model="seniorityFilter" class="w-full bg-dark-900 border border-dark-700 rounded p-1.5 text-xs text-slate-300 focus:border-cyan-500 focus:ring-0">
-                    <option value="">All Roles</option>
+                    <option value="">All roles</option>
                     <template x-for="sen in availableSeniorities" :key="sen.name">
                         <option :value="sen.name" x-text="(sen.name || 'Unknown') + ' (' + sen.count + ')'"></option>
                     </template>
@@ -91,7 +104,7 @@
                         <p class="text-[10px] text-slate-500 mt-1"><span class="text-slate-300" x-text="row.first_name + ' ' + row.last_name"></span> &bull; <span x-text="row.job_title"></span></p>
                     </div>
                     <div class="text-right" x-show="row.value">
-                        <div class="text-sm font-black text-amber-400 tracking-tight" x-text="formatMoney(row.value)"></div>
+                        <div class="text-sm font-black text-white tracking-tight" x-text="formatMoney(row.value)"></div>
                     </div>
                 </div>
             </template>
