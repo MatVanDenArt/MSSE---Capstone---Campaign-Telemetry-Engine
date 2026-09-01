@@ -71,8 +71,7 @@
                     <!-- Conversion Pill -->
                     <!-- Centered precisely over the line -->
                     <div x-show="index > 0" class="absolute -top-7 left-[-20px] -translate-x-1/2 flex items-center z-10">
-                        <span class="bg-black border border-dark-700 px-2 py-0.5 rounded text-[9px] text-slate-400 flex items-center gap-1 shadow-sm whitespace-nowrap">
-                            <i class="fa-solid fa-arrow-turn-down text-slate-600"></i> <span x-text="stage.rate"></span>
+                        <span class="bg-black border border-dark-700 px-2 py-0.5 rounded text-[9px] text-slate-400 flex items-center shadow-sm whitespace-nowrap" x-text="stage.rate">
                         </span>
                     </div>
 
@@ -81,7 +80,7 @@
                         <div class="flex items-center gap-2 mb-0.5">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="stage.name"></h4>
                             <i x-show="stage.id && isLoading !== stage.id" class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                            <i x-show="isLoading === stage.id" class="fa-solid fa-circle-notch fa-spin text-[9px] text-brand-500"></i>
+                            <i x-show="stage.id && isLoading === stage.id" class="fa-solid fa-circle-notch fa-spin text-[9px] text-brand-500"></i>
                         </div>
                         <div class="flex items-baseline gap-2">
                             <template x-if="stage.val">
