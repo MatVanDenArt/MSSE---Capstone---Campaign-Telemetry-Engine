@@ -635,7 +635,7 @@ Format in plain text without markdown."""
             try:
                 client = get_genai_client()
                 response = client.models.generate_content(
-                    model='gemini-3.5-flash',
+                    model='gemini-3.6-flash',
                     contents=prompt,
                     config=types.GenerateContentConfig(temperature=0.2)
                 )
@@ -805,7 +805,7 @@ Based on this data, generate exactly 3 strategic "Next Best Actions" a CMO shoul
 Focus on: Scenario Planning & Reallocation, Forecasting & Extrapolation, or Deep-Dive Analysis.
 Output strictly as a JSON array of objects. Do not include markdown formatting or backticks.
 Each object must have exactly these keys:
-- "title": A very short 2-3 word title (e.g. "Simulate Budget Shift", "Forecast Q4 Pipeline").
+- "title": A very short 2-3 word title in sentence case (e.g. "Simulate budget shift", "Forecast Q4 pipeline").
 - "message": A 1-sentence strategic question or command.
 - "action_command": The exact same string as "message".
 - "icon": A font-awesome class (e.g. "fa-chart-pie", "fa-money-bill-trend-up", "fa-magnifying-glass").
@@ -823,7 +823,7 @@ Each object must have exactly these keys:
             try:
                 client = get_genai_client()
                 resp = client.models.generate_content(
-                    model='gemini-3.5-flash',
+                    model='gemini-3.6-flash',
                     contents=prompt,
                     config=types.GenerateContentConfig(temperature=0.7)
                 )
@@ -841,13 +841,13 @@ Each object must have exactly these keys:
             "campaign_id": campaign_id,
             "type": "ai",
             "message": item.get("message", "Run analysis"),
-            "action_payload": item.get("title", "AI Action"),
+            "action_payload": item.get("title", "AI Action").capitalize(),
             "resolved_status": 0,
             "created_at": datetime.now().isoformat(),
             "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
             "icon": item.get("icon", "fa-bolt"),
             "icon_color": "text-fuchsia-400",
-            "title": item.get("title", "AI Recommendation"),
+            "title": item.get("title", "AI Recommendation").capitalize(),
             "action_command": item.get("action_command", "Analyze")
         })
     return actions
