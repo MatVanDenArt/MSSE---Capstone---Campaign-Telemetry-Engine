@@ -229,6 +229,13 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
             conversions = cursor.fetchone()["conv_count"] or 0
             
             cursor.execute(f"""
+                SELECT SUM(pipeline_value) as pipeline 
+                FROM crm_opps 
+                WHERE utm_campaign = '{campaign_id}' {date_filter}
+            """)
+            pipeline = cursor.fetchone()["pipeline"] or 0.0
+            
+            cursor.execute(f"""
                 SELECT COUNT(DISTINCT account_id) as acct_count FROM crm_users 
                 WHERE user_id IN (
                     SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND user_id IS NOT NULL {date_filter}
@@ -237,7 +244,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
             accounts = cursor.fetchone()["acct_count"] or 0
             cpa = spend / conversions if conversions > 0 else 0.0
             
-            return {"spend": spend, "accounts": accounts, "cpa": cpa, "conversions": conversions}
+            return {"spend": spend, "accounts": accounts, "cpa": cpa, "conversions": conversions, "pipeline": pipeline}
 
         live_metrics = fetch_metrics(campaign_id, timeframe)
         
@@ -261,11 +268,18 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         """)
         baseline_conversions = cursor.fetchone()["conv_count"] or 0
         
+        cursor.execute(f"""
+            SELECT SUM(pipeline_value) as pipeline 
+            FROM crm_opps 
+            WHERE 1=1 {date_filter}
+        """)
+        baseline_pipeline = cursor.fetchone()["pipeline"] or 0.0
+        
         cursor.execute(f"SELECT COUNT(DISTINCT account_id) as acct_count FROM crm_users WHERE user_id IN (SELECT user_id FROM ga4_events WHERE user_id IS NOT NULL {date_filter})")
         baseline_accounts = cursor.fetchone()["acct_count"] or 0
         baseline_cpa = baseline_spend / baseline_conversions if baseline_conversions > 0 else 0.0
         
-        baseline_metrics = {"spend": baseline_spend, "accounts": baseline_accounts, "cpa": baseline_cpa, "conversions": baseline_conversions}
+        baseline_metrics = {"spend": baseline_spend, "accounts": baseline_accounts, "cpa": baseline_cpa, "conversions": baseline_conversions, "pipeline": baseline_pipeline}
         
         def calc_diff(current, baseline, lower_is_better=False):
             if baseline == 0: return 0, False
@@ -277,6 +291,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         accounts_diff, accounts_good = calc_diff(live_metrics["accounts"], baseline_metrics["accounts"], lower_is_better=False)
         cpa_diff, cpa_good = calc_diff(live_metrics["cpa"], baseline_metrics["cpa"], lower_is_better=True)
         conv_diff, conv_good = calc_diff(live_metrics["conversions"], baseline_metrics["conversions"], lower_is_better=False)
+        pipe_diff, pipe_good = calc_diff(live_metrics["pipeline"], baseline_metrics["pipeline"], lower_is_better=False)
         
         # Generate 14-day sparklines
         def get_sparkline(metric_type):
