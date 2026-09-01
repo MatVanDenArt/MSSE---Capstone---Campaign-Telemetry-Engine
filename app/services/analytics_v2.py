@@ -127,7 +127,7 @@ def simulate_budget_shift(channel: str, budget: float) -> dict:
         cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
         li_hist = cursor.fetchone()["total_spend"] or 0.0
         
-        cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events WHERE event_type = 'click'")
+        cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
         em_hist = (cursor.fetchone()["c"] or 0) * 1.50
         
         cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
@@ -204,7 +204,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
             cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE campaign_id = '{campaign_id}' {date_filter}")
             li_spend = cursor.fetchone()["spend"] or 0.0
             
-            cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id LIKE '%{campaign_id}%' AND event_type = 'click' {date_filter}")
+            cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id LIKE '%{campaign_id}%' {date_filter}")
             em_clicks = cursor.fetchone()["c"] or 0
             em_spend = em_clicks * 1.50
             
@@ -239,7 +239,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE 1=1 {date_filter}")
         baseline_li = cursor.fetchone()["spend"] or 0.0
         
-        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE event_type = 'click' {date_filter}")
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {date_filter}")
         baseline_em = (cursor.fetchone()["c"] or 0) * 1.50
         
         cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {date_filter}")
