@@ -13,7 +13,8 @@ def setup_test_db():
     conn = sqlite3.connect(db_path)
     
     # 2. Read the schema we dumped
-    with open('tests_schema.sql', 'r', encoding='utf-8') as f:
+    schema_path = os.path.join(os.path.dirname(__file__), 'tests_schema.sql')
+    with open(schema_path, 'r', encoding='utf-8') as f:
         schema = f.read()
     
     # 3. Execute the schema
