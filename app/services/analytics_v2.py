@@ -776,6 +776,82 @@ def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
         return assets
     except Exception as e:
         raise e
+
+def get_ai_recommended_actions(campaign_id: str, timeframe: int) -> list:
+    import json
+    import uuid
+    from datetime import datetime, timedelta
+    from app.services.llm_rotator import get_genai_client, get_cached_response, set_cached_response
+    from google.genai import types
+    from app.services.analytics_v2 import get_kpi_benchmarks
+
+    benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
+    overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
+    
+    payload = {
+        "time_window_analyzed": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
+        "window_pipeline_generated_dollars": benchmarks["live"]["pipeline"],
+        "window_total_spend_dollars": benchmarks["live"]["spend"],
+        "window_cpa_dollars": benchmarks["live"]["cpa"],
+        "window_cpa_trend_vs_previous_window": benchmarks["comparisons"]["cpa"]["value"],
+        "window_closed_won_contracts": benchmarks["live"]["conversions"],
+        "overall_campaign_pipeline_generated_dollars": overall_benchmarks["live"]["pipeline"],
+        "overall_campaign_total_spend_dollars": overall_benchmarks["live"]["spend"],
+        "overall_campaign_cpa_dollars": overall_benchmarks["live"]["cpa"]
+    }
+    
+    prompt = f'''You are a B2B Marketing AI. Review this campaign telemetry: {payload}.
+Based on this data, generate exactly 3 strategic "Next Best Actions" a CMO should take.
+Focus on: Scenario Planning & Reallocation, Forecasting & Extrapolation, or Deep-Dive Analysis.
+Output strictly as a JSON array of objects. Do not include markdown formatting or backticks.
+Each object must have exactly these keys:
+- "title": A very short 2-3 word title (e.g. "Simulate Budget Shift", "Forecast Q4 Pipeline").
+- "message": A 1-sentence strategic question or command.
+- "action_command": The exact same string as "message".
+- "icon": A font-awesome class (e.g. "fa-chart-pie", "fa-money-bill-trend-up", "fa-magnifying-glass").
+'''
+
+    cached = get_cached_response(prompt)
+    if cached:
+        try:
+            items = json.loads(cached)
+        except:
+            items = []
+    else:
+        items = []
+        for _ in range(3):
+            try:
+                client = get_genai_client()
+                resp = client.models.generate_content(
+                    model='gemini-3.5-flash',
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=0.7)
+                )
+                text = resp.text.replace('```json', '').replace('```', '').strip()
+                items = json.loads(text)
+                set_cached_response(prompt, json.dumps(items))
+                break
+            except Exception as e:
+                pass
+
+    actions = []
+    for item in items:
+        actions.append({
+            "id": f"TRG_{uuid.uuid4().hex[:8]}",
+            "campaign_id": campaign_id,
+            "type": "ai",
+            "message": item.get("message", "Run analysis"),
+            "action_payload": item.get("title", "AI Action"),
+            "resolved_status": 0,
+            "created_at": datetime.now().isoformat(),
+            "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
+            "icon": item.get("icon", "fa-bolt"),
+            "icon_color": "text-fuchsia-400",
+            "title": item.get("title", "AI Recommendation"),
+            "action_command": item.get("action_command", "Analyze")
+        })
+    return actions
+
 def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
     try:
         import uuid
@@ -919,52 +995,9 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
             except Exception as e:
                 pass
 
-        # Default fallback: Instead of a generic success message, populate with AI Recommendations
+        # Default fallback: Populate with Dynamic AI Recommendations
         if len(actions) == 0:
-            actions.extend([
-                {
-                    "id": f"TRG_{uuid.uuid4().hex[:8]}",
-                    "campaign_id": campaign_id,
-                    "type": "ai",
-                    "message": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations.",
-                    "action_payload": "Forecast Shortfall",
-                    "resolved_status": 0,
-                    "created_at": datetime.now().isoformat(),
-                    "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
-                    "icon": "fa-chart-pie",
-                    "icon_color": "text-fuchsia-400",
-                    "title": "Forecast Shortfall",
-                    "action_command": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations."
-                },
-                {
-                    "id": f"TRG_{uuid.uuid4().hex[:8]}",
-                    "campaign_id": campaign_id,
-                    "type": "ai",
-                    "message": "Analyze budget pacing against pipeline generation targets.",
-                    "action_payload": "Pacing Analysis",
-                    "resolved_status": 0,
-                    "created_at": datetime.now().isoformat(),
-                    "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
-                    "icon": "fa-money-bill-trend-up",
-                    "icon_color": "text-fuchsia-400",
-                    "title": "Pacing Analysis",
-                    "action_command": "Analyze budget pacing against pipeline generation targets."
-                },
-                {
-                    "id": f"TRG_{uuid.uuid4().hex[:8]}",
-                    "campaign_id": campaign_id,
-                    "type": "ai",
-                    "message": "Pull executive pipeline KPIs and blended CPA.",
-                    "action_payload": "Executive KPIs",
-                    "resolved_status": 0,
-                    "created_at": datetime.now().isoformat(),
-                    "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
-                    "icon": "fa-briefcase",
-                    "icon_color": "text-fuchsia-400",
-                    "title": "Executive KPIs",
-                    "action_command": "Pull executive pipeline KPIs and blended CPA."
-                }
-            ])
+            actions.extend(get_ai_recommended_actions(campaign_id, timeframe))
             
         if timeframe == 0:
             for a in actions:
