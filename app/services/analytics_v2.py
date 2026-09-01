@@ -333,13 +333,15 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
                 "spend": round(live_metrics["spend"], 2),
                 "accounts": live_metrics["accounts"],
                 "cpa": round(live_metrics["cpa"], 2),
-                "conversions": live_metrics["conversions"]
+                "conversions": live_metrics["conversions"],
+                "pipeline": live_metrics["pipeline"]
             },
             "comparisons": {
                 "spend": {"value": spend_diff, "good": spend_good},
                 "accounts": {"value": accounts_diff, "good": accounts_good},
                 "cpa": {"value": cpa_diff, "good": cpa_good},
                 "conversions": {"value": conv_diff, "good": conv_good},
+                "pipeline": {"value": pipe_diff, "good": pipe_good}
             },
             "sparklines": sparklines
         }
