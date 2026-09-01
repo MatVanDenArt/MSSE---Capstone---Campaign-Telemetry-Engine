@@ -2829,3 +2829,55 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str, timeframe: int = 0) 
         print(traceback.format_exc())
         return []
 
+
+
+def _fetch_user_timeline(cursor, campaign_id, user_id):
+    cursor.execute('''
+        WITH UserJourney AS (
+            SELECT 'Web' as type, COALESCE(c.title, g.page_viewed) as asset, g.timestamp 
+            FROM ga4_events g
+            LEFT JOIN content_metadata c ON g.page_viewed = c.url
+            WHERE g.utm_campaign = ? AND g.user_id = ? AND g.page_viewed IS NOT NULL
+            
+            UNION ALL
+            
+            SELECT 'Email' as type, COALESCE(c.title, m.campaign_id) as asset, m.timestamp
+            FROM mailchimp_events m
+            LEFT JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
+            WHERE m.campaign_id LIKE ? AND m.email = (SELECT email FROM crm_users WHERE user_id = ?)
+            
+            UNION ALL
+            
+            SELECT 'LinkedIn' as type, COALESCE(c.title, l.ad_id) as asset, l.timestamp
+            FROM linkedin_events l
+            JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id
+            LEFT JOIN content_metadata c ON l.ad_id = c.url
+            WHERE l.campaign_id = ? AND g.user_id = ?
+        )
+        SELECT type, asset, timestamp FROM UserJourney ORDER BY timestamp ASC
+    ''', (campaign_id, user_id, f'%{campaign_id}%', user_id, campaign_id, user_id))
+    
+    assets_rows = cursor.fetchall()
+    
+    timeline = []
+    for ar in assets_rows:
+        nm = ar['asset']
+        if not nm: nm = 'Homepage'
+        elif nm.startswith('/') or nm.startswith('email-') or nm.startswith('li-'):
+            nm = nm.replace('/', ' ').replace('-', ' ').title().strip()
+        
+        dt = ar['timestamp'].split(' ')[0]
+        import datetime
+        try:
+            dt_obj = datetime.datetime.strptime(dt, '%Y-%m-%d')
+            fmt_date = dt_obj.strftime('%d %b %Y')
+        except:
+            fmt_date = dt
+            
+        timeline.append({
+            'type': ar['type'],
+            'asset': nm,
+            'date': fmt_date,
+            'is_current': False
+        })
+    return timeline
