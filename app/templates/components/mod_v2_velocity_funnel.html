@@ -20,7 +20,7 @@
             this.isLoading = stageId;
             this.drilldownHtml = ''; // Clear to force Alpine x-data re-initialization
             setTimeout(() => {
-                fetch(`/api/v2/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}`)
+                fetch(`/api/v2/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}&timeframe={{ timeframe }}`)
                     .then(res => res.text())
                     .then(html => {
                         this.drilldownHtml = html;
@@ -35,7 +35,7 @@
             }, 10);
         },
         init() {
-            fetch(`/api/v2/dashboard/ui-lab/funnel?campaign_id=${document.getElementById('current_campaign').value}`)
+            fetch(`/api/v2/dashboard/ui-lab/funnel?campaign_id=${document.getElementById('current_campaign').value}&timeframe={{ timeframe }}`)
                 .then(res => res.json())
                 .then(data => {
                     const formatMoney = (val) => {

@@ -1303,7 +1303,7 @@ def get_ui_lab_funnel_data(campaign_id: str, timeframe: int = 0) -> dict:
         cursor = conn.cursor()
         
         tf_ga = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-        tf_crm = f" AND created_date >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        tf_crm = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
         
         cursor.execute(f"SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ? {tf_ga}", (campaign_id,))
         visitors = cursor.fetchone()[0] or 0
@@ -1674,7 +1674,7 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str, timeframe: int = 0) 
         data = []
         
         tf_ga = f" AND e.timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-        tf_crm = f" AND o.created_date >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        tf_crm = f" AND o.timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
         
         if stage == 'known_users':
             cursor.execute(f"""

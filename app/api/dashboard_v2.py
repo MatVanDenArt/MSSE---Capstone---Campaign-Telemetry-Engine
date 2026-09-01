@@ -690,9 +690,9 @@ def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
     cursor = conn.cursor()
     
     tf_li = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-    tf_em = f" AND action_timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_em = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
     tf_ga = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-    tf_crm = f" AND created_date >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_crm = f" AND o.timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
     
     # LinkedIn
     cursor.execute(f"SELECT SUM(spend_consumed) FROM linkedin_events WHERE campaign_id = ?{tf_li}", (campaign_id,))
