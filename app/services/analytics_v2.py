@@ -816,17 +816,17 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                         d['icon_color'] = "text-rose-500"
                         d['action_command'] = "Run pacing analysis to identify inefficient channels"
                     elif d.get("action_payload") == "Forecast Shortfall":
-                        d['title'] = "AI Recommendation"
+                        d['title'] = "Forecast Shortfall"
                         d['icon'] = "fa-chart-pie"
                         d['icon_color'] = "text-fuchsia-400"
                         d['action_command'] = "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations."
                     elif d.get("action_payload") == "Pacing Analysis":
-                        d['title'] = "AI Recommendation"
+                        d['title'] = "Pacing Analysis"
                         d['icon'] = "fa-money-bill-trend-up"
                         d['icon_color'] = "text-fuchsia-400"
                         d['action_command'] = "Analyze budget pacing against pipeline generation targets."
                     elif d.get("action_payload") == "Executive KPIs":
-                        d['title'] = "AI Recommendation"
+                        d['title'] = "Executive KPIs"
                         d['icon'] = "fa-briefcase"
                         d['icon_color'] = "text-fuchsia-400"
                         d['action_command'] = "Pull executive pipeline KPIs and blended CPA."
@@ -932,7 +932,7 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                     "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
                     "icon": "fa-chart-pie",
                     "icon_color": "text-fuchsia-400",
-                    "title": "AI Recommendation",
+                    "title": "Forecast Shortfall",
                     "action_command": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations."
                 },
                 {
@@ -946,7 +946,7 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                     "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
                     "icon": "fa-money-bill-trend-up",
                     "icon_color": "text-fuchsia-400",
-                    "title": "AI Recommendation",
+                    "title": "Pacing Analysis",
                     "action_command": "Analyze budget pacing against pipeline generation targets."
                 },
                 {
@@ -960,7 +960,7 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                     "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
                     "icon": "fa-briefcase",
                     "icon_color": "text-fuchsia-400",
-                    "title": "AI Recommendation",
+                    "title": "Executive KPIs",
                     "action_command": "Pull executive pipeline KPIs and blended CPA."
                 }
             ])

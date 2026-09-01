@@ -79,17 +79,19 @@
                  });
              },
              getGlowClass(task) {
-                if (this.reviewingTaskId === task.id) {
-                    return 'border-fuchsia-500/50 bg-white/5 opacity-80 cursor-default';
-                }
-                const title = task.title || '';
-                if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
-                    return 'border-rose-900/60 bg-white/5 hover:border-rose-500/50 hover:bg-white/10 cursor-pointer';
-                } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
-                    return 'border-emerald-900/60 bg-white/5 hover:border-emerald-500/50 hover:bg-white/10 cursor-pointer';
-                }
-                return 'border-amber-900/60 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 cursor-pointer';
-            },
+                 if (this.reviewingTaskId === task.id) {
+                     return 'border-fuchsia-500/50 bg-white/5 opacity-80 cursor-default';
+                 }
+                 const title = task.title || '';
+                 if (task.type === 'ai') {
+                     return 'border-fuchsia-900/60 bg-white/5 hover:border-fuchsia-500/50 hover:bg-white/10 cursor-pointer';
+                 } else if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                     return 'border-rose-900/60 bg-white/5 hover:border-rose-500/50 hover:bg-white/10 cursor-pointer';
+                 } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                     return 'border-emerald-900/60 bg-white/5 hover:border-emerald-500/50 hover:bg-white/10 cursor-pointer';
+                 }
+                 return 'border-amber-900/60 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 cursor-pointer';
+             },
              getCategoryBadge(task) {
                  const title = task.title || '';
                  if (task.type === 'ai' || title.includes('AI Recommendation')) {
