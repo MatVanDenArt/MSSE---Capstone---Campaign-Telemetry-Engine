@@ -615,8 +615,9 @@ def generate_strategic_tldr(payload: dict) -> str:
         
         prompt = f"""You are a B2B Marketing AI Analyst. Review this executive campaign summary data: {payload}.
 Write a strict 2-3 sentence executive summary for the CMO.
-Evaluate if the pipeline generated justifies the total spend.
+Evaluate if the pipeline generated justifies the total spend for the analyzed time window.
 Highlight the CPA and note if the CPA trend is improving or worsening.
+Contextualize the time window's performance against the overall campaign metrics provided (e.g. if the window is a small fraction of the total, or if it is driving most of the pipeline).
 Do NOT mention sparklines, tracking anomalies, or technical metrics.
 Format in plain text without markdown."""
         

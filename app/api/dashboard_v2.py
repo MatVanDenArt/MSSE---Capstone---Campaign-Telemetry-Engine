@@ -311,16 +311,18 @@ from functools import lru_cache
 def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
     from app.services.analytics_v2 import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
-    
-    campaigns = get_all_campaigns()
-    campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
+    overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
     
     payload = {
-        "pipeline_generated_dollars": benchmarks["live"]["pipeline"],
-        "total_spend_dollars": benchmarks["live"]["spend"],
-        "cpa_dollars": benchmarks["live"]["cpa"],
-        "cpa_percent_change": benchmarks["comparisons"]["cpa"]["value"],
-        "closed_won_contracts": benchmarks["live"]["conversions"]
+        "time_window_analyzed": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
+        "window_pipeline_generated_dollars": benchmarks["live"]["pipeline"],
+        "window_total_spend_dollars": benchmarks["live"]["spend"],
+        "window_cpa_dollars": benchmarks["live"]["cpa"],
+        "window_cpa_trend_vs_previous_window": benchmarks["comparisons"]["cpa"]["value"],
+        "window_closed_won_contracts": benchmarks["live"]["conversions"],
+        "overall_campaign_pipeline_generated_dollars": overall_benchmarks["live"]["pipeline"],
+        "overall_campaign_total_spend_dollars": overall_benchmarks["live"]["spend"],
+        "overall_campaign_cpa_dollars": overall_benchmarks["live"]["cpa"]
     }
     
     return generate_strategic_tldr(payload)
