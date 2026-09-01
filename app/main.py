@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-from app.api import chat, dashboard_v2
+from app.api import chat, dashboard
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,12 +36,12 @@ app = FastAPI(lifespan=lifespan, title="Wood Group Campaign Telemetry Engine")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include Routers
-app.include_router(dashboard_v2.router, prefix="/api/v2")
+app.include_router(dashboard.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 
 @app.get("/lobby", response_class=HTMLResponse)
 async def get_lobby(request: Request):
-    from app.services.analytics_v2 import get_all_campaigns
+    from app.services.analytics import get_all_campaigns
     campaigns = get_all_campaigns()
     return templates.TemplateResponse(request=request, name="lobby.html", context={"campaigns": campaigns})
 

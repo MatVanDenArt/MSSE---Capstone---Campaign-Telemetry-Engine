@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from app.services.analytics_v2 import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice
+from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice
 import sqlite3
 import urllib.parse
 
@@ -23,9 +23,9 @@ def get_db():
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
 def get_workspace(request: Request, campaign_id: str):
-    from app.services.analytics_v2 import get_campaign_start_date
+    from app.services.analytics import get_campaign_start_date
     start_date = get_campaign_start_date(campaign_id)
-    return templates.TemplateResponse(request=request, name="workspace_v2.html", context={"campaign_id": campaign_id, "start_date": start_date})
+    return templates.TemplateResponse(request=request, name="workspace.html", context={"campaign_id": campaign_id, "start_date": start_date})
 
 @router.get("/dashboard/sidebar", response_class=HTMLResponse)
 def get_sidebar(request: Request):
@@ -41,13 +41,13 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
     penetration = data.get("account_penetration", {})
     assets = get_asset_fatigue(campaign_id, timeframe)
     
-    from app.services.analytics_v2 import get_tam_penetration, calculate_share_of_voice, get_all_campaigns
+    from app.services.analytics import get_tam_penetration, calculate_share_of_voice, get_all_campaigns
     tam = get_tam_penetration(campaign_id)
     sov = calculate_share_of_voice(campaign_id)
     campaigns = get_all_campaigns()
     campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
 
-    return templates.TemplateResponse(request=request, name="components/overview_v2.html", context={
+    return templates.TemplateResponse(request=request, name="components/overview.html", context={
         "campaign_id": campaign_id,
         "campaign_data": campaign_data,
         "timeframe": timeframe,
@@ -66,7 +66,7 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
 
 @router.get("/dashboard/action-center", response_class=HTMLResponse)
 def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
-    from app.services.analytics_v2 import generate_next_best_actions
+    from app.services.analytics import generate_next_best_actions
     copilot_tasks = generate_next_best_actions(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/oob_action_center.html", context={
         "copilot_tasks": copilot_tasks
@@ -90,7 +90,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "icon_color": "text-emerald-500",
                 "title": f"Top Asset: {top_asset.get('asset_name', 'Asset')}",
                 "subtitle": f"Driving high impact with {top_asset.get('engagement', 0)} interactions",
-                "action_command": f"/api/v2/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
                 "is_programmatic": True
             })
             
@@ -110,7 +110,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "icon_color": "text-rose-500",
                 "title": f"Fatigue: {asset.get('asset_name', 'Asset')}",
                 "subtitle": short_subtitle,
-                "action_command": f"/api/v2/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
                 "is_programmatic": True
             })
 
@@ -125,7 +125,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "icon_color": "text-rose-500",
                 "title": f"High Bounce Rate: {bounce_asset}",
                 "subtitle": "Traffic is high but conversion is < 1%",
-                "action_command": f"/api/v2/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid2}",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid2}",
                 "is_programmatic": True
             })
             
@@ -138,11 +138,11 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "icon_color": "text-emerald-500",
                 "title": f"Conversion Spike: {spike_asset}",
                 "subtitle": "Converting at 3x the historical baseline",
-                "action_command": f"/api/v2/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid3}",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid3}",
                 "is_programmatic": True
             })
 
-    return templates.TemplateResponse(request=request, name="components/performance_v2.html", context={
+    return templates.TemplateResponse(request=request, name="components/performance.html", context={
         "campaign_id": campaign_id,
         "timeframe": timeframe,
         "chart_data": chart_data,
@@ -158,7 +158,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
 def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
-    from app.services.analytics_v2 import get_prioritized_sales_targets
+    from app.services.analytics import get_prioritized_sales_targets
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
     
@@ -198,7 +198,7 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
             "title": f"Follow-up: {t['name']} ({t['company']})",
             "subtitle": subtitle,
             "is_programmatic": True,
-            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
         })
         
     # Simulated ABM Triggers based on Optimal Comparator Outline
@@ -210,7 +210,7 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
         "title": "Stalled Account: BP plc",
         "subtitle": "High early engagement, zero activity in 14 days",
         "is_programmatic": True,
-        "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
+        "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
     })
     
     tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
@@ -221,10 +221,10 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
         "title": "Cross-Department Expansion: Shell",
         "subtitle": "Engineering and Marketing consuming content simultaneously",
         "is_programmatic": True,
-        "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
+        "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
     })
 
-    return templates.TemplateResponse(request=request, name="components/audience_v2.html", context={
+    return templates.TemplateResponse(request=request, name="components/audience.html", context={
         "campaign_id": campaign_id,
         "timeframe": timeframe,
         "penetration": penetration,
@@ -239,7 +239,7 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
 
 @router.get("/dashboard/audience-actions", response_class=HTMLResponse)
 def get_audience_actions(request: Request, campaign_id: str, company: str = None):
-    from app.services.analytics_v2 import get_prioritized_sales_targets
+    from app.services.analytics import get_prioritized_sales_targets
     import uuid
     import urllib.parse
     from datetime import datetime
@@ -277,7 +277,7 @@ def get_audience_actions(request: Request, campaign_id: str, company: str = None
             "title": f"Follow-up: {t['name']} ({t['company']})",
             "subtitle": subtitle,
             "is_programmatic": True,
-            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
         })
         
     if not company:
@@ -289,7 +289,7 @@ def get_audience_actions(request: Request, campaign_id: str, company: str = None
             "title": "Stalled Account: BP plc",
             "subtitle": "High early engagement, zero activity in 14 days",
             "is_programmatic": True,
-            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
         })
         
         tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
@@ -300,7 +300,7 @@ def get_audience_actions(request: Request, campaign_id: str, company: str = None
             "title": "Cross-Department Expansion: Shell",
             "subtitle": "Engineering and Marketing consuming content simultaneously",
             "is_programmatic": True,
-            "action_command": f"/api/v2/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
         })
         
     copilot_actions = [
@@ -318,7 +318,7 @@ from functools import lru_cache
 
 @lru_cache(maxsize=32)
 def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
-    from app.services.analytics_v2 import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
+    from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
     
@@ -613,7 +613,7 @@ def execute_action(request: Request, type: str, campaign_id: str):
 
 @router.get("/dashboard/data-model")
 def get_data_model_view(request: Request, campaign_id: str):
-    from app.services.analytics_v2 import get_asset_fatigue
+    from app.services.analytics import get_asset_fatigue
     assets = get_asset_fatigue(campaign_id, 90)
     return templates.TemplateResponse(request=request, name="components/data_model.html", context={
         "campaign_id": campaign_id,
@@ -622,7 +622,7 @@ def get_data_model_view(request: Request, campaign_id: str):
 
 @router.get("/dashboard/audience-data-scoped")
 def get_audience_data_scoped(campaign_id: str):
-    from app.services.analytics_v2 import get_scoped_audience_data
+    from app.services.analytics import get_scoped_audience_data
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_scoped_audience_data(campaign_id))
 
@@ -696,7 +696,7 @@ def ui_lab_channel_roi(campaign_id: str):
 
 @router.get('/dashboard/v2/channel-roi-data')
 def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
-    from app.services.analytics_v2 import get_db_connection
+    from app.services.analytics import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -767,18 +767,18 @@ def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
     })
 
 def ui_lab_channel_roi_data(campaign_id: str):
-    from app.services.analytics_v2 import get_channel_roi_data
+    from app.services.analytics import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))
 
 @router.get("/dashboard/target-accounts-modal", response_class=HTMLResponse)
 def get_target_accounts_modal(request: Request, campaign_id: str):
-    from app.services.analytics_v2 import get_prioritized_sales_targets
+    from app.services.analytics import get_prioritized_sales_targets
     targets = get_prioritized_sales_targets(campaign_id)
     return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
 
 @router.get("/dashboard/topic-clusters", response_class=HTMLResponse)
 def get_topic_clusters(request: Request, campaign_id: str):
-    from app.services.analytics_v2 import get_db_connection
+    from app.services.analytics import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -844,7 +844,7 @@ def get_topic_clusters(request: Request, campaign_id: str):
 
 @router.get("/dashboard/abm-data")
 def get_abm_data(campaign_id: str):
-    from app.services.analytics_v2 import get_db_connection
+    from app.services.analytics import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -930,34 +930,34 @@ def get_abm_data(campaign_id: str):
 
 @router.get("/v2/api/targets")
 def v2_api_targets(campaign_id: str):
-    from app.services.analytics_v2 import get_ui_lab_funnel_data
+    from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
 @router.get('/dashboard/v2/funnel-drilldown', response_class=HTMLResponse)
 def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0):
-    from app.services.analytics_v2 import get_funnel_drilldown_data
+    from app.services.analytics import get_funnel_drilldown_data
     data = get_funnel_drilldown_data(campaign_id, stage, timeframe)
     return templates.TemplateResponse(request=request, name="components/mod_v2_funnel_modal.html", context={"data": data, "stage": stage})
 
 @router.get('/dashboard/ui-lab/funnel')
 def ui_lab_funnel(campaign_id: str, timeframe: int = 0):
-    from app.services.analytics_v2 import get_ui_lab_funnel_data
+    from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id, timeframe))
 
 @router.get('/dashboard/ui-lab/heatmap')
 def ui_lab_heatmap(campaign_id: str):
-    from app.services.analytics_v2 import get_ui_lab_heatmap_data
+    from app.services.analytics import get_ui_lab_heatmap_data
     return JSONResponse(content=get_ui_lab_heatmap_data(campaign_id))
 
 
 @router.get('/dashboard/sales-alerts')
 def get_sales_alerts(campaign_id: str):
-    from app.services.analytics_v2 import get_prioritized_sales_targets
+    from app.services.analytics import get_prioritized_sales_targets
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_prioritized_sales_targets(campaign_id))
 
 
-from app.services.analytics_v2 import get_asset_personas
+from app.services.analytics import get_asset_personas
 
 @router.get("/asset-personas")
 def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str, timeframe: int = 0):
