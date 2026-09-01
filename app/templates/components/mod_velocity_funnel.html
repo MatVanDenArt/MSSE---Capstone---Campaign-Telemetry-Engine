@@ -20,7 +20,7 @@
             this.isLoading = stageId;
             this.drilldownHtml = ''; // Clear to force Alpine x-data re-initialization
             setTimeout(() => {
-                fetch(`/api/dashboard/v2/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}&timeframe={{ timeframe }}`)
+                fetch(`/api/dashboard/funnel-drilldown?campaign_id=${document.getElementById('current_campaign').value}&stage=${stageId}&timeframe={{ timeframe }}`)
                     .then(res => res.text())
                     .then(html => {
                         this.drilldownHtml = html;
