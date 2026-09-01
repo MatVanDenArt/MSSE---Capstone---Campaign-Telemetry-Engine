@@ -158,7 +158,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
 def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
-    from app.services.analytics import get_prioritized_sales_targets
+    from app.services.analytics_v2 import get_prioritized_sales_targets
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
     
@@ -239,7 +239,7 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
 
 @router.get("/dashboard/audience-actions", response_class=HTMLResponse)
 def get_audience_actions(request: Request, campaign_id: str, company: str = None):
-    from app.services.analytics import get_prioritized_sales_targets
+    from app.services.analytics_v2 import get_prioritized_sales_targets
     import uuid
     import urllib.parse
     from datetime import datetime
@@ -613,7 +613,7 @@ def execute_action(request: Request, type: str, campaign_id: str):
 
 @router.get("/dashboard/data-model")
 def get_data_model_view(request: Request, campaign_id: str):
-    from app.services.analytics import get_asset_fatigue
+    from app.services.analytics_v2 import get_asset_fatigue
     assets = get_asset_fatigue(campaign_id, 90)
     return templates.TemplateResponse(request=request, name="components/data_model.html", context={
         "campaign_id": campaign_id,
@@ -622,7 +622,7 @@ def get_data_model_view(request: Request, campaign_id: str):
 
 @router.get("/dashboard/audience-data-scoped")
 def get_audience_data_scoped(campaign_id: str):
-    from app.services.analytics import get_scoped_audience_data
+    from app.services.analytics_v2 import get_scoped_audience_data
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_scoped_audience_data(campaign_id))
 
@@ -696,7 +696,7 @@ def ui_lab_channel_roi(campaign_id: str):
 
 @router.get('/dashboard/v2/channel-roi-data')
 def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
-    from app.services.analytics import get_db_connection
+    from app.services.analytics_v2 import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -767,18 +767,18 @@ def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
     })
 
 def ui_lab_channel_roi_data(campaign_id: str):
-    from app.services.analytics import get_channel_roi_data
+    from app.services.analytics_v2 import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))
 
 @router.get("/dashboard/target-accounts-modal", response_class=HTMLResponse)
 def get_target_accounts_modal(request: Request, campaign_id: str):
-    from app.services.analytics import get_prioritized_sales_targets
+    from app.services.analytics_v2 import get_prioritized_sales_targets
     targets = get_prioritized_sales_targets(campaign_id)
     return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
 
 @router.get("/dashboard/topic-clusters", response_class=HTMLResponse)
 def get_topic_clusters(request: Request, campaign_id: str):
-    from app.services.analytics import get_db_connection
+    from app.services.analytics_v2 import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -844,7 +844,7 @@ def get_topic_clusters(request: Request, campaign_id: str):
 
 @router.get("/dashboard/abm-data")
 def get_abm_data(campaign_id: str):
-    from app.services.analytics import get_db_connection
+    from app.services.analytics_v2 import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -930,34 +930,34 @@ def get_abm_data(campaign_id: str):
 
 @router.get("/v2/api/targets")
 def v2_api_targets(campaign_id: str):
-    from app.services.analytics import get_ui_lab_funnel_data
+    from app.services.analytics_v2 import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
 @router.get('/dashboard/v2/funnel-drilldown', response_class=HTMLResponse)
 def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0):
-    from app.services.analytics import get_funnel_drilldown_data
+    from app.services.analytics_v2 import get_funnel_drilldown_data
     data = get_funnel_drilldown_data(campaign_id, stage, timeframe)
     return templates.TemplateResponse(request=request, name="components/mod_v2_funnel_modal.html", context={"data": data, "stage": stage})
 
 @router.get('/dashboard/ui-lab/funnel')
 def ui_lab_funnel(campaign_id: str, timeframe: int = 0):
-    from app.services.analytics import get_ui_lab_funnel_data
+    from app.services.analytics_v2 import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id, timeframe))
 
 @router.get('/dashboard/ui-lab/heatmap')
 def ui_lab_heatmap(campaign_id: str):
-    from app.services.analytics import get_ui_lab_heatmap_data
+    from app.services.analytics_v2 import get_ui_lab_heatmap_data
     return JSONResponse(content=get_ui_lab_heatmap_data(campaign_id))
 
 
 @router.get('/dashboard/sales-alerts')
 def get_sales_alerts(campaign_id: str):
-    from app.services.analytics import get_prioritized_sales_targets
+    from app.services.analytics_v2 import get_prioritized_sales_targets
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_prioritized_sales_targets(campaign_id))
 
 
-from app.services.analytics import get_asset_personas
+from app.services.analytics_v2 import get_asset_personas
 
 @router.get("/asset-personas")
 def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str, timeframe: int = 0):
