@@ -1,43 +1,55 @@
 <!-- The 4 Core Metrics -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-    
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+
     <!-- Metric 1: Pipeline Generated -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group">
-        
-        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Pipeline Generated</p>
-        <h3 class="text-3xl font-black text-white mb-2 tracking-tight">${{ "{:,.1f}".format(campaign_data.total_pipeline / 1000000) }}M</h3>
+
+        <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Pipeline Generated</p>
+        <h3 class="text-3xl font-black text-white mb-2 tracking-tight">${{ "{:,.1f}".format(campaign_data.total_pipeline
+            / 1000000) }}M</h3>
         <div class="flex items-center text-xs">
             <!-- Mock target delta since target pipeline isn't formally stored in DB -->
-            <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-arrow-trend-up mr-1"></i> +12.4%</span>
+            <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-arrow-trend-up mr-1"></i> +12.4%</span>
             <span class="text-slate-500">vs. target</span>
         </div>
     </div>
 
     <!-- Metric 2: Total Campaign Spend & CPA -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group">
-        
-        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">Total Spend & Blended CPA</p>
-        <h3 class="text-3xl font-black text-white mb-2 tracking-tight">${{ "{:,.0f}".format(benchmarks.live.spend) }}</h3>
+
+        <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Total Spend & Blended CPA</p>
+        <h3 class="text-3xl font-black text-white mb-2 tracking-tight">${{ "{:,.0f}".format(benchmarks.live.spend) }}
+        </h3>
         <div class="flex items-center text-xs">
             {% if benchmarks.comparisons.cpa.good %}
-                <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-arrow-trend-down mr-1"></i> ${{ "{:,.0f}".format(benchmarks.live.cpa) }} CPA</span>
+            <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-arrow-trend-down mr-1"></i> ${{ "{:,.0f}".format(benchmarks.live.cpa) }}
+                CPA</span>
             {% else %}
-                <span class="text-rose-400 font-bold bg-rose-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-arrow-trend-up mr-1"></i> ${{ "{:,.0f}".format(benchmarks.live.cpa) }} CPA</span>
+            <span class="text-rose-400 font-bold bg-rose-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-arrow-trend-up mr-1"></i> ${{ "{:,.0f}".format(benchmarks.live.cpa) }} CPA</span>
             {% endif %}
-            <span class="text-slate-500">vs avg (${{ "{:,.0f}".format(benchmarks.live.cpa / (1 - (benchmarks.comparisons.cpa.value / 100)) if (1 - (benchmarks.comparisons.cpa.value / 100)) != 0 else benchmarks.live.cpa) }})</span>
+            <span class="text-slate-500">vs avg (${{ "{:,.0f}".format(benchmarks.live.cpa / (1 +
+                (benchmarks.comparisons.cpa.value / 100)) if (1 + (benchmarks.comparisons.cpa.value / 100)) != 0 else
+                benchmarks.live.cpa) }})</span>
         </div>
     </div>
 
     <!-- Metric 3: Target Account Penetration -->
-    <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group cursor-pointer hover:border-rose-500/50" hx-get="/api/v1/dashboard/target-accounts-modal?campaign_id={{ campaign_id }}" hx-target="body" hx-swap="beforeend">
-        
-        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ tam.metric_name }}</p>
+    <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group cursor-pointer hover:border-rose-500/50"
+        hx-get="/api/v1/dashboard/target-accounts-modal?campaign_id={{ campaign_id }}" hx-target="body"
+        hx-swap="beforeend">
+
+        <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ tam.metric_name }}</p>
         <h3 class="text-3xl font-black text-white mb-2 tracking-tight">{{ tam.value }}</h3>
         <div class="flex items-center text-xs">
             {% if tam.delta > 0 %}
-                <span class="text-rose-400 font-bold bg-rose-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-crosshairs mr-1"></i> +{{ tam.delta }}%</span>
+            <span class="text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-crosshairs mr-1"></i> +{{ tam.delta }}%</span>
             {% else %}
-                <span class="text-slate-400 font-bold bg-slate-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-crosshairs mr-1"></i> {{ tam.delta }}%</span>
+            <span class="text-slate-400 font-bold bg-slate-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-crosshairs mr-1"></i> {{ tam.delta }}%</span>
             {% endif %}
             <span class="text-slate-500">Tier 1 accounts</span>
         </div>
@@ -45,14 +57,16 @@
 
     <!-- Metric 4: Topic Share of Voice -->
     <div class="bg-black border border-dark-800 p-6 relative overflow-hidden group">
-        
-        <p class="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ sov.metric_name }}</p>
+
+        <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ sov.metric_name }}</p>
         <h3 class="text-3xl font-black text-white mb-2 tracking-tight">{{ sov.value }}</h3>
         <div class="flex items-center text-xs">
             {% if sov.delta > 0 %}
-                <span class="text-fuchsia-400 font-bold bg-fuchsia-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-crown mr-1"></i> #1 Rank</span>
+            <span class="text-fuchsia-400 font-bold bg-fuchsia-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-crown mr-1"></i> #1 Rank</span>
             {% else %}
-                <span class="text-slate-400 font-bold bg-slate-400/10 px-2 py-0.5 rounded mr-2"><i class="fa-solid fa-crown mr-1"></i> #2 Rank</span>
+            <span class="text-slate-400 font-bold bg-slate-400/10 px-2 py-0.5 rounded mr-2"><i
+                    class="fa-solid fa-crown mr-1"></i> #2 Rank</span>
             {% endif %}
             <span class="text-slate-500">vs competitor avg ({{ sov.competitor_avg }}%)</span>
         </div>
