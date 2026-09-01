@@ -1,47 +1,49 @@
 <!-- OOB Swap for Copilot Action Chips -->
 <div id="copilot-action-chips" hx-swap-oob="true" class="px-4">
     <style>
-        .custom-scrollbar-hide::-webkit-scrollbar { display: none; }
-        .custom-scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .custom-scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
-    <div class="flex overflow-x-auto gap-2 py-3 custom-scrollbar-hide" 
-         @wheel="if(Math.abs($event.deltaY) > Math.abs($event.deltaX)) { $event.preventDefault(); $el.scrollLeft += $event.deltaY; }">
+    <div class="flex overflow-x-auto gap-2 py-3 custom-scrollbar-hide"
+        @wheel="if(Math.abs($event.deltaY) > Math.abs($event.deltaX)) { $event.preventDefault(); $el.scrollLeft += $event.deltaY; }">
         {% for action in copilot_actions %}
         <div class="relative group shrink-0" x-data="{ show: false, x: 0, y: 0 }">
-            <button @click="activeSidebarView = 'chat'; show = false" 
-                @mouseenter="
+            <button @click="activeSidebarView = 'chat'; show = false" @mouseenter="
                     let rect = $el.getBoundingClientRect();
                     x = rect.left + (rect.width / 2);
                     y = rect.top;
                     show = true;
-                "
-                @mouseleave="show = false"
-                hx-post="/api/chat" 
-                hx-target="#chat-history" 
-                hx-swap="beforeend" 
-                hx-indicator="#loading-indicator" 
-                hx-vals='{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true"}' 
+                " @mouseleave="show = false" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend"
+                hx-indicator="#loading-indicator"
+                hx-vals='{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true"}'
                 class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
-                
-                <i class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
-                <span class="text-xs font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{ action.label }}</span>
+
+                <i
+                    class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
+                <span
+                    class="text-xs font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{
+                    action.label }}</span>
             </button>
-            
+
             <!-- Tooltip using Fixed positioning to escape overflow hidden -->
-            <div x-show="show" 
-                 @scroll.window="show = false"
-                 x-transition:enter="transition ease-out duration-200 delay-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="transition ease-in duration-150"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed z-[99999] -translate-x-1/2 -translate-y-full mb-2 w-48 p-2.5 bg-black border border-dark-600 rounded-lg text-[10px] leading-relaxed text-slate-300 shadow-xl pointer-events-none"
-                 :style="`left: ${x}px; top: ${y - 4}px;`"
-                 style="display: none;">
-                 {{ action.command }}
-                 <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600"></div>
-                 <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black mt-[-1px]"></div>
+            <div x-show="show" @scroll.window="show = false"
+                x-transition:enter="transition ease-out duration-200 delay-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="fixed z-[99999] -translate-x-1/2 -translate-y-full mb-2 w-48 p-2.5 bg-black border border-dark-600 rounded-lg text-[10px] leading-relaxed text-slate-300 shadow-xl pointer-events-none"
+                :style="`left: ${x}px; top: ${y - 4}px;`" style="display: none;">
+                {{ action.command }}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
+                </div>
+                <div
+                    class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black mt-[-1px]">
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -56,8 +58,7 @@
 <!-- OOB Swap for Proactive Tasks Container -->
 <div id="copilot-tasks-container" hx-swap-oob="true">
     {% if copilot_tasks %}
-    <div class="bg-black border-b border-dark-800 flex flex-col"
-         x-data="{
+    <div class="bg-black border-b border-dark-800 flex flex-col" x-data="{
              tasks: {{ copilot_tasks | tojson | forceescape }},
              visibleTasks: [],
              queue: [],
@@ -155,7 +156,7 @@
                  htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + task.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
              }
          }">
-        
+
         <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
             <span class="text-sm font-bold text-fuchsia-500">Priority Actions</span>
             <span class="text-xs text-slate-500 font-mono flex items-center gap-2">
@@ -165,50 +166,53 @@
                 <span>[<span x-text="totalTasks"></span>]</span>
             </span>
         </div>
-        
-        <div class="flex flex-col p-2 space-y-2 overflow-y-auto custom-scrollbar relative min-h-[300px]">
+
+        <div class="flex flex-col p-2 space-y-2 overflow-y-auto custom-scrollbar relative">
             <template x-for="(task, index) in visibleTasks" :key="task.id">
                 <div @click="if(reviewingTaskId !== task.id) executeTask(task)"
-                     class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
-                     :class="getGlowClass(task)"
-                     :id="'task-card-' + task.id"
-                     x-transition:enter="transition ease-out duration-500 transform"
-                     x-transition:enter-start="opacity-0 translate-y-8 scale-95"
-                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                     x-transition:leave="transition ease-in duration-300 transform"
-                     x-transition:leave-start="opacity-100 translate-x-0"
-                     x-transition:leave-end="opacity-0 -translate-x-full">
-                    
+                    class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
+                    :class="getGlowClass(task)" :id="'task-card-' + task.id"
+                    x-transition:enter="transition ease-out duration-500 transform"
+                    x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    x-transition:leave="transition ease-in duration-300 transform"
+                    x-transition:leave-start="opacity-100 translate-x-0"
+                    x-transition:leave-end="opacity-0 -translate-x-full">
+
                     <!-- Header Row -->
                     <div class="flex items-start justify-between w-full mb-2">
                         <div class="flex flex-col gap-1 w-5/6">
-                            <span class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-widest w-fit" 
-                                  :class="getCategoryBadge(task).color" 
-                                  x-text="getCategoryBadge(task).label"></span>
+                            <span
+                                class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-widest w-fit"
+                                :class="getCategoryBadge(task).color" x-text="getCategoryBadge(task).label"></span>
                             <div class="flex items-center gap-2 mt-1">
-                                <div class="text-xs font-bold text-slate-200 tracking-wide truncate" x-text="task.title"></div>
+                                <div class="text-xs font-bold text-slate-200 tracking-wide truncate"
+                                    x-text="task.title"></div>
                             </div>
                         </div>
                         <!-- Dismiss Button -->
-                        <button @click.stop.prevent="dismissTask(task)" class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0" title="Dismiss">
+                        <button @click.stop.prevent="dismissTask(task)"
+                            class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0"
+                            title="Dismiss">
                             <i class="fa-solid fa-times"></i>
                         </button>
                     </div>
-                    
+
                     <!-- Context Row -->
                     <div class="mb-2 pr-2">
-                        <div class="text-xs text-slate-400 line-clamp-2 leading-relaxed" x-text="task.subtitle || task.message"></div>
+                        <div class="text-xs text-slate-400 line-clamp-2 leading-relaxed"
+                            x-text="task.subtitle || task.message"></div>
                     </div>
-                    
+
                     <!-- Action Row -->
                     <div class="flex justify-end mt-1">
-                        <button @click.prevent="executeTask(task)" 
-                                class="flex items-center gap-1.5 text-xs font-mono font-bold transition-all duration-300"
-                                :class="reviewingTaskId === task.id ? 'text-fuchsia-600 cursor-default' : 'text-fuchsia-500/80 group-hover:text-fuchsia-300'">
-                            <span class="transition-colors" 
-                                  x-text="reviewingTaskId === task.id ? 'Reviewing...' : (task.action_payload || 'Send to Copilot')"></span>
-                            <i class="fa-solid transition-transform duration-300" 
-                               :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin' : 'fa-arrow-right group-hover:translate-x-1'"></i>
+                        <button @click.prevent="executeTask(task)"
+                            class="flex items-center gap-1.5 text-xs font-mono font-bold transition-all duration-300"
+                            :class="reviewingTaskId === task.id ? 'text-fuchsia-600 cursor-default' : 'text-fuchsia-500/80 group-hover:text-fuchsia-300'">
+                            <span class="transition-colors"
+                                x-text="reviewingTaskId === task.id ? 'Reviewing...' : (task.action_payload || 'Send to Copilot')"></span>
+                            <i class="fa-solid transition-transform duration-300"
+                                :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin' : 'fa-arrow-right group-hover:translate-x-1'"></i>
                         </button>
                     </div>
                 </div>
