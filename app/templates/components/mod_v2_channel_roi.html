@@ -9,82 +9,74 @@
         </button>
     </div>
 
-    <!-- The actual chart wrapper -->
-    <div class="flex-grow w-full relative min-h-[250px] flex items-center justify-center" x-data="{
+    <div class="flex-grow flex flex-col justify-center" x-data="{
+        metrics: [],
         initChart() {
             const campaignId = document.getElementById('current_campaign').value;
             fetch(`/api/v2/dashboard/v2/channel-roi-data?campaign_id=${campaignId}`)
                 .then(res => res.json())
                 .then(data => {
-                    const ctx = this.$refs.roiCanvas.getContext('2d');
-                    
-                    const labels = ['LinkedIn Ads', 'Email Campaigns', 'Web Traffic'];
-                    const roiData = [
-                        data.linkedin ? data.linkedin.roi_multiplier : 0,
-                        data.email ? data.email.roi_multiplier : 0,
-                        data.web ? data.web.roi_multiplier : 0
-                    ];
-
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'ROI Multiplier',
-                                data: roiData,
-                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                                hoverBackgroundColor: 'rgba(52, 211, 153, 1)',
-                                borderRadius: 4,
-                                barThickness: 24
-                            }]
+                    let rawMetrics = [
+                        { 
+                            name: 'LinkedIn Ads', 
+                            roi: data.linkedin ? data.linkedin.roi_multiplier : 0, 
+                            dot: 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)]',
+                            barColor: 'bg-blue-500'
                         },
-                        options: {
-                            indexAxis: 'y',
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    titleColor: '#94a3b8',
-                                    bodyColor: '#fff',
-                                    borderColor: '#334155',
-                                    borderWidth: 1,
-                                    padding: 12,
-                                    displayColors: false,
-                                    callbacks: {
-                                        label: function(context) {
-                                            return context.parsed.x + 'x ROI';
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    grid: { color: '#1e293b', drawBorder: false },
-                                    ticks: {
-                                        color: '#64748b',
-                                        font: { size: 10, family: 'Inter' },
-                                        callback: function(value) {
-                                            return value + 'x';
-                                        }
-                                    },
-                                    border: { display: false }
-                                },
-                                y: {
-                                    grid: { display: false, drawBorder: false },
-                                    ticks: {
-                                        color: '#94a3b8',
-                                        font: { size: 11, family: 'Inter', weight: 'bold' }
-                                    },
-                                    border: { display: false }
-                                }
-                            }
+                        { 
+                            name: 'Email Campaigns', 
+                            roi: data.email ? data.email.roi_multiplier : 0, 
+                            dot: 'bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.5)]',
+                            barColor: 'bg-violet-500'
+                        },
+                        { 
+                            name: 'Web Traffic', 
+                            roi: data.web ? data.web.roi_multiplier : 0, 
+                            dot: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]',
+                            barColor: 'bg-cyan-500'
                         }
+                    ];
+                    
+                    // Use a logarithmic scale for bar width so extreme outliers don't break the visualization
+                    const maxLog = Math.max(...rawMetrics.map(m => Math.log10(Math.max(m.roi, 1))));
+                    
+                    this.metrics = rawMetrics.map(m => {
+                        m.targetPercentage = maxLog > 0 ? (Math.log10(Math.max(m.roi, 1)) / maxLog) * 100 : 0;
+                        m.targetPercentage = Math.max(m.targetPercentage, 2);
+                        m.percentage = 0;
+                        return m;
                     });
+
+                    setTimeout(() => {
+                        this.metrics.forEach(m => m.percentage = m.targetPercentage);
+                    }, 100);
                 });
+        },
+        formatNumber(val) {
+            return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(val);
         }
     }" x-init="initChart()">
-        <canvas x-ref="roiCanvas"></canvas>
+        
+        <div class="relative py-2">
+            <template x-for="(item, index) in metrics" :key="item.name">
+                <div class="mb-8 last:mb-0">
+                    <div class="flex justify-between items-end mb-2">
+                        <div class="flex items-center gap-2">
+                            <div :class="`w-1.5 h-1.5 rounded-full ${item.dot}`"></div>
+                            <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest" x-text="item.name"></h4>
+                        </div>
+                        <div class="flex items-baseline gap-0.5">
+                            <span class="text-xl font-black text-slate-200 tracking-tight" x-text="formatNumber(item.roi)"></span>
+                            <span class="text-[10px] font-bold text-slate-500 ml-0.5">x</span>
+                        </div>
+                    </div>
+                    <!-- Bar -->
+                    <div class="h-1 w-full bg-dark-800 rounded-full overflow-hidden">
+                        <div :class="`h-full ${item.barColor} rounded-full transition-all duration-1000 ease-out`" :style="`width: ${item.percentage}%`"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        
     </div>
 </div>
