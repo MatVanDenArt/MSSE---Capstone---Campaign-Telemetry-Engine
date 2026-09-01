@@ -35,7 +35,7 @@
                             dot: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]',
                             barColor: 'bg-cyan-500'
                         }
-                    ];
+                    ].sort((a, b) => b.roi - a.roi);
                     
                     // Use a logarithmic scale for bar width so extreme outliers don't break the visualization
                     const maxLog = Math.max(...rawMetrics.map(m => Math.log10(Math.max(m.roi, 1))));
