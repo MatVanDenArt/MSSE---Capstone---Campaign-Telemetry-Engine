@@ -20,8 +20,15 @@ def calculate_blended_cpa() -> dict:
         
         # Get total spend
         cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
-        spend_row = cursor.fetchone()
-        total_spend = spend_row["total_spend"] if spend_row and spend_row["total_spend"] else 0.0
+        li_spend = cursor.fetchone()["total_spend"] or 0.0
+        
+        cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
+        em_spend = (cursor.fetchone()["c"] or 0) * 1.50
+        
+        cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
+        web_spend = (cursor.fetchone()["c"] or 0) * 0.80
+        
+        total_spend = li_spend + em_spend + web_spend
         
         # Get total closed won opps
         cursor.execute("SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won'")
@@ -228,7 +235,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
                 )
             """)
             accounts = cursor.fetchone()["acct_count"] or 0
-            cpa = spend / accounts if accounts > 0 else 0.0
+            cpa = spend / conversions if conversions > 0 else 0.0
             
             return {"spend": spend, "accounts": accounts, "cpa": cpa, "conversions": conversions}
 
@@ -256,7 +263,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         
         cursor.execute(f"SELECT COUNT(DISTINCT account_id) as acct_count FROM crm_users WHERE user_id IN (SELECT user_id FROM ga4_events WHERE user_id IS NOT NULL {date_filter})")
         baseline_accounts = cursor.fetchone()["acct_count"] or 0
-        baseline_cpa = baseline_spend / baseline_accounts if baseline_accounts > 0 else 0.0
+        baseline_cpa = baseline_spend / baseline_conversions if baseline_conversions > 0 else 0.0
         
         baseline_metrics = {"spend": baseline_spend, "accounts": baseline_accounts, "cpa": baseline_cpa, "conversions": baseline_conversions}
         
@@ -290,7 +297,7 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
                 elif metric_type == "cpa":
                     cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE campaign_id = '{campaign_id}' AND timestamp >= {day_start} AND timestamp < {day_end}")
                     s = cursor.fetchone()["s"] or 0
-                    cursor.execute(f"SELECT COUNT(DISTINCT account_id) as c FROM crm_users WHERE user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = '{campaign_id}')")
+                    cursor.execute(f"SELECT COUNT(*) as c FROM crm_opps WHERE utm_campaign = '{campaign_id}' AND event_type = 'Closed Won' AND timestamp >= {day_start} AND timestamp < {day_end}")
                     c = cursor.fetchone()["c"] or 1
                     val = s / c
                 data.append(val)
