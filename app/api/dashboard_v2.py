@@ -309,9 +309,21 @@ from functools import lru_cache
 
 @lru_cache(maxsize=32)
 def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
-    from app.services.analytics_v2 import get_kpi_benchmarks, generate_strategic_tldr
+    from app.services.analytics_v2 import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
-    return generate_strategic_tldr(benchmarks)
+    
+    campaigns = get_all_campaigns()
+    campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
+    
+    payload = {
+        "pipeline_generated_dollars": campaign_data["total_pipeline_value"] if campaign_data else 0,
+        "total_spend_dollars": benchmarks["live"]["spend"],
+        "cpa_dollars": benchmarks["live"]["cpa"],
+        "cpa_percent_change": benchmarks["comparisons"]["cpa"]["value"],
+        "closed_won_contracts": benchmarks["live"]["conversions"]
+    }
+    
+    return generate_strategic_tldr(payload)
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
 def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):

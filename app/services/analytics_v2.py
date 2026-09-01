@@ -581,13 +581,18 @@ def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
         return assets
     except Exception as e:
         raise e
-def generate_strategic_tldr(metrics: dict) -> str:
+def generate_strategic_tldr(payload: dict) -> str:
     from google import genai
     from google.genai import types
     try:
         from app.services.llm_rotator import get_genai_client
         
-        prompt = f"You are an AI Analyst. Review these campaign metrics: {metrics}. Write a strict 2-3 sentence executive summary. Highlight pipeline generated and CPA anomalies. Format it in plain text without markdown."
+        prompt = f"""You are a B2B Marketing AI Analyst. Review this executive campaign summary data: {payload}.
+Write a strict 2-3 sentence executive summary for the CMO.
+Evaluate if the pipeline generated justifies the total spend.
+Highlight the CPA and note if the CPA trend is improving or worsening.
+Do NOT mention sparklines, tracking anomalies, or technical metrics.
+Format in plain text without markdown."""
         
         from app.services.llm_rotator import get_cached_response, set_cached_response
         cached = get_cached_response(prompt)
