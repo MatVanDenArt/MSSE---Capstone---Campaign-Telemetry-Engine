@@ -783,7 +783,7 @@ def get_ai_recommended_actions(campaign_id: str, timeframe: int) -> list:
     from datetime import datetime, timedelta
     from app.services.llm_rotator import get_genai_client, get_cached_response, set_cached_response
     from google.genai import types
-    from app.services.analytics_v2 import get_kpi_benchmarks
+    from app.services.analytics import get_kpi_benchmarks
 
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
@@ -915,7 +915,7 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
             
         actions = []
         
-        from app.services.analytics_v2 import get_kpi_benchmarks, get_tam_penetration, get_campaign_start_date
+        from app.services.analytics import get_kpi_benchmarks, get_tam_penetration, get_campaign_start_date
         benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
         live_cpa = benchmarks["live"]["cpa"]
         cpa_diff = benchmarks["comparisons"]["cpa"]["value"]

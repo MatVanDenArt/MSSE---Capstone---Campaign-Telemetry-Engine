@@ -14,7 +14,7 @@
         metrics: [],
         initEfficiency() {
             const campaignId = document.getElementById('current_campaign').value;
-            fetch(`/api/v2/dashboard/v2/channel-roi-data?campaign_id=${campaignId}&timeframe={{ timeframe }}`)
+            fetch(`/api/dashboard/v2/channel-roi-data?campaign_id=${campaignId}&timeframe={{ timeframe }}`)
                 .then(res => res.json())
                 .then(data => {
                     this.metrics = [

@@ -71,7 +71,7 @@
                  window.addEventListener('task-resolved', (e) => {
                      if (e.detail && e.detail.id) {
                          this.removeTask(e.detail.id, 'handoff');
-                         htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + e.detail.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
+                         htmx.ajax('DELETE', '/api/dashboard/trigger/' + e.detail.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
                          if (this.reviewingTaskId === e.detail.id) {
                              this.reviewingTaskId = null;
                          }
@@ -157,7 +157,7 @@
              },
              dismissTask(task) {
                  this.removeTask(task.id, 'dismiss');
-                 htmx.ajax('DELETE', '/api/v2/dashboard/trigger/' + task.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
+                 htmx.ajax('DELETE', '/api/dashboard/trigger/' + task.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
              }
          }">
 

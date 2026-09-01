@@ -43,13 +43,13 @@
             this.loading = true;
             try {
                 // Fetch V2 Account Data
-                const abmRes = await fetch(`/api/v2/dashboard/abm-data?campaign_id=${campaignId}`);
+                const abmRes = await fetch(`/api/dashboard/abm-data?campaign_id=${campaignId}`);
                 const abmData = await abmRes.json();
                 this.accounts = abmData.accounts;
                 this.topics = abmData.topics;
                 
                 // Fetch V1 User Data for Global Pipeline
-                const userRes = await fetch(`/api/v2/dashboard/audience-data-scoped?campaign_id=${campaignId}`);
+                const userRes = await fetch(`/api/dashboard/audience-data-scoped?campaign_id=${campaignId}`);
                 const userData = await userRes.json();
                 this.allUsers = userData.users || [];
                 
@@ -196,7 +196,7 @@
                 top_intent_topics: topTopics
             };
             
-            fetch('/api/v2/dashboard/generate-ai-insight', {
+            fetch('/api/dashboard/generate-ai-insight', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -220,7 +220,7 @@
                 this.isGeneratingDiagnosis = false;
             });
             
-            htmx.ajax('GET', '/api/v2/dashboard/audience-actions', {
+            htmx.ajax('GET', '/api/dashboard/audience-actions', {
                 target: 'body', 
                 swap: 'none', 
                 values: {
@@ -232,7 +232,7 @@
         
         closeDeepDive() {
             this.currentView = 'global';
-            htmx.ajax('GET', '/api/v2/dashboard/audience-actions', { 
+            htmx.ajax('GET', '/api/dashboard/audience-actions', { 
                 target: 'body', 
                 swap: 'none', 
                 values: { 

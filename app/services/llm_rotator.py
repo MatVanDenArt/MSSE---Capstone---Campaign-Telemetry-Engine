@@ -200,7 +200,7 @@ def get_legacy_generative_model(model_name="gemini-3.6-flash"):
     model = genai.GenerativeModel(model_name)
     return LegacyModelWrapper(model)
 
-from app.services.analytics_v2 import (
+from app.services.analytics import (
     calculate_blended_cpa,
     get_account_penetration,
     evaluate_trickle_threshold,

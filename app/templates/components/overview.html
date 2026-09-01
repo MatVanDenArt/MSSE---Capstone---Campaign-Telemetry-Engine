@@ -41,7 +41,7 @@
         <div>
             <h2 class="text-xs uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
             <div class="text-[14px] text-slate-300 font-mono leading-relaxed"
-                hx-get="/api/v2/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}"
+                hx-get="/api/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}"
                 hx-trigger="load" hx-swap="innerHTML">
                 <span class="animate-pulse text-fuchsia-400/70"><i
                         class="fa-solid fa-circle-notch fa-spin mr-2"></i>Generating strategic insight...</span>
@@ -50,7 +50,7 @@
     </div>
 
     <!-- V2 North Star Metric Cards -->
-    {% include 'components/overview_cards_v2.html' %}
+    {% include 'components/overview_cards.html' %}
 
     <!-- V2 North Star Visualizations -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 ">
@@ -61,5 +61,5 @@
 
     <!-- Action Center (OOB Copilot) -->
     {% include 'components/oob_copilot.html' %}
-    <div hx-get="/api/v2/dashboard/action-center?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load" class="hidden"></div>
+    <div hx-get="/api/dashboard/action-center?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load" class="hidden"></div>
 </div>
