@@ -1671,5 +1671,83 @@ def get_funnel_drilldown_data(campaign_id: str, stage: str, timeframe: int = 0) 
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        data = []
+        
+        tf_ga = f" AND e.timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        tf_crm = f" AND o.created_date >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        
+        if stage == 'known_users':
+            cursor.execute(f"""
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, u.user_id
+                FROM ga4_events e 
+                JOIN crm_users u ON e.user_id = u.user_id 
+                WHERE e.utm_campaign = ? AND e.user_id IS NOT NULL {tf_ga}
+                LIMIT 50
+            """, (campaign_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[5]))
+                data.append({
+                    "company_name": r[0],
+                    "first_name": r[1],
+                    "last_name": r[2],
+                    "job_title": r[3],
+                    "seniority": r[4],
+                    "value": None,
+                    "interactions": len(timeline),
+                    "timeline": timeline,
+                    "id": str(r[5])
+                })
+        elif stage == 'opportunities':
+            cursor.execute(f"""
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value, u.user_id
+                FROM crm_opps o 
+                JOIN crm_users u ON o.user_id = u.user_id 
+                WHERE o.utm_campaign = ? {tf_crm}
+                GROUP BY u.user_id
+                ORDER BY value DESC
+            """, (campaign_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[6]))
+                data.append({
+                    "company_name": r[0],
+                    "first_name": r[1],
+                    "last_name": r[2],
+                    "job_title": r[3],
+                    "seniority": r[4],
+                    "value": r[5],
+                    "interactions": len(timeline),
+                    "timeline": timeline,
+                    "id": str(r[6])
+                })
+        elif stage == 'contracts':
+            cursor.execute(f"""
+                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value, u.user_id
+                FROM crm_opps o 
+                JOIN crm_users u ON o.user_id = u.user_id 
+                WHERE o.utm_campaign = ? AND o.event_type = 'Closed Won' {tf_crm}
+                GROUP BY u.user_id
+                ORDER BY value DESC
+            """, (campaign_id,))
+            rows = cursor.fetchall()
+            for r in rows:
+                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[6]))
+                data.append({
+                    "company_name": r[0],
+                    "first_name": r[1],
+                    "last_name": r[2],
+                    "job_title": r[3],
+                    "seniority": r[4],
+                    "value": r[5],
+                    "interactions": len(timeline),
+                    "timeline": timeline,
+                    "id": str(r[6])
+                })
+                
+        conn.close()
+        return data
+    except Exception as e:
+        import traceback
         print(traceback.format_exc())
         return []
