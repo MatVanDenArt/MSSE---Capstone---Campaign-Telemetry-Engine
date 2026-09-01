@@ -61,7 +61,7 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
             {"label": "Pacing Analysis", "command": "Analyze budget pacing against pipeline generation targets.", "intent": "analyze", "icon": "fa-money-bill-trend-up"},
             {"label": "Executive KPIs", "command": "Pull executive pipeline KPIs and blended CPA.", "intent": "analyze", "icon": "fa-briefcase"}
         ],
-        "copilot_tasks": generate_next_best_actions(campaign_id)
+        "copilot_tasks": generate_next_best_actions(campaign_id, timeframe)
     })
 @router.get("/dashboard/performance", response_class=HTMLResponse)
 def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
@@ -587,8 +587,8 @@ def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARB
     })
 
 @router.get("/dashboard/alerts", response_class=HTMLResponse)
-def get_alerts_view(request: Request, campaign_id: str):
-    actions = generate_next_best_actions(campaign_id)
+def get_alerts_view(request: Request, campaign_id: str, timeframe: int = 0):
+    actions = generate_next_best_actions(campaign_id, timeframe)
     if not actions:
         return HTMLResponse(content="") # Empty response if no alerts
     return templates.TemplateResponse(request=request, name="components/alerts.html", context={

@@ -749,7 +749,7 @@ def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
         return assets
     except Exception as e:
         raise e
-def generate_next_best_actions(campaign_id: str) -> list:
+def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
     try:
         import uuid
         from datetime import datetime, timedelta
@@ -768,55 +768,55 @@ def generate_next_best_actions(campaign_id: str) -> list:
             enriched = []
             for r in existing:
                 d = dict(r)
-                # Map old DB fields to UI fields if missing
-                if 'icon' not in d:
-                    d['icon'] = 'fa-bolt'
-                if 'icon_color' not in d:
-                    d['icon_color'] = 'text-fuchsia-500'
-                if 'title' not in d:
-                    d['title'] = 'Action Required'
-                if 'action_command' not in d:
-                    d['action_command'] = f"Execute action for {d.get('action_payload', 'this trigger')}"
+                if 'icon' not in d: d['icon'] = 'fa-bolt'
+                if 'icon_color' not in d: d['icon_color'] = 'text-fuchsia-500'
+                if 'title' not in d: d['title'] = 'Action Required'
+                if 'action_command' not in d: d['action_command'] = f"Execute action for {d.get('action_payload', 'this trigger')}"
                 enriched.append(d)
             return enriched
             
         actions = []
         
-        # Rule 1: High Spend, Zero CRM Opps
-        cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE campaign_id = '{campaign_id}'")
-        spend = cursor.fetchone()["s"] or 0
+        from app.services.analytics_v2 import get_kpi_benchmarks, get_tam_penetration, get_campaign_start_date
+        benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
+        live_cpa = benchmarks["live"]["cpa"]
+        cpa_diff = benchmarks["comparisons"]["cpa"]["value"]
+        live_spend = benchmarks["live"]["spend"]
         
-        cursor.execute(f"SELECT COUNT(*) as c FROM crm_opps WHERE utm_campaign = '{campaign_id}'")
-        opps = cursor.fetchone()["c"] or 0
-        
-        if spend > 1000 and opps == 0:
+        # Rule 1: CPA Anomaly
+        if live_spend > 1000 and cpa_diff > 30:
             actions.append({
                 "id": f"TRG_{uuid.uuid4().hex[:8]}",
                 "campaign_id": campaign_id,
                 "type": "alert",
-                "message": f"LinkedIn spend has exceeded ${spend:,.0f} with zero pipeline generated.",
-                "action_payload": "Pause Ads",
+                "message": f"Blended CPA has spiked to ${live_cpa:,.0f} (+{cpa_diff:.1f}% vs baseline).",
+                "action_payload": "Reallocate Budget",
                 "resolved_status": 0,
                 "created_at": datetime.now().isoformat(),
                 "expires_at": (datetime.now() + timedelta(hours=48)).isoformat(),
                 "icon": "fa-triangle-exclamation",
                 "icon_color": "text-rose-500",
-                "title": "Budget Drain Detected",
-                "action_command": "Analyze funnel velocity to identify bottlenecks"
+                "title": "CPA Anomaly Detected",
+                "action_command": "Run pacing analysis to identify inefficient channels"
             })
             
-        # Rule 2: High Traffic, Low Conversion
-        cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'")
-        traffic = cursor.fetchone()["c"] or 0
-        cursor.execute(f"SELECT COUNT(*) as c FROM mailchimp_events WHERE campaign_id LIKE '%{campaign_id}%'")
-        mc = cursor.fetchone()["c"] or 0
+        # Rule 2: Funnel Conversion Drop-off
+        tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' {tf_condition}")
+        total_sessions = cursor.fetchone()["c"] or 0
         
-        if traffic > 100 and mc < (traffic * 0.02):
+        cursor.execute(f"SELECT COUNT(*) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' AND user_id IS NOT NULL {tf_condition}")
+        known_users = cursor.fetchone()["c"] or 0
+        
+        conversion_rate = (known_users / total_sessions * 100) if total_sessions > 0 else 0
+        min_visits = (15 * timeframe) if timeframe > 0 else 100
+        
+        if total_sessions >= min_visits and conversion_rate < 2.5:
             actions.append({
                 "id": f"TRG_{uuid.uuid4().hex[:8]}",
                 "campaign_id": campaign_id,
                 "type": "insight",
-                "message": f"Traffic is healthy ({traffic} visits) but conversion is below 2%.",
+                "message": f"Web traffic is healthy but Top-of-Funnel conversion is low ({conversion_rate:.1f}%).",
                 "action_payload": "A/B Test Landing Page",
                 "resolved_status": 0,
                 "created_at": datetime.now().isoformat(),
@@ -824,8 +824,39 @@ def generate_next_best_actions(campaign_id: str) -> list:
                 "icon": "fa-circle-exclamation",
                 "icon_color": "text-amber-500",
                 "title": "Conversion Bottleneck",
-                "action_command": "Draft new messaging for landing page"
+                "action_command": "Draft new messaging or adjust gating strategy"
             })
+            
+        # Rule 3: TAM Penetration Stagnation
+        tam = get_tam_penetration(campaign_id)
+        penetration_str = str(tam.get("value", "0%")).replace("%", "")
+        try:
+            penetration = float(penetration_str)
+        except ValueError:
+            penetration = 0.0
+            
+        start_str = get_campaign_start_date(campaign_id)
+        if start_str != "Unknown":
+            try:
+                start_date = datetime.strptime(start_str, "%Y-%m-%d")
+                days_active = (datetime.now() - start_date).days
+                if days_active > 30 and penetration < 15.0:
+                    actions.append({
+                        "id": f"TRG_{uuid.uuid4().hex[:8]}",
+                        "campaign_id": campaign_id,
+                        "type": "insight",
+                        "message": f"Campaign active for {days_active} days but Tier 1 penetration is stuck at {penetration}%.",
+                        "action_payload": "Launch Outbound Sequence",
+                        "resolved_status": 0,
+                        "created_at": datetime.now().isoformat(),
+                        "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
+                        "icon": "fa-crosshairs",
+                        "icon_color": "text-sky-500",
+                        "title": "TAM Penetration Stalled",
+                        "action_command": "Draft targeted outbound sales sequence for Tier 1 accounts"
+                    })
+            except Exception as e:
+                pass
 
         # Default fallback task to ensure Copilot Action Center is never empty in V2 Demo
         if len(actions) == 0:
@@ -833,15 +864,15 @@ def generate_next_best_actions(campaign_id: str) -> list:
                 "id": f"TRG_{uuid.uuid4().hex[:8]}",
                 "campaign_id": campaign_id,
                 "type": "insight",
-                "message": "The 'Decarbonization Roadmap' asset is showing high fatigue among Tier 1 accounts.",
-                "action_payload": "Rotate Asset",
+                "message": "Campaign telemetry is fully optimized. No critical bottlenecks detected.",
+                "action_payload": "Generate Upsell Strategy",
                 "resolved_status": 0,
                 "created_at": datetime.now().isoformat(),
                 "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
-                "icon": "fa-rotate",
+                "icon": "fa-check-circle",
                 "icon_color": "text-emerald-500",
-                "title": "Asset Fatigue Detected",
-                "action_command": "Rotate fatigued Decarbonization Roadmap asset"
+                "title": "Campaign Optimized",
+                "action_command": "Draft Q4 upsell strategy for engaged Tier 1 accounts"
             })
             
         for a in actions:
