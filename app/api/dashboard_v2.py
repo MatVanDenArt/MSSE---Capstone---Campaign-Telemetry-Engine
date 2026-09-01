@@ -61,8 +61,17 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
             {"label": "Pacing Analysis", "command": "Analyze budget pacing against pipeline generation targets.", "intent": "analyze", "icon": "fa-money-bill-trend-up"},
             {"label": "Executive KPIs", "command": "Pull executive pipeline KPIs and blended CPA.", "intent": "analyze", "icon": "fa-briefcase"}
         ],
-        "copilot_tasks": generate_next_best_actions(campaign_id, timeframe)
+        "copilot_tasks": None
     })
+
+@router.get("/dashboard/action-center", response_class=HTMLResponse)
+def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
+    from app.services.analytics_v2 import generate_next_best_actions
+    copilot_tasks = generate_next_best_actions(campaign_id, timeframe)
+    return templates.TemplateResponse(request=request, name="components/oob_action_center.html", context={
+        "copilot_tasks": copilot_tasks
+    })
+
 @router.get("/dashboard/performance", response_class=HTMLResponse)
 def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
