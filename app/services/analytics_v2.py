@@ -863,7 +863,7 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
             actions.append({
                 "id": f"TRG_{uuid.uuid4().hex[:8]}",
                 "campaign_id": campaign_id,
-                "type": "insight",
+                "type": "opportunity",
                 "message": "Campaign telemetry is fully optimized. No critical bottlenecks detected.",
                 "action_payload": "Generate Upsell Strategy",
                 "resolved_status": 0,
@@ -871,7 +871,7 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                 "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
                 "icon": "fa-check-circle",
                 "icon_color": "text-emerald-500",
-                "title": "Campaign Optimized",
+                "title": "Maximum Efficiency",
                 "action_command": "Draft Q4 upsell strategy for engaged Tier 1 accounts"
             })
             
