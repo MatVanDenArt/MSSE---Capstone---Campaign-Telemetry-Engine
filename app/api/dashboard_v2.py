@@ -684,48 +684,56 @@ def ui_lab_channel_roi(campaign_id: str):
     return templates.TemplateResponse(request=Request({"type": "http"}), name="components/mod_channel_roi.html", context={"matrix": matrix})
 
 @router.get('/dashboard/v2/channel-roi-data')
-def v2_channel_roi_data(campaign_id: str):
+def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
     from app.services.analytics import get_db_connection
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # LinkedIn
-    cursor.execute('''SELECT SUM(spend_consumed) FROM linkedin_events WHERE campaign_id = ?''', (campaign_id,))
-    li_spend = cursor.fetchone()[0] or 0
+    tf_li = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_em = f" AND action_timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_ga = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_crm = f" AND created_date >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
     
-    cursor.execute('''
+    # LinkedIn
+    cursor.execute(f"SELECT SUM(spend_consumed) FROM linkedin_events WHERE campaign_id = ?{tf_li}", (campaign_id,))
+    row_li = cursor.fetchone()
+    li_spend = row_li[0] if row_li and row_li[0] else 0
+    
+    cursor.execute(f"""
         SELECT SUM(o.pipeline_value), COUNT(o.event_id)
         FROM crm_opps o
-        WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM linkedin_events WHERE campaign_id = ?)
-    ''', (campaign_id, campaign_id))
+        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM linkedin_events WHERE campaign_id = ? {tf_li})
+    """, (campaign_id, campaign_id))
     row = cursor.fetchone()
     li_pipe = row[0] or 0.0
     li_opps = row[1] or 0
     
     # Email
-    cursor.execute('''SELECT COUNT(event_id) FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' ''', (campaign_id,))
-    em_clicks = cursor.fetchone()[0] or 0
+    cursor.execute(f"SELECT COUNT(event_id) FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em}", (campaign_id,))
+    row_em = cursor.fetchone()
+    em_clicks = row_em[0] if row_em and row_em[0] else 0
     em_spend = em_clicks * 1.50 # Simulated CPC
     
-    cursor.execute('''
+    cursor.execute(f"""
         SELECT SUM(o.pipeline_value), COUNT(o.event_id)
         FROM crm_opps o
-        WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%')
-    ''', (campaign_id, campaign_id))
+        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em})
+    """, (campaign_id, campaign_id))
     row = cursor.fetchone()
     em_pipe = row[0] or 0.0
     em_opps = row[1] or 0
     
     # Web
-    cursor.execute('''SELECT COUNT(session_id) FROM ga4_events WHERE utm_campaign = ?''', (campaign_id,))
-    web_views = cursor.fetchone()[0] or 0
+    cursor.execute(f"SELECT COUNT(session_id) FROM ga4_events WHERE utm_campaign = ? {tf_ga}", (campaign_id,))
+    row_ga = cursor.fetchone()
+    web_views = row_ga[0] if row_ga and row_ga[0] else 0
     web_spend = web_views * 0.80 # Simulated CPC
     
-    cursor.execute('''
+    cursor.execute(f"""
         SELECT SUM(o.pipeline_value), COUNT(o.event_id)
         FROM crm_opps o
-        WHERE o.utm_campaign = ? AND o.user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = ?)
-    ''', (campaign_id, campaign_id))
+        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = ? {tf_ga})
+    """, (campaign_id, campaign_id))
     row = cursor.fetchone()
     web_pipe = row[0] or 0.0
     web_opps = row[1] or 0
@@ -746,6 +754,7 @@ def v2_channel_roi_data(campaign_id: str):
         "email": calc_metrics(em_spend, em_pipe, em_opps),
         "web": calc_metrics(web_spend, web_pipe, web_opps)
     })
+
 def ui_lab_channel_roi_data(campaign_id: str):
     from app.services.analytics import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))
@@ -914,15 +923,15 @@ def v2_api_targets(campaign_id: str):
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
 @router.get('/dashboard/v2/funnel-drilldown', response_class=HTMLResponse)
-def get_funnel_drilldown(request: Request, campaign_id: str, stage: str):
+def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0):
     from app.services.analytics import get_funnel_drilldown_data
-    data = get_funnel_drilldown_data(campaign_id, stage)
+    data = get_funnel_drilldown_data(campaign_id, stage, timeframe)
     return templates.TemplateResponse(request=request, name="components/mod_v2_funnel_modal.html", context={"data": data, "stage": stage})
 
 @router.get('/dashboard/ui-lab/funnel')
-def ui_lab_funnel(campaign_id: str):
+def ui_lab_funnel(campaign_id: str, timeframe: int = 0):
     from app.services.analytics import get_ui_lab_funnel_data
-    return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
+    return JSONResponse(content=get_ui_lab_funnel_data(campaign_id, timeframe))
 
 @router.get('/dashboard/ui-lab/heatmap')
 def ui_lab_heatmap(campaign_id: str):

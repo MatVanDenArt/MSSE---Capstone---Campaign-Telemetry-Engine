@@ -1297,39 +1297,42 @@ def get_channel_roi_data(campaign_id: str) -> dict:
         print(traceback.format_exc())
         return {'error': str(e)}
 
-def get_ui_lab_funnel_data(campaign_id: str) -> dict:
+def get_ui_lab_funnel_data(campaign_id: str, timeframe: int = 0) -> dict:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ?", (campaign_id,))
+        tf_ga = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        tf_crm = f" AND created_date >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        
+        cursor.execute(f"SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ? {tf_ga}", (campaign_id,))
         visitors = cursor.fetchone()[0] or 0
         
-        cursor.execute("SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ? AND bounce_flag = 0", (campaign_id,))
+        cursor.execute(f"SELECT COUNT(DISTINCT session_id) FROM ga4_events WHERE utm_campaign = ? AND bounce_flag = 0 {tf_ga}", (campaign_id,))
         engaged = cursor.fetchone()[0] or 0
         
-        cursor.execute("SELECT COUNT(DISTINCT user_id) FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL", (campaign_id,))
+        cursor.execute(f"SELECT COUNT(DISTINCT user_id) FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL {tf_ga}", (campaign_id,))
         known = cursor.fetchone()[0] or 0
         
-        cursor.execute("SELECT COUNT(DISTINCT user_id), SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ?", (campaign_id,))
+        cursor.execute(f"SELECT COUNT(DISTINCT user_id), SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ? {tf_crm}", (campaign_id,))
         pipe_row = cursor.fetchone()
         pipeline = pipe_row[0] or 0
         pipeline_val = pipe_row[1] or 0.0
         
-        cursor.execute("SELECT COUNT(DISTINCT user_id), SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ? AND event_type = 'Closed Won'", (campaign_id,))
+        cursor.execute(f"SELECT COUNT(DISTINCT user_id), SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ? AND event_type = 'Closed Won' {tf_crm}", (campaign_id,))
         won_row = cursor.fetchone()
         won = won_row[0] or 0
         won_val = won_row[1] or 0.0
         
         conn.close()
         return {
-            'visitors': visitors, 
-            'engaged': engaged, 
-            'known': known, 
-            'pipeline': pipeline, 
-            'pipeline_val': pipeline_val,
-            'won': won,
-            'won_val': won_val
+            "visitors": visitors,
+            "engaged": engaged,
+            "known": known,
+            "pipeline": pipeline,
+            "pipeline_val": pipeline_val,
+            "won": won,
+            "won_val": won_val
         }
     except Exception as e:
         return {'error': str(e)}
@@ -1663,83 +1666,10 @@ def _fetch_user_timeline(cursor, campaign_id, user_id):
         })
     return timeline
 
-def get_funnel_drilldown_data(campaign_id: str, stage: str) -> list:
+def get_funnel_drilldown_data(campaign_id: str, stage: str, timeframe: int = 0) -> list:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        data = []
-        if stage == 'known_users':
-            cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, u.user_id
-                FROM ga4_events e 
-                JOIN crm_users u ON e.user_id = u.user_id 
-                WHERE e.utm_campaign = ? AND e.user_id IS NOT NULL
-                LIMIT 50
-            """, (campaign_id,))
-            rows = cursor.fetchall()
-            for r in rows:
-                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[5]))
-                data.append({
-                    "company_name": r[0],
-                    "first_name": r[1],
-                    "last_name": r[2],
-                    "job_title": r[3],
-                    "seniority": r[4],
-                    "value": None,
-                    "interactions": len(timeline),
-                    "timeline": timeline,
-                    "id": str(r[5])
-                })
-        elif stage == 'opportunities':
-            cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value, u.user_id
-                FROM crm_opps o 
-                JOIN crm_users u ON o.user_id = u.user_id 
-                WHERE o.utm_campaign = ?
-                GROUP BY u.user_id
-                ORDER BY value DESC
-            """, (campaign_id,))
-            rows = cursor.fetchall()
-            for r in rows:
-                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[6]))
-                data.append({
-                    "company_name": r[0],
-                    "first_name": r[1],
-                    "last_name": r[2],
-                    "job_title": r[3],
-                    "seniority": r[4],
-                    "value": r[5],
-                    "interactions": len(timeline),
-                    "timeline": timeline,
-                    "id": str(r[6])
-                })
-        elif stage == 'contracts':
-            cursor.execute("""
-                SELECT DISTINCT u.company_name, u.first_name, u.last_name, u.job_title, u.seniority, SUM(o.pipeline_value) as value, u.user_id
-                FROM crm_opps o 
-                JOIN crm_users u ON o.user_id = u.user_id 
-                WHERE o.utm_campaign = ? AND o.event_type = 'Closed Won'
-                GROUP BY u.user_id
-                ORDER BY value DESC
-            """, (campaign_id,))
-            rows = cursor.fetchall()
-            for r in rows:
-                timeline = _fetch_user_timeline(cursor, campaign_id, str(r[6]))
-                data.append({
-                    "company_name": r[0],
-                    "first_name": r[1],
-                    "last_name": r[2],
-                    "job_title": r[3],
-                    "seniority": r[4],
-                    "value": r[5],
-                    "interactions": len(timeline),
-                    "timeline": timeline,
-                    "id": str(r[6])
-                })
-        
-        conn.close()
-        return data
-    except Exception as e:
-        print(f"Error in drilldown: {e}")
+        print(traceback.format_exc())
         return []
