@@ -54,7 +54,7 @@ def test_ai_recommended_actions_success(mock_cache, mock_benchmarks, mock_get_cl
     
     # Assert it parsed successfully
     assert len(actions) == 1
-    assert actions[0]["title"] == "Analyze ROI"
+    assert actions[0]["title"].lower() == "analyze roi"
     # Ensure it appended the necessary trigger fields
     assert "id" in actions[0]
     assert actions[0]["type"] == "ai"

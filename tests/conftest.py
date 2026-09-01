@@ -25,17 +25,17 @@ def setup_test_db():
         INSERT INTO crm_users (user_id, account_id, company_name, email, first_name, last_name, job_title, seniority, persona_type) 
         VALUES (1, 100, 'Acme Corp', 'test@acme.com', 'Test', 'User', 'CEO', 'C-Level', 'Decision Maker');
         
-        INSERT INTO crm_opps (opp_id, user_id, utm_campaign, pipeline_stage, pipeline_value, event_type, timestamp)
-        VALUES ('OPP1', 1, 'CMP_TEST', 'Negotiation', 500000.0, 'Opportunity Created', datetime('now', '-5 days'));
-        
-        INSERT INTO crm_opps (opp_id, user_id, utm_campaign, pipeline_stage, pipeline_value, event_type, timestamp)
-        VALUES ('OPP2', 1, 'CMP_TEST', 'Closed Won', 250000.0, 'Closed Won', datetime('now', '-2 days'));
-        
-        INSERT INTO ga4_events (event_id, cookie_id, user_id, event_name, page_viewed, session_id, utm_campaign, utm_source, utm_medium, timestamp)
-        VALUES ('EV1', 'C1', 1, 'page_view', '/whitepaper', 'S1', 'CMP_TEST', 'linkedin', 'cpc', datetime('now', '-10 days'));
-        
-        INSERT INTO media_spend (spend_id, campaign_id, channel, spend_amount, impressions, clicks, date)
-        VALUES ('SP1', 'CMP_TEST', 'LinkedIn', 10000.0, 50000, 500, datetime('now', '-10 days'));
+        INSERT INTO crm_opps (event_id, user_id, account_id, event_type, pipeline_value, timestamp, utm_campaign)
+        VALUES ('OPP1', 1, 100, 'Opportunity Created', 500000.0, datetime('now', '-5 days'), 'CMP_TEST');
+
+        INSERT INTO crm_opps (event_id, user_id, account_id, event_type, pipeline_value, timestamp, utm_campaign)
+        VALUES ('OPP2', 1, 100, 'Closed Won', 250000.0, datetime('now', '-2 days'), 'CMP_TEST');
+
+        INSERT INTO ga4_events (session_id, cookie_id, utm_source, utm_campaign, page_viewed, bounce_flag, timestamp, user_id)
+        VALUES ('S1', 'C1', 'linkedin', 'CMP_TEST', '/whitepaper', 0, datetime('now', '-10 days'), 1);
+
+        INSERT INTO linkedin_events (event_id, campaign_id, ad_id, cookie_id, utm_source, spend_consumed, timestamp, user_id)
+        VALUES ('EV1', 'CMP_TEST', 'AD1', 'C1', 'linkedin', 10000.0, datetime('now', '-10 days'), 1);
     ''')
     conn.commit()
     conn.close()
