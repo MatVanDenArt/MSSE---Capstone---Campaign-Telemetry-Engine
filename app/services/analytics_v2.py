@@ -248,7 +248,10 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
 
         live_metrics = fetch_metrics(campaign_id, timeframe)
         
-        date_filter = f"AND timestamp < datetime('now', '-{timeframe} days')"
+        date_filter = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        
+        cursor.execute(f"SELECT COUNT(DISTINCT campaign_id) as n FROM linkedin_events WHERE 1=1 {date_filter}")
+        num_campaigns = cursor.fetchone()["n"] or 1
         
         cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE 1=1 {date_filter}")
         baseline_li = cursor.fetchone()["spend"] or 0.0
@@ -279,7 +282,13 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         baseline_accounts = cursor.fetchone()["acct_count"] or 0
         baseline_cpa = baseline_spend / baseline_conversions if baseline_conversions > 0 else 0.0
         
-        baseline_metrics = {"spend": baseline_spend, "accounts": baseline_accounts, "cpa": baseline_cpa, "conversions": baseline_conversions, "pipeline": baseline_pipeline}
+        baseline_metrics = {
+            "spend": baseline_spend / num_campaigns,
+            "accounts": baseline_accounts / num_campaigns,
+            "cpa": baseline_cpa,
+            "conversions": baseline_conversions / num_campaigns,
+            "pipeline": baseline_pipeline / num_campaigns
+        }
         
         def calc_diff(current, baseline, lower_is_better=False):
             if baseline == 0: return 0, False
@@ -777,20 +786,21 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
         cursor.execute("DELETE FROM action_triggers WHERE expires_at IS NOT NULL AND expires_at < ?", (datetime.now().isoformat(),))
         conn.commit()
         
-        # Check DB first
-        cursor.execute("SELECT * FROM action_triggers WHERE campaign_id = ? AND resolved_status = 0", (campaign_id,))
-        existing = cursor.fetchall()
-        if existing:
-            conn.close()
-            enriched = []
-            for r in existing:
-                d = dict(r)
-                if 'icon' not in d: d['icon'] = 'fa-bolt'
-                if 'icon_color' not in d: d['icon_color'] = 'text-fuchsia-500'
-                if 'title' not in d: d['title'] = 'Action Required'
-                if 'action_command' not in d: d['action_command'] = f"Execute action for {d.get('action_payload', 'this trigger')}"
-                enriched.append(d)
-            return enriched
+        # Check DB first for timeframe 0
+        if timeframe == 0:
+            cursor.execute("SELECT * FROM action_triggers WHERE campaign_id = ? AND resolved_status = 0", (campaign_id,))
+            existing = cursor.fetchall()
+            if existing:
+                conn.close()
+                enriched = []
+                for r in existing:
+                    d = dict(r)
+                    if 'icon' not in d: d['icon'] = 'fa-bolt'
+                    if 'icon_color' not in d: d['icon_color'] = 'text-fuchsia-500'
+                    if 'title' not in d: d['title'] = 'Action Required'
+                    if 'action_command' not in d: d['action_command'] = f"Execute action for {d.get('action_payload', 'this trigger')}"
+                    enriched.append(d)
+                return enriched
             
         actions = []
         
@@ -892,16 +902,18 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                 "action_command": "Draft Q4 upsell strategy for engaged Tier 1 accounts"
             })
             
-        for a in actions:
-            try:
-                cursor.execute("""
-                    INSERT INTO action_triggers (id, campaign_id, type, message, action_payload, resolved_status, created_at, expires_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (a["id"], a["campaign_id"], a["type"], a["message"], a["action_payload"], a["resolved_status"], a["created_at"], a["expires_at"]))
-            except Exception as e:
-                pass
-                
-        conn.commit()
+        if timeframe == 0:
+            for a in actions:
+                try:
+                    cursor.execute("""
+                        INSERT INTO action_triggers (id, campaign_id, type, message, action_payload, resolved_status, created_at, expires_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (a["id"], a["campaign_id"], a["type"], a["message"], a["action_payload"], a["resolved_status"], a["created_at"], a["expires_at"]))
+                except Exception as e:
+                    pass
+                    
+            conn.commit()
+            
         conn.close()
         return actions
     except Exception as e:
