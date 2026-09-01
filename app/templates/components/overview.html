@@ -1,121 +1,65 @@
-<div class="max-w-6xl mx-auto pb-48">
+<div class="max-w-7xl mx-auto pb-48">
     <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
-    
-    <!-- Top-Line AI TL;DR -->
-    <div class="bg-black p-4 md:p-6 border border-dark-800 border-l-4 border-l-fuchsia-500 flex flex-col md:flex-row items-start gap-4 mb-2">
-        <div class="mt-1 w-8 h-8 bg-fuchsia-900 border border-fuchsia-500/50 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-sparkles text-fuchsia-400 text-sm"></i>
+
+    <div class="flex items-center gap-3 mb-6">
+        <div
+            class="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            <i class="fa-solid fa-chart-line text-[12px] text-emerald-400"></i>
         </div>
         <div>
-            <h2 class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
-            <p class="text-sm md:text-base text-slate-300 leading-relaxed font-mono" hx-get="${apiPrefix}/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load">
-                <i class="fa-solid fa-terminal fa-fade text-fuchsia-500 mr-2"></i> Generating Strategic Insight...
-            </p>
+            <h2 class="text-lg font-bold text-slate-100 tracking-wide uppercase">The CMO Lobby</h2>
+            <p class="text-xs text-slate-500">Executive Strategic Overview & ROI</p>
+        </div>
+    </div>
+    <style>
+        @keyframes tldr-breathe {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(217, 70, 239, 0.05);
+                border-color: rgba(217, 70, 239, 0.15);
+                background-color: rgba(0, 0, 0, 1);
+            }
+
+            50% {
+                box-shadow: 0 0 25px rgba(217, 70, 239, 0.25);
+                border-color: rgba(217, 70, 239, 0.6);
+                background-color: rgba(217, 70, 239, 0.06);
+            }
+        }
+
+        .animate-tldr-breathe {
+            animation: tldr-breathe 4s ease-in-out infinite;
+        }
+    </style>
+    <!-- Top-Line AI TL;DR (V1 styled with V2 breathing) -->
+    <div
+        class="animate-tldr-breathe bg-black p-4 md:p-6 border border-dark-800 border-l-4 border-l-fuchsia-500 flex flex-col md:flex-row items-start gap-4 mb-6">
+        <div class="mt-1 w-8 h-8 bg-fuchsia-900 border border-fuchsia-500/50 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400 text-sm"></i>
+        </div>
+        <div>
+            <h2 class="text-xs uppercase font-bold text-slate-500 mb-1 tracking-widest">Strategic TL;DR</h2>
+            <div class="text-[14px] text-slate-300 font-mono leading-relaxed"
+                hx-get="/api/dashboard/tldr?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}"
+                hx-trigger="load" hx-swap="innerHTML">
+                <span class="animate-pulse text-fuchsia-400/70"><i
+                        class="fa-solid fa-circle-notch fa-spin mr-2"></i>Generating strategic insight...</span>
+            </div>
         </div>
     </div>
 
-    <!-- Quant Core (Metrics) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-        {% if tam and sov %}
-        <!-- Target Account Penetration (TAM) -->
-        <button hx-get="/api/v2/dashboard/target-accounts-modal?campaign_id={{ campaign_id }}" hx-target="body" hx-swap="beforeend" class="bg-black border border-brand-500/50 flex flex-col justify-between hover:border-brand-500 transition-colors relative overflow-hidden h-32 w-full text-left group">
-            <div class="p-4 relative z-10 flex justify-between items-start w-full">
-                <div>
-                    <div class="text-brand-500 text-[10px] uppercase font-bold tracking-widest mb-1">{{ tam.metric_name }}</div>
-                    <div class="text-2xl font-bold text-brand-400">{{ tam.value }}</div>
-                    <div class="text-[10px] text-slate-500 mt-1">{{ tam.engaged_accounts }} / {{ tam.total_target_accounts }} Tier 1 Accounts</div>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                    <div class="text-[10px] font-bold uppercase tracking-widest {% if tam.delta > 0 %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                        <i class="fa-solid {% if tam.delta > 0 %}fa-arrow-up{% elif tam.delta < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
-                        {{ tam.delta | replace('-', '') }}% vs avg
-                    </div>
-                    <!-- Micro-interaction icon -->
-                    <i class="fa-solid fa-arrow-right text-brand-500/0 group-hover:text-brand-500 transition-all duration-300 transform -translate-x-2 group-hover:translate-x-0"></i>
-                </div>
-            </div>
-            <!-- Progress Bar Background (Instead of sparkline) -->
-            <div class="absolute bottom-0 left-0 right-0 h-1 bg-dark-800 z-0">
-                <div class="h-full bg-brand-500" style="width: {{ tam.raw_value }}%;"></div>
-            </div>
-        </button>
-        
-        <!-- Topic Share of Voice (SOV) -->
-        <div class="bg-black border border-fuchsia-500/50 flex flex-col justify-between hover:border-fuchsia-500 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 relative z-10 flex justify-between items-start">
-                <div>
-                    <div class="text-fuchsia-500 text-[10px] uppercase font-bold tracking-widest mb-1">{{ sov.metric_name }}</div>
-                    <div class="text-2xl font-bold text-fuchsia-400">{{ sov.value }}</div>
-                    <div class="text-[10px] text-slate-500 mt-1">Competitor Avg: {{ sov.competitor_avg }}%</div>
-                </div>
-                <div class="text-[10px] font-bold uppercase tracking-widest {% if sov.delta > 0 %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                    <i class="fa-solid {% if sov.delta > 0 %}fa-arrow-up{% elif sov.delta < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
-                    {{ sov.delta | replace('-', '') }}% vs avg
-                </div>
-            </div>
-            <!-- Progress Bar Background -->
-            <div class="absolute bottom-0 left-0 right-0 h-1 bg-dark-800 z-0">
-                <div class="h-full bg-fuchsia-500" style="width: {{ sov.raw_value }}%;"></div>
-            </div>
-        </div>
-        {% endif %}
+    <!-- V2 North Star Metric Cards -->
+    {% include 'components/overview_cards.html' %}
 
-        <!-- CPA -->
-        <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-dark-600 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 relative z-10 flex justify-between items-start">
-                <div>
-                    <div class="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Cost Per Engaged Account</div>
-                    <div class="text-2xl font-bold text-slate-100">${{ "{:,.0f}".format(benchmarks.live.cpa) }}</div>
-                </div>
-                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.cpa.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                    <i class="fa-solid {% if benchmarks.comparisons.cpa.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.cpa.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
-                    {{ benchmarks.comparisons.cpa.value | replace('-', '') }}% vs avg
-                </div>
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
-                spark: {{ benchmarks.sparklines.cpa | tojson | safe }},
-                initChart() {
-                    const ctx = this.$refs.canvas.getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#525252', backgroundColor: 'rgba(82,82,82,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
-                    });
-                }
-            }" x-init="initChart()"><canvas x-ref="canvas"></canvas></div>
-        </div>
-
-        <!-- Conversions -->
-        <div class="bg-black border border-dark-800 flex flex-col justify-between hover:border-emerald-500/50 transition-colors relative overflow-hidden h-32">
-            <div class="p-4 relative z-10 flex justify-between items-start">
-                <div>
-                    <div class="text-emerald-500/70 text-[10px] uppercase font-bold tracking-widest mb-1">High-Intent Conversions</div>
-                    <div class="text-2xl font-bold text-emerald-500">{{ "{:,.0f}".format(benchmarks.live.conversions) }}</div>
-                </div>
-                <div class="text-[10px] font-bold uppercase tracking-widest {% if benchmarks.comparisons.conversions.good %}text-emerald-500{% else %}text-rose-500{% endif %}">
-                    <i class="fa-solid {% if benchmarks.comparisons.conversions.value > 0 %}fa-arrow-up{% elif benchmarks.comparisons.conversions.value < 0 %}fa-arrow-down{% else %}fa-minus{% endif %}"></i> 
-                    {{ benchmarks.comparisons.conversions.value | replace('-', '') }}% vs avg
-                </div>
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 h-12 opacity-50 z-0" x-data="{
-                spark: {{ benchmarks.sparklines.conversions | tojson | safe }},
-                initChart() {
-                    const ctx = this.$refs.canvas.getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line', data: { labels: Array(14).fill(''), datasets: [{ data: this.spark, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0, pointRadius: 0, borderWidth: 1 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, layout: { padding: 0 } }
-                    });
-                }
-            }" x-init="initChart()"><canvas x-ref="canvas"></canvas></div>
-        </div>
-    </div>
-
-    <!-- Module 1: Channel ROI -->
-    <div class="flex flex-col gap-6 mt-6">
+    <!-- V2 North Star Visualizations -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 ">
         {% include 'components/mod_channel_roi.html' %}
+        {% include 'components/mod_pipeline_efficiency.html' %}
+        {% include 'components/mod_velocity_funnel.html' %}
     </div>
 
-    <!-- OOB Copilot Integration -->
+    <!-- Action Center (OOB Copilot) -->
     {% include 'components/oob_copilot.html' %}
+    <div hx-get="/api/dashboard/action-center?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load" class="hidden"></div>
 </div>
-
-

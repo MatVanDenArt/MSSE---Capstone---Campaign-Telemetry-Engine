@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data
+from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice
 import sqlite3
 import urllib.parse
 
@@ -11,20 +11,29 @@ templates = Jinja2Templates(directory="app/templates")
 import os
 DB_PATH = os.getenv("DATABASE_URL", "capstone.db")
 
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
-async def get_workspace(request: Request, campaign_id: str):
+def get_workspace(request: Request, campaign_id: str):
     from app.services.analytics import get_campaign_start_date
     start_date = get_campaign_start_date(campaign_id)
     return templates.TemplateResponse(request=request, name="workspace.html", context={"campaign_id": campaign_id, "start_date": start_date})
 
 @router.get("/dashboard/sidebar", response_class=HTMLResponse)
-async def get_sidebar(request: Request):
+def get_sidebar(request: Request):
     campaigns = get_all_campaigns()
     return templates.TemplateResponse(request=request, name="components/sidebar.html", context={"campaigns": campaigns})
 
 @router.get("/dashboard/overview", response_class=HTMLResponse)
-async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
@@ -32,50 +41,56 @@ async def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
     penetration = data.get("account_penetration", {})
     assets = get_asset_fatigue(campaign_id, timeframe)
     
+    from app.services.analytics import get_tam_penetration, calculate_share_of_voice, get_all_campaigns
+    tam = get_tam_penetration(campaign_id)
+    sov = calculate_share_of_voice(campaign_id)
+    campaigns = get_all_campaigns()
+    campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
+
     return templates.TemplateResponse(request=request, name="components/overview.html", context={
         "campaign_id": campaign_id,
+        "campaign_data": campaign_data,
         "timeframe": timeframe,
         "benchmarks": benchmarks,
         "assets": assets,
+        "tam": tam,
+        "sov": sov,
         "copilot_context_name": "Executive Overview",
         "copilot_actions": [
-            {"label": "Gen Report", "command": "Generate an executive summary report"},
-            {"label": "Analyze Funnel", "command": "Analyze funnel velocity"},
-            {"label": "Forecast EOM", "command": "Forecast end of month ROI"}
+            {"label": "Forecast Shortfall", "command": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations.", "intent": "analyze", "icon": "fa-chart-pie"},
+            {"label": "Pacing Analysis", "command": "Analyze budget pacing against pipeline generation targets.", "intent": "analyze", "icon": "fa-money-bill-trend-up"},
+            {"label": "Executive KPIs", "command": "Pull executive pipeline KPIs and blended CPA.", "intent": "analyze", "icon": "fa-briefcase"}
         ],
-        "copilot_tasks": [
-            {
-                "icon": "fa-chart-line",
-                "icon_color": "text-rose-500",
-                "title": "Funnel Velocity Alert",
-                "subtitle": "CPA trending 12% higher than 30d avg",
-                "action_command": "Analyze funnel velocity to identify bottlenecks"
-            },
-            {
-                "icon": "fa-bullseye",
-                "icon_color": "text-brand-500",
-                "title": "Goal Tracking",
-                "subtitle": "MQL target at 85% for the month",
-                "action_command": "Forecast end of month ROI"
-            }
-        ]
+        "copilot_tasks": None
     })
+
+@router.get("/dashboard/action-center", response_class=HTMLResponse)
+def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
+    from app.services.analytics import generate_next_best_actions
+    copilot_tasks = generate_next_best_actions(campaign_id, timeframe)
+    return templates.TemplateResponse(request=request, name="components/oob_action_center.html", context={
+        "copilot_tasks": copilot_tasks
+    })
+
 @router.get("/dashboard/performance", response_class=HTMLResponse)
-async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     
+    import uuid
     dynamic_tasks = []
     if matrix:
         top_asset = max(matrix, key=lambda x: x.get('impact_score', 0))
         if top_asset:
             encoded_asset = urllib.parse.quote(top_asset.get('asset_name', 'Asset'))
+            tid = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
+                "id": tid,
                 "icon": "fa-arrow-trend-up",
                 "icon_color": "text-emerald-500",
                 "title": f"Top Asset: {top_asset.get('asset_name', 'Asset')}",
                 "subtitle": f"Driving high impact with {top_asset.get('engagement', 0)} interactions",
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
                 "is_programmatic": True
             })
             
@@ -88,12 +103,42 @@ async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBO
             if "Ad fatigue" in asset.get('ai_recommendation', ''):
                 short_subtitle = "Ad fatigue detected"
                 
+            tid = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
+                "id": tid,
                 "icon": "fa-battery-quarter",
                 "icon_color": "text-rose-500",
                 "title": f"Fatigue: {asset.get('asset_name', 'Asset')}",
                 "subtitle": short_subtitle,
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
+                "is_programmatic": True
+            })
+
+        # Simulated Triggers based on Optimal Comparator Outline
+        if len(matrix) > 2:
+            bounce_asset = matrix[1].get('asset_name', 'Landing Page')
+            enc_bounce = urllib.parse.quote(bounce_asset)
+            tid2 = f"TRG_{uuid.uuid4().hex[:8]}"
+            dynamic_tasks.append({
+                "id": tid2,
+                "icon": "fa-arrow-right-from-bracket",
+                "icon_color": "text-rose-500",
+                "title": f"High Bounce Rate: {bounce_asset}",
+                "subtitle": "Traffic is high but conversion is < 1%",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid2}",
+                "is_programmatic": True
+            })
+            
+            spike_asset = matrix[2].get('asset_name', 'Webinar')
+            enc_spike = urllib.parse.quote(spike_asset)
+            tid3 = f"TRG_{uuid.uuid4().hex[:8]}"
+            dynamic_tasks.append({
+                "id": tid3,
+                "icon": "fa-bolt",
+                "icon_color": "text-emerald-500",
+                "title": f"Conversion Spike: {spike_asset}",
+                "subtitle": "Converting at 3x the historical baseline",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid3}",
                 "is_programmatic": True
             })
 
@@ -104,15 +149,15 @@ async def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBO
         "matrix": matrix,
         "copilot_context_name": "Asset Performance",
         "copilot_actions": [
-            {"label": "Check Fatigue", "command": "Check for asset fatigue"},
-            {"label": "Suggest Rotation", "command": "Suggest asset rotation"},
-            {"label": "Analyze Mix", "command": "Analyze channel mix"}
+            {"label": "Analyze Fatigue", "command": "Analyze the fatigue rate of top assets against historical baselines.", "intent": "analyze", "icon": "fa-battery-quarter"},
+            {"label": "Compare Baselines", "command": "Compare asset baselines to identify the highest ROI channel.", "intent": "analyze", "icon": "fa-code-compare"},
+            {"label": "Generate A/B Test", "command": "Generate A/B test variants for underperforming assets.", "intent": "draft", "icon": "fa-flask"}
         ],
         "copilot_tasks": dynamic_tasks
     })
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
-async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     from app.services.analytics import get_prioritized_sales_targets
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
@@ -120,6 +165,7 @@ async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
     from datetime import datetime
     
     # Map prioritized sales targets to Copilot Priority Actions
+    import uuid
     raw_targets = get_prioritized_sales_targets(campaign_id)[:4] # Top 4 targets
     copilot_tasks = []
     for t in raw_targets:
@@ -144,14 +190,39 @@ async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
         encoded_name = urllib.parse.quote(t['name'])
         encoded_company = urllib.parse.quote(t['company'])
         
+        tid = f"TRG_{uuid.uuid4().hex[:8]}"
         copilot_tasks.append({
+            "id": tid,
             "icon": "fa-bullseye",
             "icon_color": icon_col,
             "title": f"Follow-up: {t['name']} ({t['company']})",
             "subtitle": subtitle,
             "is_programmatic": True,
-            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}"
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
         })
+        
+    # Simulated ABM Triggers based on Optimal Comparator Outline
+    tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
+    copilot_tasks.append({
+        "id": tid_stalled,
+        "icon": "fa-hourglass-end",
+        "icon_color": "text-rose-500",
+        "title": "Stalled Account: BP plc",
+        "subtitle": "High early engagement, zero activity in 14 days",
+        "is_programmatic": True,
+        "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
+    })
+    
+    tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
+    copilot_tasks.append({
+        "id": tid_cross,
+        "icon": "fa-network-wired",
+        "icon_color": "text-emerald-500",
+        "title": "Cross-Department Expansion: Shell",
+        "subtitle": "Engineering and Marketing consuming content simultaneously",
+        "is_programmatic": True,
+        "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
+    })
 
     return templates.TemplateResponse(request=request, name="components/audience.html", context={
         "campaign_id": campaign_id,
@@ -159,10 +230,87 @@ async def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZ
         "penetration": penetration,
         "copilot_context_name": "Audience & Accounts",
         "copilot_actions": [
-            {"label": "Sync SQLs to CRM", "command": "Sync SQLs to CRM"},
-            {"label": "Draft Outreach", "command": "Draft executive outreach"},
-            {"label": "Find Lookalikes", "command": "Find lookalike accounts"}
+            {"label": "Map Committee", "command": "Map the entire buying committee for stalled accounts and identify persona blind spots.", "intent": "analyze", "icon": "fa-sitemap"},
+            {"label": "Surge Signals", "command": "Identify intent surge signals across target accounts in the last 48 hours.", "intent": "analyze", "icon": "fa-bolt"},
+            {"label": "Draft Outreach", "command": "Draft a personalized outreach sequence for the stalled accounts.", "intent": "draft", "icon": "fa-envelope"}
         ],
+        "copilot_tasks": copilot_tasks
+    })
+
+@router.get("/dashboard/audience-actions", response_class=HTMLResponse)
+def get_audience_actions(request: Request, campaign_id: str, company: str = None):
+    from app.services.analytics import get_prioritized_sales_targets
+    import uuid
+    import urllib.parse
+    from datetime import datetime
+    
+    raw_targets = get_prioritized_sales_targets(campaign_id)
+    if company:
+        raw_targets = [t for t in raw_targets if t['company'] == company]
+    
+    raw_targets = raw_targets[:4]
+    
+    copilot_tasks = []
+    for t in raw_targets:
+        icon_col = "text-sky-400" if t['status'] == 'SQL' else "text-fuchsia-500"
+        try:
+            last_active_date = datetime.strptime(t['last_active'], "%Y-%m-%d")
+            delta = datetime.now() - last_active_date
+            if delta.days == 0:
+                relative_date = "Today"
+            elif delta.days == 1:
+                relative_date = "Yesterday"
+            else:
+                relative_date = f"{delta.days} days ago"
+        except:
+            relative_date = t['last_active']
+            
+        subtitle = f"{t['interactions']} interactions | Last active {relative_date}"
+        encoded_name = urllib.parse.quote(t['name'])
+        encoded_company = urllib.parse.quote(t['company'])
+        
+        tid = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid,
+            "icon": "fa-bullseye",
+            "icon_color": icon_col,
+            "title": f"Follow-up: {t['name']} ({t['company']})",
+            "subtitle": subtitle,
+            "is_programmatic": True,
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
+        })
+        
+    if not company:
+        tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid_stalled,
+            "icon": "fa-hourglass-end",
+            "icon_color": "text-rose-500",
+            "title": "Stalled Account: BP plc",
+            "subtitle": "High early engagement, zero activity in 14 days",
+            "is_programmatic": True,
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
+        })
+        
+        tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid_cross,
+            "icon": "fa-network-wired",
+            "icon_color": "text-emerald-500",
+            "title": "Cross-Department Expansion: Shell",
+            "subtitle": "Engineering and Marketing consuming content simultaneously",
+            "is_programmatic": True,
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
+        })
+        
+    copilot_actions = [
+        {"label": "Map Committee", "command": f"Map the entire buying committee for {company or 'stalled accounts'} and identify persona blind spots.", "intent": "analyze", "icon": "fa-sitemap"},
+        {"label": "Surge Signals", "command": f"Identify intent surge signals across {company or 'target accounts'} in the last 48 hours.", "intent": "analyze", "icon": "fa-bolt"},
+        {"label": "Draft Outreach", "command": f"Draft a personalized outreach sequence for {company or 'the stalled accounts'}.", "intent": "draft", "icon": "fa-envelope"}
+    ]
+        
+    return templates.TemplateResponse(request=request, name="components/oob_copilot.html", context={
+        "copilot_actions": copilot_actions,
         "copilot_tasks": copilot_tasks
     })
 
@@ -170,32 +318,54 @@ from functools import lru_cache
 
 @lru_cache(maxsize=32)
 def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
-    from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr
+    from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
-    return generate_strategic_tldr(benchmarks)
+    overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
+    
+    payload = {
+        "time_window_analyzed": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
+        "window_pipeline_generated_dollars": benchmarks["live"]["pipeline"],
+        "window_total_spend_dollars": benchmarks["live"]["spend"],
+        "window_cpa_dollars": benchmarks["live"]["cpa"],
+        "window_cpa_trend_vs_previous_window": benchmarks["comparisons"]["cpa"]["value"],
+        "window_closed_won_contracts": benchmarks["live"]["conversions"],
+        "overall_campaign_pipeline_generated_dollars": overall_benchmarks["live"]["pipeline"],
+        "overall_campaign_total_spend_dollars": overall_benchmarks["live"]["spend"],
+        "overall_campaign_cpa_dollars": overall_benchmarks["live"]["cpa"]
+    }
+    
+    return generate_strategic_tldr(payload)
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
-async def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     tldr = cached_generate_strategic_tldr(campaign_id, timeframe)
     return HTMLResponse(content=tldr)
 
 @router.get("/dashboard/investigate-target", response_class=HTMLResponse)
-async def investigate_target(campaign_id: str, name: str, company: str):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
     
-    query = f"""
-        SELECT g.page_viewed, g.timestamp, g.utm_source, c.seniority
-        FROM ga4_events g
-        JOIN crm_users c ON g.user_id = c.user_id
-        WHERE g.utm_campaign = ? AND (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
-        ORDER BY g.timestamp DESC
-        LIMIT 10
-    """
-    cursor.execute(query, (campaign_id, name, company))
+    if name == 'Unknown':
+        query = f"""
+            SELECT g.page_viewed, g.timestamp, g.utm_source, c.seniority, (c.first_name || ' ' || c.last_name) as full_name
+            FROM ga4_events g
+            JOIN crm_users c ON g.user_id = c.user_id
+            WHERE g.utm_campaign = ? AND c.company_name LIKE ?
+            ORDER BY g.timestamp DESC
+            LIMIT 10
+        """
+        cursor.execute(query, (campaign_id, f"%{company}%"))
+    else:
+        query = f"""
+            SELECT g.page_viewed, g.timestamp, g.utm_source, c.seniority, (c.first_name || ' ' || c.last_name) as full_name
+            FROM ga4_events g
+            JOIN crm_users c ON g.user_id = c.user_id
+            WHERE g.utm_campaign = ? AND (c.first_name || ' ' || c.last_name) = ? AND c.company_name = ?
+            ORDER BY g.timestamp DESC
+            LIMIT 10
+        """
+        cursor.execute(query, (campaign_id, name, company))
     rows = cursor.fetchall()
-    conn.close()
     
     if not rows:
         history_items = "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"
@@ -288,7 +458,7 @@ async def investigate_target(campaign_id: str, name: str, company: str):
         <div class="w-full">
             <div class="bg-black border border-dark-700">
                 <div class="p-3 border-b border-dark-700 bg-dark-900 flex justify-between items-center">
-                    <span class="text-xs font-bold text-slate-300 tracking-widest uppercase">Target Analysis: {name}</span>
+                    <span class="text-xs font-bold text-slate-300 tracking-widest uppercase">Target Analysis: {name if name != 'Unknown' else company}</span>
                     <span class="text-sky-400 text-[10px] font-bold"><i class="fa-solid fa-check-circle"></i> SQL</span>
                 </div>
                 <div class="p-4 flex flex-col">
@@ -299,10 +469,10 @@ async def investigate_target(campaign_id: str, name: str, company: str):
                     </div>
                 </div>
                 <div class="p-3 border-t border-dark-700 bg-dark-900 flex gap-2">
-                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Draft executive outreach for {name} at {company}"}}' class="flex-1 py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Draft executive outreach for {name} at {company}", "intent": "draft"}}' class="flex-1 py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
                         <i class="fa-solid fa-bolt"></i> Draft Outreach
                     </button>
-                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Sync {name} to CRM"}}' class="flex-1 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-300 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Sync {name} to CRM", "intent": "automate"}}' class="flex-1 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-300 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
                         Sync to CRM
                     </button>
                 </div>
@@ -310,10 +480,14 @@ async def investigate_target(campaign_id: str, name: str, company: str):
         </div>
     </div>
     """
+    
+    if trigger_id:
+        html_content += f'<div id="task-card-{trigger_id}" hx-swap-oob="delete"></div>'
+        
     return HTMLResponse(content=html_content)
 
 @router.get("/dashboard/investigate-asset", response_class=HTMLResponse)
-async def investigate_asset(campaign_id: str, asset_name: str):
+def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None):
     matrix = get_asset_impact_matrix(campaign_id, 0)
     asset = next((m for m in matrix if m['asset_name'] == asset_name), None)
     
@@ -351,10 +525,10 @@ async def investigate_asset(campaign_id: str, asset_name: str):
                     </div>
                 </div>
                 <div class="p-3 border-t border-dark-700 bg-dark-900 flex gap-2">
-                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Suggest asset rotation for {asset_name}"}}' class="flex-1 py-2 bg-brand-900/20 hover:bg-brand-600/20 border border-brand-500/50 hover:border-brand-500 text-brand-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Suggest asset rotation for {asset_name}", "intent": "analyze"}}' class="flex-1 py-2 bg-brand-900/20 hover:bg-brand-600/20 border border-brand-500/50 hover:border-brand-500 text-brand-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
                         <i class="fa-solid fa-arrows-rotate"></i> Suggest Rotation
                     </button>
-                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Execute: Draft newsletter mention for {asset_name}"}}' class="flex-1 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-300 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
+                    <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "Draft newsletter mention for {asset_name}", "intent": "draft"}}' class="flex-1 py-2 bg-dark-800 hover:bg-dark-700 border border-dark-600 text-slate-300 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2">
                         <i class="fa-solid fa-envelope"></i> Draft Mention
                     </button>
                 </div>
@@ -362,9 +536,13 @@ async def investigate_asset(campaign_id: str, asset_name: str):
         </div>
     </div>
     """
+    
+    if trigger_id:
+        html_content += f'<div id="task-card-{trigger_id}" hx-swap-oob="delete"></div>'
+        
     return HTMLResponse(content=html_content)
 
-async def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
+def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
     return templates.TemplateResponse(request=request, name="components/account_penetration.html", context={
@@ -373,10 +551,8 @@ async def get_account_penetration_view(request: Request, campaign_id: str = "CMP
     })
 
 @router.get("/dashboard/penetration-details", response_class=HTMLResponse)
-async def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
     
     query = f"""
         SELECT DISTINCT page_viewed 
@@ -387,7 +563,6 @@ async def get_penetration_details(request: Request, campaign_id: str, company: s
     """
     cursor.execute(query, (campaign_id, company, seniority))
     rows = cursor.fetchall()
-    conn.close()
     
     assets_html = "".join([f"<li><i class='fa-solid fa-file-pdf text-rose-400 mr-2'></i> {r['page_viewed'].replace('/', '')}</li>" for r in rows]) if rows else "<li class='text-slate-500'>No specific assets consumed</li>"
     
@@ -405,7 +580,7 @@ async def get_penetration_details(request: Request, campaign_id: str, company: s
     """)
 
 @router.get("/dashboard/timeline", response_class=HTMLResponse)
-async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/timeline.html", context={
@@ -415,7 +590,7 @@ async def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECAR
     })
 
 @router.get("/dashboard/asset-fatigue", response_class=HTMLResponse)
-async def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
+def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
     assets = get_asset_fatigue(campaign_id)
     return templates.TemplateResponse(request=request, name="components/asset_fatigue.html", context={
         "campaign_id": campaign_id,
@@ -423,8 +598,8 @@ async def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_
     })
 
 @router.get("/dashboard/alerts", response_class=HTMLResponse)
-async def get_alerts_view(request: Request, campaign_id: str):
-    actions = generate_next_best_actions(campaign_id)
+def get_alerts_view(request: Request, campaign_id: str, timeframe: int = 0):
+    actions = generate_next_best_actions(campaign_id, timeframe)
     if not actions:
         return HTMLResponse(content="") # Empty response if no alerts
     return templates.TemplateResponse(request=request, name="components/alerts.html", context={
@@ -432,12 +607,12 @@ async def get_alerts_view(request: Request, campaign_id: str):
     })
 
 @router.post("/dashboard/execute-action", response_class=HTMLResponse)
-async def execute_action(request: Request, type: str, campaign_id: str):
+def execute_action(request: Request, type: str, campaign_id: str):
     # Mock execution endpoint
     return HTMLResponse(content=f"<span class='text-emerald-400 font-bold'><i class='fa-solid fa-check mr-2'></i>Action Executed</span>")
 
 @router.get("/dashboard/data-model")
-async def get_data_model_view(request: Request, campaign_id: str):
+def get_data_model_view(request: Request, campaign_id: str):
     from app.services.analytics import get_asset_fatigue
     assets = get_asset_fatigue(campaign_id, 90)
     return templates.TemplateResponse(request=request, name="components/data_model.html", context={
@@ -446,45 +621,337 @@ async def get_data_model_view(request: Request, campaign_id: str):
     })
 
 @router.get("/dashboard/audience-data-scoped")
-async def get_audience_data_scoped(campaign_id: str):
+def get_audience_data_scoped(campaign_id: str):
     from app.services.analytics import get_scoped_audience_data
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_scoped_audience_data(campaign_id))
 
 @router.get("/dashboard/audience-data")
-async def get_audience_data(campaign_id: str = None):
+def get_audience_data(campaign_id: str = None):
     data = get_audience_network_data() # We will update this later if needed
     return JSONResponse(content=data)
 
 @router.get("/dashboard/sankey-data")
-async def get_sankey_data_route(campaign_id: str):
+def get_sankey_data_route(campaign_id: str):
     data = get_sankey_data(campaign_id)
     return JSONResponse(content=data)
 
 @router.get("/dashboard/asset-timeline")
-async def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
+def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
     data = get_asset_timeline_data(campaign_id, timeframe)
     return JSONResponse(content=data)
 
+@router.delete("/dashboard/trigger/{trigger_id}", response_class=HTMLResponse)
+def resolve_trigger(trigger_id: str, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("UPDATE action_triggers SET resolved_status = 1 WHERE id = ?", (trigger_id,))
+    db.commit()
+    return HTMLResponse(content="")
+
+@router.post("/dashboard/generate-ai-insight")
+async def generate_ai_insight(request: Request):
+    from app.services.llm_rotator import get_genai_client
+    from fastapi.responses import JSONResponse
+    import json
+    
+    try:
+        data = await request.json()
+        company = data.get("company", "Unknown")
+        
+        prompt = f"""You are an expert Strategic Account Executive.
+Analyze the following engagement data for the account '{company}'.
+Data:
+{json.dumps(data, indent=2)}
+
+Output your response strictly as a JSON object with the following keys:
+- "diagnosis": A short, single-paragraph synthesis evaluating the health of this account (committee gaps, intent topics, momentum). Don't just repeat the numbers. Identify risks (e.g. missing executives, stalled users) or momentum.
+- "signals": An array of 1 to 3 signal objects. Each object must have:
+    - "icon": A FontAwesome class (e.g., 'fa-arrow-trend-up', 'fa-triangle-exclamation', 'fa-hourglass-half', 'fa-check')
+    - "color": A Tailwind text color (e.g., 'text-emerald-400', 'text-rose-400', 'text-amber-400', 'text-slate-400')
+    - "label": A short 1-2 word label (e.g., 'Surge Signal', 'Friction Alert', 'Stall Risk', 'Status')
+    - "text": A brief 1-sentence description of the signal.
+
+Ensure valid JSON output.
+"""
+        client = get_genai_client()
+        from starlette.concurrency import run_in_threadpool
+        resp = await run_in_threadpool(client.models.generate_content, model="gemini-3.6-flash", contents=prompt)
+        
+        try:
+            result = json.loads(resp.text)
+        except json.JSONDecodeError:
+            text = resp.text.replace("```json", "").replace("```", "").strip()
+            result = json.loads(text)
+            
+        return JSONResponse(content=result)
+    except Exception as e:
+        print(f"Error generating insight: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 
 @router.get('/dashboard/ui-lab/channel-roi')
-async def ui_lab_channel_roi(campaign_id: str):
+def ui_lab_channel_roi(campaign_id: str):
+    matrix = get_asset_impact_matrix(campaign_id, 0)
+    return templates.TemplateResponse(request=Request({"type": "http"}), name="components/mod_channel_roi.html", context={"matrix": matrix})
+
+@router.get('/dashboard/v2/channel-roi-data')
+def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
+    from app.services.analytics import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    tf_li = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_em = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_ga = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    tf_crm = f" AND o.timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+    
+    # LinkedIn
+    cursor.execute(f"SELECT SUM(spend_consumed) FROM linkedin_events WHERE campaign_id = ?{tf_li}", (campaign_id,))
+    row_li = cursor.fetchone()
+    li_spend = row_li[0] if row_li and row_li[0] else 0
+    
+    cursor.execute(f"""
+        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
+        FROM crm_opps o
+        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM linkedin_events WHERE campaign_id = ? {tf_li})
+    """, (campaign_id, campaign_id))
+    row = cursor.fetchone()
+    li_pipe = row[0] or 0.0
+    li_opps = row[1] or 0
+    
+    # Email
+    cursor.execute(f"SELECT COUNT(event_id) FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em}", (campaign_id,))
+    row_em = cursor.fetchone()
+    em_clicks = row_em[0] if row_em and row_em[0] else 0
+    em_spend = em_clicks * 1.50 # Simulated CPC
+    
+    cursor.execute(f"""
+        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
+        FROM crm_opps o
+        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em})
+    """, (campaign_id, campaign_id))
+    row = cursor.fetchone()
+    em_pipe = row[0] or 0.0
+    em_opps = row[1] or 0
+    
+    # Web
+    cursor.execute(f"SELECT COUNT(session_id) FROM ga4_events WHERE utm_campaign = ? {tf_ga}", (campaign_id,))
+    row_ga = cursor.fetchone()
+    web_views = row_ga[0] if row_ga and row_ga[0] else 0
+    web_spend = web_views * 0.80 # Simulated CPC
+    
+    cursor.execute(f"""
+        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
+        FROM crm_opps o
+        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = ? {tf_ga})
+    """, (campaign_id, campaign_id))
+    row = cursor.fetchone()
+    web_pipe = row[0] or 0.0
+    web_opps = row[1] or 0
+    
+    conn.close()
+
+    def calc_metrics(spend, pipe, opps):
+        return {
+            "spend": spend,
+            "pipeline": pipe,
+            "opps": opps,
+            "roi_multiplier": round(pipe / spend, 1) if spend > 0 else 0,
+            "cpo": round(spend / opps, 2) if opps > 0 else 0
+        }
+
+    return JSONResponse(content={
+        "linkedin": calc_metrics(li_spend, li_pipe, li_opps),
+        "email": calc_metrics(em_spend, em_pipe, em_opps),
+        "web": calc_metrics(web_spend, web_pipe, web_opps)
+    })
+
+def ui_lab_channel_roi_data(campaign_id: str):
     from app.services.analytics import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))
 
-@router.get('/dashboard/ui-lab/funnel')
-async def ui_lab_funnel(campaign_id: str):
+@router.get("/dashboard/target-accounts-modal", response_class=HTMLResponse)
+def get_target_accounts_modal(request: Request, campaign_id: str):
+    from app.services.analytics import get_prioritized_sales_targets
+    targets = get_prioritized_sales_targets(campaign_id)
+    return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
+
+@router.get("/dashboard/topic-clusters", response_class=HTMLResponse)
+def get_topic_clusters(request: Request, campaign_id: str):
+    from app.services.analytics import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Base query for all engagements mapped to topics and assets
+    query = '''
+    WITH AllEngagements AS (
+        SELECT g.timestamp, c.intent_topic, c.title, c.asset_type
+        FROM ga4_events g
+        JOIN content_metadata c ON g.page_viewed = c.url
+        WHERE g.utm_campaign = ?
+        
+        UNION ALL
+        
+        SELECT m.timestamp, c.intent_topic, c.title, c.asset_type
+        FROM mailchimp_events m
+        JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
+        WHERE m.campaign_id = ? AND m.action = 'Open'
+        
+        UNION ALL
+        
+        SELECT l.timestamp, c.intent_topic, c.title, c.asset_type
+        FROM linkedin_events l
+        JOIN content_metadata c ON l.ad_id = c.url
+        WHERE l.campaign_id = ?
+    )
+    SELECT 
+        intent_topic,
+        title,
+        asset_type,
+        COUNT(timestamp) as engagements
+    FROM AllEngagements
+    GROUP BY intent_topic, title, asset_type
+    ORDER BY intent_topic, engagements DESC
+    '''
+    cursor.execute(query, (campaign_id, campaign_id, campaign_id))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Process into hierarchical dictionary
+    topic_map = {}
+    for row in rows:
+        topic = row['intent_topic']
+        if topic not in topic_map:
+            topic_map[topic] = {
+                'intent_topic': topic,
+                'total_engagements': 0,
+                'assets': []
+            }
+        topic_map[topic]['assets'].append({
+            'title': row['title'],
+            'type': row['asset_type'],
+            'engagements': row['engagements']
+        })
+        topic_map[topic]['total_engagements'] += row['engagements']
+        
+    # Sort topics by total engagements
+    sorted_topics = sorted(list(topic_map.values()), key=lambda x: x['total_engagements'], reverse=True)
+    
+    return templates.TemplateResponse(request=request, name="components/topic_clusters.html", context={
+        "campaign_id": campaign_id,
+        "topics": sorted_topics
+    })
+
+@router.get("/dashboard/abm-data")
+def get_abm_data(campaign_id: str):
+    from app.services.analytics import get_db_connection
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 1. Buying Committee (Users by Persona Type)
+    query = '''
+    WITH AllEvents AS (
+        SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
+        UNION ALL
+        SELECT m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
+        UNION ALL
+        SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
+    )
+    SELECT 
+        c.company_name, 
+        c.persona_type, 
+        COUNT(DISTINCT c.user_id) as user_count,
+        COUNT(a.timestamp) as interactions
+    FROM AllEvents a
+    JOIN crm_users c ON a.user_id = c.user_id
+    GROUP BY c.company_name, c.persona_type
+    ORDER BY interactions DESC
+    '''
+    cursor.execute(query, (campaign_id, f'%{campaign_id}%', campaign_id))
+    accounts = cursor.fetchall()
+    
+    # Process into structured account objects
+    account_map = {}
+    for row in accounts:
+        comp = row['company_name']
+        if comp not in account_map:
+            account_map[comp] = {
+                'company': comp, 
+                'total_interactions': 0, 
+                'technical_users': 0, 
+                'commercial_users': 0,
+                'crm_status': 'Target',
+                'pipeline_value': 0.0,
+                'won_value': 0.0,
+                'active_opp_value': 0.0,
+                'opportunities': []
+            }
+        
+        account_map[comp]['total_interactions'] += row['interactions']
+        if row['persona_type'] == 'Technical':
+            account_map[comp]['technical_users'] += row['user_count']
+        elif row['persona_type'] == 'Commercial':
+            account_map[comp]['commercial_users'] += row['user_count']
+            
+    # Add CRM Opportunities data
+    opps_query = '''
+    SELECT c.company_name, o.event_type, o.pipeline_value, o.timestamp
+    FROM crm_opps o
+    JOIN (SELECT DISTINCT account_id, company_name FROM crm_users) c ON o.account_id = c.account_id
+    WHERE o.utm_campaign = ?
+    ORDER BY o.timestamp DESC
+    '''
+    cursor.execute(opps_query, (campaign_id,))
+    for row in cursor.fetchall():
+        comp = row['company_name']
+        if comp in account_map:
+            val = float(row['pipeline_value'] or 0)
+            account_map[comp]['opportunities'].append({
+                'date': str(row['timestamp']).split(' ')[0],
+                'type': row['event_type'],
+                'value': val
+            })
+            account_map[comp]['pipeline_value'] += val
+            
+            # Update CRM status and specific values
+            current = account_map[comp]['crm_status']
+            if row['event_type'] == 'Closed Won':
+                account_map[comp]['crm_status'] = 'Customer'
+                account_map[comp]['won_value'] += val
+            elif row['event_type'] == 'Opportunity Created':
+                if current != 'Customer':
+                    account_map[comp]['crm_status'] = 'Active Opp'
+                account_map[comp]['active_opp_value'] += val
+                
+    sorted_accounts = sorted(list(account_map.values()), key=lambda x: x['total_interactions'], reverse=True)[:10]
+
+    conn.close()
+    return {"accounts": sorted_accounts}
+
+@router.get("/v2/api/targets")
+def v2_api_targets(campaign_id: str):
     from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
+@router.get('/dashboard/funnel-drilldown', response_class=HTMLResponse)
+def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0):
+    from app.services.analytics import get_funnel_drilldown_data
+    data = get_funnel_drilldown_data(campaign_id, stage, timeframe)
+    return templates.TemplateResponse(request=request, name="components/mod_funnel_modal.html", context={"data": data, "stage": stage})
+
+@router.get('/dashboard/ui-lab/funnel')
+def ui_lab_funnel(campaign_id: str, timeframe: int = 0):
+    from app.services.analytics import get_ui_lab_funnel_data
+    return JSONResponse(content=get_ui_lab_funnel_data(campaign_id, timeframe))
+
 @router.get('/dashboard/ui-lab/heatmap')
-async def ui_lab_heatmap(campaign_id: str):
+def ui_lab_heatmap(campaign_id: str):
     from app.services.analytics import get_ui_lab_heatmap_data
     return JSONResponse(content=get_ui_lab_heatmap_data(campaign_id))
 
 
 @router.get('/dashboard/sales-alerts')
-async def get_sales_alerts(campaign_id: str):
+def get_sales_alerts(campaign_id: str):
     from app.services.analytics import get_prioritized_sales_targets
     from fastapi.responses import JSONResponse
     return JSONResponse(content=get_prioritized_sales_targets(campaign_id))
@@ -493,7 +960,13 @@ async def get_sales_alerts(campaign_id: str):
 from app.services.analytics import get_asset_personas
 
 @router.get("/asset-personas")
-async def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str):
-    users = get_asset_personas(campaign_id, asset_name, type)
+def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str, timeframe: int = 0):
+    users = get_asset_personas(campaign_id, asset_name, type, timeframe)
     return JSONResponse(content=users)
+
+@router.get("/telemetry/ai-calls")
+def get_ai_telemetry():
+    from app.services.llm_rotator import get_telemetry
+    data = get_telemetry()
+    return JSONResponse(content=data)
 
