@@ -61,4 +61,5 @@
 
     <!-- Action Center (OOB Copilot) -->
     {% include 'components/oob_copilot.html' %}
+    <div hx-get="/api/v2/dashboard/action-center?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}" hx-trigger="load" class="hidden"></div>
 </div>
