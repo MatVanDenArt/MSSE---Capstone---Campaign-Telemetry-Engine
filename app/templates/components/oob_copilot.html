@@ -92,7 +92,9 @@
             },
              getCategoryBadge(task) {
                  const title = task.title || '';
-                 if (title.includes('Optimize') || title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                 if (task.type === 'ai' || title.includes('AI Recommendation')) {
+                     return { label: 'AI RECOMMENDED', color: 'text-fuchsia-400 bg-fuchsia-950 border-fuchsia-900' };
+                 } else if (title.includes('Optimize') || title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
                      return { label: 'ACTION REQUIRED', color: 'text-rose-400 bg-rose-950 border-rose-900' };
                  } else if (title.includes('Scale') || title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
                      return { label: 'GROWTH OPPTY', color: 'text-emerald-400 bg-emerald-950 border-emerald-900' };
