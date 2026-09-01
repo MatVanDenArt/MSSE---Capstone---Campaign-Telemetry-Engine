@@ -51,3 +51,10 @@ async def read_root():
     Redirect root to the lobby.
     """
     return RedirectResponse(url="/lobby")
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for Render/Kubernetes deployments.
+    """
+    return {"status": "ok"}
