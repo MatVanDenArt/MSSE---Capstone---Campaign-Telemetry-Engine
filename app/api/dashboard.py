@@ -933,11 +933,11 @@ def v2_api_targets(campaign_id: str):
     from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
-@router.get('/dashboard/v2/funnel-drilldown', response_class=HTMLResponse)
+@router.get('/dashboard/funnel-drilldown', response_class=HTMLResponse)
 def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0):
     from app.services.analytics import get_funnel_drilldown_data
     data = get_funnel_drilldown_data(campaign_id, stage, timeframe)
-    return templates.TemplateResponse(request=request, name="components/mod_v2_funnel_modal.html", context={"data": data, "stage": stage})
+    return templates.TemplateResponse(request=request, name="components/mod_funnel_modal.html", context={"data": data, "stage": stage})
 
 @router.get('/dashboard/ui-lab/funnel')
 def ui_lab_funnel(campaign_id: str, timeframe: int = 0):

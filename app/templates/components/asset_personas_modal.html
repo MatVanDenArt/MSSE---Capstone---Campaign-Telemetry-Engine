@@ -57,7 +57,7 @@
             this.seniorityFilter = '';
             this.showAccountsModal = true;
             
-            fetch((window.location.pathname.includes('/v2/') ? '/api/v2' : '/api/v1') + `/asset-personas?campaign_id=${encodeURIComponent(this.campaignId)}&asset_name=${encodeURIComponent(assetName)}&type=${encodeURIComponent(assetType)}&timeframe=${encodeURIComponent(tf)}`)
+            fetch(`/api/asset-personas?campaign_id=${encodeURIComponent(this.campaignId)}&asset_name=${encodeURIComponent(assetName)}&type=${encodeURIComponent(assetType)}&timeframe=${encodeURIComponent(tf)}`)
                 .then(r => r.json())
                 .then(data => {
                     if (data.users) {
