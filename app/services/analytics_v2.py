@@ -125,8 +125,15 @@ def simulate_budget_shift(channel: str, budget: float) -> dict:
         cursor = conn.cursor()
         
         cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
-        spend_row = cursor.fetchone()
-        historical_spend = spend_row["total_spend"] if spend_row and spend_row["total_spend"] else 0.0
+        li_hist = cursor.fetchone()["total_spend"] or 0.0
+        
+        cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events WHERE event_type = 'click'")
+        em_hist = (cursor.fetchone()["c"] or 0) * 1.50
+        
+        cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
+        web_hist = (cursor.fetchone()["c"] or 0) * 0.80
+        
+        historical_spend = li_hist + em_hist + web_hist
         
         cursor.execute("SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE event_type = 'Closed Won'")
         pipe_row = cursor.fetchone()
@@ -195,7 +202,17 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
                 date_filter = f"AND timestamp >= datetime('now', '-{days} days')"
                 
             cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE campaign_id = '{campaign_id}' {date_filter}")
-            spend = cursor.fetchone()["spend"] or 0.0
+            li_spend = cursor.fetchone()["spend"] or 0.0
+            
+            cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id LIKE '%{campaign_id}%' AND event_type = 'click' {date_filter}")
+            em_clicks = cursor.fetchone()["c"] or 0
+            em_spend = em_clicks * 1.50
+            
+            cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}' {date_filter}")
+            web_views = cursor.fetchone()["c"] or 0
+            web_spend = web_views * 0.80
+            
+            spend = li_spend + em_spend + web_spend
             
             cursor.execute(f"""
                 SELECT COUNT(*) as conv_count 
@@ -220,7 +237,15 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         date_filter = f"AND timestamp < datetime('now', '-{timeframe} days')"
         
         cursor.execute(f"SELECT SUM(spend_consumed) as spend FROM linkedin_events WHERE 1=1 {date_filter}")
-        baseline_spend = cursor.fetchone()["spend"] or 0.0
+        baseline_li = cursor.fetchone()["spend"] or 0.0
+        
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE event_type = 'click' {date_filter}")
+        baseline_em = (cursor.fetchone()["c"] or 0) * 1.50
+        
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {date_filter}")
+        baseline_web = (cursor.fetchone()["c"] or 0) * 0.80
+        
+        baseline_spend = baseline_li + baseline_em + baseline_web
         
         cursor.execute(f"""
             SELECT COUNT(*) as conv_count 
