@@ -358,6 +358,7 @@ def chat_stream(task_id: str):
     """
                 text_response = tool_ui + "\n" + text_response
                 
+            clear_btn = "<div class='mt-4 border-t border-dark-800 pt-4'><button onclick=\"this.innerHTML='<i class=&quot;fa-solid fa-check-double&quot;></i> Cleared'; this.disabled=true; this.classList.add('opacity-50', 'cursor-not-allowed'); window.dispatchEvent(new CustomEvent('task-resolved', {detail: {id: '" + trigger_id + "'}}));\" class='w-full py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded'><i class='fa-solid fa-check'></i> Clear Alert from Queue</button></div>" if (intent == "review" and trigger_id) else ""
             import markdown
             parsed_html = markdown.markdown(text_response)
             
@@ -370,14 +371,14 @@ def chat_stream(task_id: str):
             .copilot-markdown li {{ margin-bottom: 0.5em; }}
             .copilot-markdown strong {{ font-weight: bold; color: #fdf4ff; }}
             </style>
-            <div class="flex gap-3 my-4">
-                <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0">
-                    <i class="fa-solid fa-robot text-[10px] text-black"></i>
+            <div class="flex gap-4">
+                <div class="w-8 h-8 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 flex items-center justify-center flex-shrink-0 mt-1">
+                    <i class="fa-solid fa-robot text-fuchsia-400 text-sm"></i>
                 </div>
                 <div class="w-full min-w-0">
                     <div class="bg-black border border-dark-700 p-4 w-full">
                         <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
-                        {"<div class='mt-4 border-t border-dark-800 pt-4'><button onclick=\"this.innerHTML='<i class=&quot;fa-solid fa-check-double&quot;></i> Cleared'; this.disabled=true; this.classList.add('opacity-50', 'cursor-not-allowed'); window.dispatchEvent(new CustomEvent('task-resolved', {detail: {id: '" + trigger_id + "'}}));\" class='w-full py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded'><i class='fa-solid fa-check'></i> Clear Alert from Queue</button></div>" if (intent == "review" and trigger_id) else ""}
+                        {clear_btn}
                     </div>
                 </div>
             </div>
