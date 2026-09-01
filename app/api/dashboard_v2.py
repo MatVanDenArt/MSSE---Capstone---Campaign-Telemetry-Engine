@@ -316,7 +316,7 @@ def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
     campaign_data = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
     
     payload = {
-        "pipeline_generated_dollars": campaign_data["total_pipeline"] if campaign_data else 0,
+        "pipeline_generated_dollars": benchmarks["live"]["pipeline"],
         "total_spend_dollars": benchmarks["live"]["spend"],
         "cpa_dollars": benchmarks["live"]["cpa"],
         "cpa_percent_change": benchmarks["comparisons"]["cpa"]["value"],
