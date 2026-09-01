@@ -28,7 +28,7 @@ jobs:
 
     - name: Run Test Suite
       run: |
-        pytest tests/ -v
+        PYTHONPATH=. pytest tests/ -v
 
     # Optional: We could add a step here to trigger Render deployment only if tests pass
     # but currently Render handles this natively by monitoring the branch and checking the commit status.
