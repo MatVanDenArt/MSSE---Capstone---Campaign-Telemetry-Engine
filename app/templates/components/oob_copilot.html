@@ -223,5 +223,13 @@
             </template>
         </div>
     </div>
+    {% else %}
+    <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
+        <span class="text-sm font-bold text-fuchsia-500">Priority Actions</span>
+    </div>
+    <div class="p-8 flex flex-col items-center justify-center space-y-3">
+        <i class="fa-solid fa-circle-notch fa-spin text-fuchsia-500/50 text-2xl"></i>
+        <span class="text-xs text-slate-500 font-mono tracking-widest uppercase animate-pulse">Generating AI Actions...</span>
+    </div>
     {% endif %}
 </div>
