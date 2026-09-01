@@ -798,6 +798,39 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
                     if 'icon' not in d: d['icon'] = 'fa-bolt'
                     if 'icon_color' not in d: d['icon_color'] = 'text-fuchsia-500'
                     if 'title' not in d: d['title'] = 'Action Required'
+                    
+                    # Fix fallback title mapping bug
+                    if d.get("action_payload") == "Launch Outbound Sequence":
+                        d['title'] = "TAM Penetration Stalled"
+                        d['icon'] = "fa-crosshairs"
+                        d['icon_color'] = "text-sky-500"
+                        d['action_command'] = "Draft targeted outbound sales sequence for Tier 1 accounts"
+                    elif d.get("action_payload") == "A/B Test Landing Page":
+                        d['title'] = "Conversion Bottleneck"
+                        d['icon'] = "fa-circle-exclamation"
+                        d['icon_color'] = "text-amber-500"
+                        d['action_command'] = "Draft new messaging or adjust gating strategy"
+                    elif d.get("action_payload") == "Reallocate Budget":
+                        d['title'] = "CPA Anomaly Detected"
+                        d['icon'] = "fa-triangle-exclamation"
+                        d['icon_color'] = "text-rose-500"
+                        d['action_command'] = "Run pacing analysis to identify inefficient channels"
+                    elif d.get("action_payload") == "Forecast Shortfall":
+                        d['title'] = "AI Recommendation"
+                        d['icon'] = "fa-chart-pie"
+                        d['icon_color'] = "text-fuchsia-400"
+                        d['action_command'] = "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations."
+                    elif d.get("action_payload") == "Pacing Analysis":
+                        d['title'] = "AI Recommendation"
+                        d['icon'] = "fa-money-bill-trend-up"
+                        d['icon_color'] = "text-fuchsia-400"
+                        d['action_command'] = "Analyze budget pacing against pipeline generation targets."
+                    elif d.get("action_payload") == "Executive KPIs":
+                        d['title'] = "AI Recommendation"
+                        d['icon'] = "fa-briefcase"
+                        d['icon_color'] = "text-fuchsia-400"
+                        d['action_command'] = "Pull executive pipeline KPIs and blended CPA."
+                        
                     if 'action_command' not in d: d['action_command'] = f"Execute action for {d.get('action_payload', 'this trigger')}"
                     enriched.append(d)
                 return enriched
@@ -885,22 +918,52 @@ def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
             except Exception as e:
                 pass
 
-        # Default fallback task to ensure Copilot Action Center is never empty in V2 Demo
+        # Default fallback: Instead of a generic success message, populate with AI Recommendations
         if len(actions) == 0:
-            actions.append({
-                "id": f"TRG_{uuid.uuid4().hex[:8]}",
-                "campaign_id": campaign_id,
-                "type": "opportunity",
-                "message": "Campaign telemetry is fully optimized. No critical bottlenecks detected.",
-                "action_payload": "Generate Upsell Strategy",
-                "resolved_status": 0,
-                "created_at": datetime.now().isoformat(),
-                "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
-                "icon": "fa-check-circle",
-                "icon_color": "text-emerald-500",
-                "title": "Maximum Efficiency",
-                "action_command": "Draft Q4 upsell strategy for engaged Tier 1 accounts"
-            })
+            actions.extend([
+                {
+                    "id": f"TRG_{uuid.uuid4().hex[:8]}",
+                    "campaign_id": campaign_id,
+                    "type": "ai",
+                    "message": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations.",
+                    "action_payload": "Forecast Shortfall",
+                    "resolved_status": 0,
+                    "created_at": datetime.now().isoformat(),
+                    "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
+                    "icon": "fa-chart-pie",
+                    "icon_color": "text-fuchsia-400",
+                    "title": "AI Recommendation",
+                    "action_command": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations."
+                },
+                {
+                    "id": f"TRG_{uuid.uuid4().hex[:8]}",
+                    "campaign_id": campaign_id,
+                    "type": "ai",
+                    "message": "Analyze budget pacing against pipeline generation targets.",
+                    "action_payload": "Pacing Analysis",
+                    "resolved_status": 0,
+                    "created_at": datetime.now().isoformat(),
+                    "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
+                    "icon": "fa-money-bill-trend-up",
+                    "icon_color": "text-fuchsia-400",
+                    "title": "AI Recommendation",
+                    "action_command": "Analyze budget pacing against pipeline generation targets."
+                },
+                {
+                    "id": f"TRG_{uuid.uuid4().hex[:8]}",
+                    "campaign_id": campaign_id,
+                    "type": "ai",
+                    "message": "Pull executive pipeline KPIs and blended CPA.",
+                    "action_payload": "Executive KPIs",
+                    "resolved_status": 0,
+                    "created_at": datetime.now().isoformat(),
+                    "expires_at": (datetime.now() + timedelta(days=7)).isoformat(),
+                    "icon": "fa-briefcase",
+                    "icon_color": "text-fuchsia-400",
+                    "title": "AI Recommendation",
+                    "action_command": "Pull executive pipeline KPIs and blended CPA."
+                }
+            ])
             
         if timeframe == 0:
             for a in actions:
