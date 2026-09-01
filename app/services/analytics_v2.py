@@ -800,13 +800,24 @@ def get_ai_recommended_actions(campaign_id: str, timeframe: int) -> list:
         "overall_campaign_cpa_dollars": overall_benchmarks["live"]["cpa"]
     }
     
+    from app.services.llm_rotator import mcp_tools
+    tool_summaries = [f"- {t['name']}: {t['description']}" for t in mcp_tools]
+    tool_list = "\n".join(tool_summaries)
+
     prompt = f'''You are a B2B Marketing AI. Review this campaign telemetry: {payload}.
 Based on this data, generate exactly 3 strategic "Next Best Actions" a CMO should take.
 Focus on: Scenario Planning & Reallocation, Forecasting & Extrapolation, or Deep-Dive Analysis.
+
+CRITICAL INSTRUCTION:
+The AI Copilot that will execute your "action_command" ONLY has access to the following backend tools:
+{tool_list}
+
+Your recommended actions MUST be directly executable using one or more of these specific tools. Do not invent analytical tasks (like "audit pipeline outliers" or "review deal stages") that these tools cannot perform.
+
 Output strictly as a JSON array of objects. Do not include markdown formatting or backticks.
 Each object must have exactly these keys:
-- "title": A very short 2-3 word title in sentence case (e.g. "Simulate budget shift", "Forecast Q4 pipeline").
-- "message": A 1-sentence strategic question or command.
+- "title": A very short 2-3 word title in sentence case (e.g. "Simulate budget shift", "Analyze channel ROI").
+- "message": A 1-sentence strategic question or command that clearly maps to an available tool.
 - "action_command": The exact same string as "message".
 - "icon": A font-awesome class (e.g. "fa-chart-pie", "fa-money-bill-trend-up", "fa-magnifying-glass").
 '''
