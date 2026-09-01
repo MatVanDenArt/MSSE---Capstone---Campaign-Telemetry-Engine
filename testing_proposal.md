@@ -1,60 +1,59 @@
 # Comprehensive Testing Suite Proposal
 **MSSE Capstone Project - Campaign Telemetry Engine**
 
-To achieve maximum points (Score: 5) on the Capstone rubric, we must provide documented evidence of testing methods and CI/CD usage. Given your architecture (FastAPI, HTMX, SQLite, Gemini AI) and your deployment pipeline (GitHub → Render), this proposal outlines a comprehensive 5-tier testing strategy.
+To achieve maximum points (Score: 5) on the Capstone rubric, we must provide documented evidence of testing methods and CI/CD usage. Given your architecture (FastAPI, HTMX, SQLite, Gemini AI) and your deployment pipeline (GitHub -> Render), this proposal outlines a comprehensive 5-tier testing strategy, updated to specifically address the unique challenges of Agentic AI and the Model Context Protocol (MCP).
 
-## 1. Unit Testing (Core Mathematical Logic)
-**Target:** `app/services/analytics_v2.py`
+## 1. Unit Testing & Data Boundaries (Core Logic)
+**Target:** `app/services/analytics.py`
 **Tool:** `pytest`
 
-We must mathematically prove to the graders that the calculations powering your dashboard are accurate before the AI even touches them. 
-*   **What to test:** **Full coverage of all 16 MCP analytical functions.** This includes:
-    *   `calculate_blended_cpa()`: Assert that total spend divided by total conversions yields the correct float.
-    *   `get_account_penetration()` & `get_tam_penetration()`: Assert correct percentages based on dummy data.
-    *   `evaluate_trickle_threshold()`, `simulate_budget_shift()`, `calculate_share_of_voice()`, `run_attribution_model()`, `get_asset_impact_matrix()`, `get_intent_surge_signals()`, and all other analytical tools exposed to the LLM.
-    *   UI Helper functions like `format_pipeline()` and `generate_next_best_actions(campaign_id)`.
+We must mathematically prove to the graders that the calculations powering your dashboard are accurate before the AI even touches them, and that data boundaries are strictly enforced.
+*   **What to test:** 
+    *   **Full coverage of all 16 MCP analytical functions.** (`calculate_blended_cpa()`, `simulate_budget_shift()`, `get_asset_impact_matrix()`, etc.).
+    *   **Data Boundary Authorization:** Ensure every MCP tool function strict-checks the `campaign_id` parameter against the authorized user session context, preventing the AI from cross-campaign data leakage.
 *   **Methodology:** We will use a lightweight, in-memory SQLite database populated with a standard set of mock data specifically for the test suite, completely isolating it from your production `capstone.db`.
 
-## 2. LLM & MCP Integration Testing
-**Target:** `app/services/llm_rotator.py` & `analytics_v2.py`
+## 2. LLM, MCP Integration & Fuzz Testing
+**Target:** `app/services/llm_rotator.py` & `analytics.py`
 **Tool:** `pytest` + `unittest.mock`
 
-*Should we test model availability?* **No.** Directly querying Gemini in a CI pipeline is an anti-pattern (it leads to rate-limit failures, non-deterministic timeouts, and unnecessary token costs).
-*   **What to test:** We will test *our system's interaction* with the model. We will use `unittest.mock.patch` to "fake" a response from the Gemini API. 
-*   **Methodology:** 
-    *   Assert that `generate_strategic_tldr` correctly constructs the `prompt` string and successfully extracts the `.text` property from the mocked response.
-    *   Assert that the MCP fallback logic works (i.e., if the mocked API throws a `RateLimitError`, assert that the code gracefully returns the string: *"AI Context Unavailable"* instead of crashing the server).
+Directly querying Gemini in a CI pipeline is an anti-pattern. Instead, we test *our system's interaction* with the model and its resilience to AI hallucinations.
+*   **What to test:** 
+    *   **MCP Contract Testing:** Dynamically assert that every parameter described in the `mcp_tools` JSON schema perfectly matches the parameter names, types, and defaults of the actual Python function signatures in `analytics.py`. This prevents "Schema Drift".
+    *   **Negative Parsing / Hallucination Checks:** Mock *bad* LLM responses (hallucinated tools, missing JSON brackets, wrong data types) and assert that our backend parser handles them gracefully without throwing 500 Server Errors.
+    *   **State Rehydration:** Generate a mock AI Action payload, pass it through the SQLite insertion function, immediately query it back, and assert that the rehydrated dictionary matches the original structure required by the Jinja template.
 
-## 3. API Route Testing
-**Target:** `app/api/dashboard_v2.py`
+## 3. Offline LLM Evaluations (Reasoning Quality)
+**Target:** Gemini 3.6 Flash reasoning logic
+**Tool:** `pytest --run-evals` (Manual Trigger)
+
+Unit tests check if the math is right, but they don't check if the AI is *smart*.
+*   **What to test:** We need an offline suite (not run on every PR to save costs) that feeds the live LLM standard datasets (e.g., a "Fatigued Campaign" dataset) and asserts that the LLM's response *always* chooses the correct MCP tool (e.g., `get_asset_fatigue`).
+*   **Methodology:** This guarantees that as we tweak system prompts, we don't inadvertently "dumb down" the LLM's tool selection logic.
+
+## 4. API Route Testing
+**Target:** `app/api/dashboard.py`
 **Tool:** `fastapi.testclient.TestClient`
 
 Since your frontend relies on HTMX, the backend API *is* your presentation layer. If an endpoint fails, the UI breaks.
 *   **What to test:** We will programmatically fire `GET` requests to your core endpoints.
-    *   `/api/v2/dashboard/overview` -> Assert `status_code == 200` and response contains `<div id="overview-content">`.
-    *   `/api/v2/dashboard/investigate-target` -> Pass mock URL parameters and assert the endpoint returns the correctly formatted HTML action card.
+    *   `/api/dashboard/overview` -> Assert `status_code == 200` and response contains `<div id="overview-content">`.
+    *   `/api/dashboard/action-center` -> Assert HTMX lazy-loading endpoints return valid HTML fragments.
 *   **Methodology:** The `TestClient` spins up a virtual FastAPI server in milliseconds without occupying a real network port.
-
-## 4. End-to-End (E2E) Frontend Testing (Optional but Recommended)
-**Target:** The HTMX DOM
-**Tool:** `pytest-playwright`
-
-Because HTMX swaps elements in the DOM dynamically, we need to prove the user journey works in a real browser.
-*   **What to test:** A headless Chromium browser will boot up, navigate to the CMO Lobby, click the "Decarbonization" campaign card, and click an alert in the Action Center. 
-*   **Methodology:** The test will assert that clicking the trigger successfully renders the Copilot modal on the screen.
 
 ## 5. Continuous Integration (GitHub Actions)
 **Target:** `.github/workflows/ci.yml`
 **Tool:** GitHub Actions
 
 This is the final piece to satisfy the *"collaborative software engineering tools, including CI/CD tools"* rubric requirement.
-*   **The Pipeline:** We will commit a YAML file that tells GitHub to automatically run all the `pytest` suites every time a team member opens a Pull Request or pushes to `main`. 
-*   **Render Integration:** Render will be configured to "Wait for CI to pass" before deploying. If a teammate accidentally breaks an MCP function, the GitHub Action will fail, and Render will block the deployment, protecting your live environment.
+*   **The Pipeline:** We will commit a YAML file that tells GitHub to automatically run all standard `pytest` suites every time a team member opens a Pull Request or pushes to `main`. 
+*   **Render Integration:** Render will be configured to "Wait for CI to pass" before deploying. If a teammate accidentally breaks an MCP function signature, the GitHub Action will fail, and Render will block the deployment, protecting your live environment.
 
 ---
 
 ### Implementation Plan
 If this proposal aligns with your vision, I can execute it in the following phases:
 1.  Setup the `tests/` directory and configure `pytest`.
-2.  Write the Unit, API, and LLM Mock tests (covering all 16 MCP tools).
-3.  Write the GitHub Actions `ci.yml` file.
+2.  Write the MCP Contract, LLM Fuzzing, and Artifact Rehydration tests (`test_mcp_contracts.py`, `test_llm_parsers.py`).
+3.  Write the core Unit and API tests.
+4.  Write the GitHub Actions `ci.yml` file.
