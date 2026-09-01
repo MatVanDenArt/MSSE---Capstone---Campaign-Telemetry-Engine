@@ -22,8 +22,8 @@ def setup_test_db():
     
     # 4. Insert some mock data for unit tests
     conn.executescript('''
-        INSERT INTO crm_users (user_id, first_name, last_name, company_name, industry, job_title, seniority, email, phone) 
-        VALUES (1, 'Test', 'User', 'Acme Corp', 'Energy', 'CEO', 'C-Level', 'test@acme.com', '123');
+        INSERT INTO crm_users (user_id, account_id, company_name, email, first_name, last_name, job_title, seniority, persona_type) 
+        VALUES (1, 100, 'Acme Corp', 'test@acme.com', 'Test', 'User', 'CEO', 'C-Level', 'Decision Maker');
         
         INSERT INTO crm_opps (opp_id, user_id, utm_campaign, pipeline_stage, pipeline_value, event_type, timestamp)
         VALUES ('OPP1', 1, 'CMP_TEST', 'Negotiation', 500000.0, 'Opportunity Created', datetime('now', '-5 days'));
