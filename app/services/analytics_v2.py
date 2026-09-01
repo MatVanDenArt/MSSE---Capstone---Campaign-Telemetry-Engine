@@ -216,8 +216,8 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
             
             cursor.execute(f"""
                 SELECT COUNT(*) as conv_count 
-                FROM ga4_events 
-                WHERE utm_campaign = '{campaign_id}' AND user_id IS NOT NULL {date_filter}
+                FROM crm_opps 
+                WHERE utm_campaign = '{campaign_id}' AND event_type = 'Closed Won' {date_filter}
             """)
             conversions = cursor.fetchone()["conv_count"] or 0
             
@@ -249,8 +249,8 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         
         cursor.execute(f"""
             SELECT COUNT(*) as conv_count 
-            FROM ga4_events 
-            WHERE user_id IS NOT NULL {date_filter}
+            FROM crm_opps 
+            WHERE event_type = 'Closed Won' {date_filter}
         """)
         baseline_conversions = cursor.fetchone()["conv_count"] or 0
         
