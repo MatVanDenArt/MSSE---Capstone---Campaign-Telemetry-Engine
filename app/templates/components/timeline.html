@@ -333,7 +333,7 @@
                 <!-- Asset Rows -->
                 <div class="space-y-3">
                     <template x-for="(m, index) in sortedMatrix" :key="m.asset_name">
-                        <div class="relative bg-dark-900 border border-dark-800 hover:border-emerald-500/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 py-3 px-5 group flex items-center justify-between cursor-pointer rounded" 
+                        <div class="relative bg-dark-900 border border-dark-800 hover:border-emerald-500/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 py-3 px-4 md:px-5 group flex flex-col md:flex-row items-start md:items-center justify-between cursor-pointer rounded gap-3 md:gap-0" 
                              @click="$dispatch('open-asset-modal', { ...m, timeframe: typeof activeTimeframe !== 'undefined' ? activeTimeframe : 0 })"
                              x-data="{
                                 sparkline: m.sparkline || [],
@@ -441,7 +441,7 @@
                              }" x-init="initSparkline()">
                             
                             <!-- Left: Asset Info -->
-                            <div class="flex flex-col w-[30%] pr-4 shrink-0 overflow-hidden">
+                            <div class="flex flex-col w-full md:w-[30%] pr-0 md:pr-4 shrink-0 overflow-hidden">
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1 min-w-0 grid">
                                         <h5 class="col-start-1 row-start-1 text-xs font-bold text-slate-200 truncate transition-opacity duration-300 group-hover:opacity-0" :title="m.title" x-text="m.title"></h5>
@@ -464,8 +464,8 @@
                             </div>
 
                             <!-- Right: Metrics & Hover Action -->
-                            <div class="flex items-center justify-end relative w-auto shrink-0 pl-2">
-                                <div class="flex items-center gap-4 bg-dark-950 px-4 py-1.5 border border-dark-800 rounded group-hover:border-dark-600 transition-colors duration-300 shadow-sm">
+                            <div class="flex items-center justify-start md:justify-end relative w-full md:w-auto shrink-0 pl-0 md:pl-2">
+                                <div class="flex items-center gap-3 md:gap-4 bg-dark-950 px-3 md:px-4 py-2 border border-dark-800 rounded group-hover:border-dark-600 transition-colors duration-300 shadow-sm w-full md:w-auto justify-between md:justify-start">
                                     <div class="text-center">
                                         <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5" x-text="m.type === 'Web' ? 'Views' : m.type === 'LinkedIn' ? 'Clicks' : 'Opens'"></div>
                                         <div class="text-base font-bold text-slate-200 font-mono" x-text="formatNumber(m.engagement)"></div>
