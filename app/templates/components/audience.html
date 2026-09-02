@@ -333,16 +333,16 @@
 
                                 <template x-if="account.active_opp_value > 0">
                                     <div
-                                        class="flex justify-between items-center bg-amber-900/10 border border-amber-500/20 rounded px-2.5 py-1.5">
+                                        class="flex justify-between items-center bg-sky-900/10 border border-sky-500/20 rounded px-2.5 py-1.5">
                                         <div class="flex items-center gap-2">
                                             <div
-                                                class="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]">
+                                                class="w-1.5 h-1.5 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.8)]">
                                             </div>
                                             <span
-                                                class="text-[10px] uppercase tracking-wider text-amber-500/80 font-bold">Active
+                                                class="text-[10px] uppercase tracking-wider text-sky-500/80 font-bold">Active
                                                 Pipeline</span>
                                         </div>
-                                        <span class="text-xs font-mono font-bold text-amber-400"
+                                        <span class="text-xs font-mono font-bold text-sky-400"
                                             x-text="'$' + (account.active_opp_value / 1000000).toFixed(1) + 'M'"></span>
                                     </div>
                                 </template>
@@ -384,11 +384,11 @@
                                 <div class="flex-1">
                                     <div class="flex justify-between items-end mb-1.5">
                                         <span class="text-[12px] text-slate-400">Commercial</span>
-                                        <span class="text-xs font-mono font-bold text-rose-500"
+                                        <span class="text-xs font-mono font-bold text-fuchsia-500"
                                             x-text="account.commercial_users"></span>
                                     </div>
                                     <div class="h-1 bg-dark-800 rounded-full overflow-visible">
-                                        <div class="h-full bg-rose-500 rounded-full"
+                                        <div class="h-full bg-fuchsia-500 rounded-full"
                                             :style="`width: ${Math.min(100, (account.commercial_users / 5) * 100)}%`">
                                         </div>
                                     </div>
@@ -590,7 +590,7 @@
                                                 x-text="new Date(opp.date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })"></span>
                                         </div>
                                         <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded"
-                                            :class="opp.type === 'Closed Won' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
+                                            :class="opp.type === 'Closed Won' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'"
                                             x-text="opp.type === 'Closed Won' ? 'Captured Revenue' : 'Active Pipeline'">
                                         </span>
                                     </div>
@@ -608,7 +608,7 @@
                                     Health</span>
                                 <button x-show="deepDiveFunnelFilter"
                                     @click="deepDiveFunnelFilter = null; applyDeepDiveFilters()"
-                                    class="text-[11px] font-bold uppercase text-rose-400 hover:text-rose-300 transition-colors"><i
+                                    class="text-[11px] font-bold uppercase text-fuchsia-400 hover:text-fuchsia-300 transition-colors"><i
                                         class="fa-solid fa-xmark mr-1"></i>Reset</button>
                             </div>
                             <div class="h-2 rounded-full flex overflow-hidden bg-dark-900 border border-dark-700">
@@ -654,7 +654,7 @@
                                     Committee</span>
                                 <button x-show="deepDivePersonaFilter"
                                     @click="deepDivePersonaFilter = null; applyDeepDiveFilters()"
-                                    class="text-[11px] font-bold uppercase text-rose-400 hover:text-rose-300 transition-colors"><i
+                                    class="text-[11px] font-bold uppercase text-fuchsia-400 hover:text-fuchsia-300 transition-colors"><i
                                         class="fa-solid fa-xmark mr-1"></i>Reset</button>
                             </div>
                             <div class="h-2 rounded-full flex overflow-hidden bg-dark-900 border border-dark-700">
@@ -664,7 +664,7 @@
                                     :style="`width: ${Math.max(2, (accountTechUsers / Math.max(1, accountUsers.length)) * 100)}%`"
                                     title="Technical"></div>
                                 <div @click="deepDivePersonaFilter = deepDivePersonaFilter === 'Commercial' ? null : 'Commercial'; applyDeepDiveFilters()"
-                                    class="bg-rose-500 h-full transition-all cursor-pointer hover:brightness-125"
+                                    class="bg-fuchsia-500 h-full transition-all cursor-pointer hover:brightness-125"
                                     :class="deepDivePersonaFilter && deepDivePersonaFilter !== 'Commercial' ? 'opacity-20' : ''"
                                     :style="`width: ${Math.max(2, (accountCommUsers / Math.max(1, accountUsers.length)) * 100)}%`"
                                     title="Commercial"></div>
@@ -679,7 +679,7 @@
                                 <button
                                     @click="deepDivePersonaFilter = deepDivePersonaFilter === 'Commercial' ? null : 'Commercial'; applyDeepDiveFilters()"
                                     class="transition-colors hover:text-white"
-                                    :class="deepDivePersonaFilter === 'Commercial' ? 'text-white' : (deepDivePersonaFilter ? 'text-rose-900' : 'text-rose-500')"><i
+                                    :class="deepDivePersonaFilter === 'Commercial' ? 'text-white' : (deepDivePersonaFilter ? 'text-fuchsia-900' : 'text-fuchsia-500')"><i
                                         class="fa-solid fa-handshake mr-1"></i><span x-text="accountCommUsers"></span>
                                     Comm</button>
                             </div>
@@ -767,10 +767,10 @@
                 class="flex flex-col bg-dark-950 border border-dark-800 rounded-xl overflow-hidden shadow-lg h-fit max-h-[800px]">
                 <div
                     class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center sticky top-0 z-20">
-                    <h4 class="font-bold text-amber-500 text-[10px] uppercase tracking-widest"><i
+                    <h4 class="font-bold text-sky-500 text-[10px] uppercase tracking-widest"><i
                             class="fa-solid fa-chess-king mr-1.5"></i> C-Suite</h4>
                     <span
-                        class="bg-amber-900/30 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-800/50"
+                        class="bg-sky-900/30 text-sky-400 text-[10px] font-bold px-2 py-0.5 rounded border border-sky-800/50"
                         x-text="accountCSuite.length"></span>
                 </div>
                 <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
@@ -791,7 +791,7 @@
                                                 x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
                                         </div>
                                         <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-rose-900/30 text-rose-400 border-rose-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
+                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-fuchsia-900/30 text-fuchsia-400 border-fuchsia-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
                                             <span x-text="user.persona_type || 'Unknown'"></span>
                                         </div>
                                     </div>
@@ -878,7 +878,7 @@
                                                 x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
                                         </div>
                                         <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-rose-900/30 text-rose-400 border-rose-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
+                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-fuchsia-900/30 text-fuchsia-400 border-fuchsia-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
                                             <span x-text="user.persona_type || 'Unknown'"></span>
                                         </div>
                                     </div>
@@ -964,7 +964,7 @@
                                                 x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
                                         </div>
                                         <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-rose-900/30 text-rose-400 border-rose-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
+                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-fuchsia-900/30 text-fuchsia-400 border-fuchsia-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
                                             <span x-text="user.persona_type || 'Unknown'"></span>
                                         </div>
                                     </div>
@@ -1050,7 +1050,7 @@
                                                 x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
                                         </div>
                                         <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-rose-900/30 text-rose-400 border-rose-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
+                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-fuchsia-900/30 text-fuchsia-400 border-fuchsia-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
                                             <span x-text="user.persona_type || 'Unknown'"></span>
                                         </div>
                                     </div>
