@@ -124,8 +124,8 @@
                                 <template x-for="opp in selectedAsset.influenced_opps" :key="opp.company + opp.date">
                                     <div class="flex justify-between items-center bg-dark-900 border border-dark-700 rounded p-2">
                                         <div>
-                                            <span class="text-[10px] font-bold text-white block truncate w-32" x-text="opp.company"></span>
-                                            <span class="text-[9px] text-slate-400" x-text="opp.date"></span>
+                                            <span class="text-sm font-bold text-white block truncate w-32 md:w-48" x-text="opp.company"></span>
+                                            <span class="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5 block" x-text="(()=>{ const m = [\'JAN\',\'FEB\',\'MAR\',\'APR\',\'MAY\',\'JUN\',\'JUL\',\'AUG\',\'SEP\',\'OCT\',\'NOV\',\'DEC\']; const p = (opp.date||\'\').split(\'-\'); return p.length === 3 ? `${p[2]} ${m[parseInt(p[1])-1]} ${p[0]}` : opp.date })()"></span>
                                         </div>
                                         <span class="text-xs font-black text-emerald-400" x-text="'$' + (opp.value / 1000000).toFixed(1) + 'M'"></span>
                                     </div>
