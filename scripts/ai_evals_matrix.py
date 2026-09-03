@@ -9,7 +9,14 @@ from dotenv import load_dotenv
 env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
 load_dotenv(env_path)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app.services.analytics import get_executive_pipeline_kpis, simulate_budget_shift, draft_outreach_sequence
+from app.services.analytics import (
+    calculate_blended_cpa, get_account_penetration, evaluate_trickle_threshold,
+    simulate_budget_shift, get_tam_penetration, calculate_share_of_voice,
+    get_executive_pipeline_kpis, get_budget_pacing, run_attribution_model,
+    compare_asset_baselines, map_buying_committee, get_intent_surge_signals,
+    get_asset_impact_matrix, get_user_journey, generate_ab_test_variants,
+    draft_outreach_sequence
+)
 from app.services.llm_rotator import get_genai_client, mark_key_exhausted
 
 # --- CONFIGURATION ---
@@ -19,7 +26,20 @@ MATRIX_TIMEFRAMES = [30, 90]
 MATRIX_TOOLS = [
     {"name": "get_executive_pipeline_kpis", "func": get_executive_pipeline_kpis, "kwargs": {}},
     {"name": "simulate_budget_shift", "func": simulate_budget_shift, "kwargs": {"channel": "linkedin", "budget": "REMAINING_BUDGET"}},
-    {"name": "draft_outreach_sequence", "func": draft_outreach_sequence, "kwargs": {"persona": "CMO", "context_data": "High intent on sustainability"}}
+    {"name": "draft_outreach_sequence", "func": draft_outreach_sequence, "kwargs": {"persona": "CMO", "context_data": "High intent on sustainability"}},
+    {"name": "calculate_blended_cpa", "func": calculate_blended_cpa, "kwargs": {}},
+    {"name": "get_account_penetration", "func": get_account_penetration, "kwargs": {"account_identifier": "Acme Corp"}},
+    {"name": "evaluate_trickle_threshold", "func": evaluate_trickle_threshold, "kwargs": {}},
+    {"name": "get_tam_penetration", "func": get_tam_penetration, "kwargs": {}},
+    {"name": "calculate_share_of_voice", "func": calculate_share_of_voice, "kwargs": {}},
+    {"name": "get_budget_pacing", "func": get_budget_pacing, "kwargs": {"channel": "all"}},
+    {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "w_shaped"}},
+    {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper", "asset_b": "/demo"}},
+    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Acme Corp"}},
+    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {}},
+    {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {"asset_type": "Web"}},
+    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"email": "test@acme.com"}},
+    {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"base_copy": "Improve your ROI today."}}
 ]
 
 def heuristic_sparsity_score(data) -> int:
@@ -137,7 +157,7 @@ def main():
     
     for r in results:
         notes = r['reasoning'].replace('\n', ' ')
-        if len(notes) > 50: notes = notes[:47] + "..."
+        
         report.append(f"| `{r['tool']}` | {r['timeframe']}d | {r['sparsity']}/5 | {r['actionability']}/5 | {r['relevance']}/5 | {r['exec_ms']}ms | {notes} |")
         
     artifact_path = os.path.join(os.path.dirname(__file__), '..', 'ai_evals_report.md')
