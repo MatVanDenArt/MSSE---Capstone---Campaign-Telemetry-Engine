@@ -225,7 +225,16 @@ mcp_tools = [
         "description": "Calculates the blended Cost Per Acquisition (CPA) by dividing total LinkedIn spend by total CRM Closed Won opportunities.",
         "parameters": {
             "type": "object",
-            "properties": {},
+            "properties": {
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
+                }
+            },
             "required": []
         }
     },
@@ -234,7 +243,16 @@ mcp_tools = [
         "description": "Retrieves the account penetration grouped by company name and user seniority level.",
         "parameters": {
             "type": "object",
-            "properties": {},
+            "properties": {
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
+                }
+            },
             "required": []
         }
     },
@@ -243,7 +261,16 @@ mcp_tools = [
         "description": "Evaluates if the campaign is currently active or past based on the Trickle Threshold Algorithm (95% drop sustained for 7 days).",
         "parameters": {
             "type": "object",
-            "properties": {},
+            "properties": {
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
+                }
+            },
             "required": []
         }
     },
@@ -260,9 +287,20 @@ mcp_tools = [
                 "budget": {
                     "type": "number",
                     "description": "The new proposed budget amount in dollars."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["channel", "budget"]
+            "required": [
+                "channel",
+                "budget"
+            ]
         }
     },
     {
@@ -274,9 +312,15 @@ mcp_tools = [
                 "campaign_id": {
                     "type": "string",
                     "description": "The ID of the campaign."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["campaign_id"]
+            "required": [
+                "campaign_id"
+            ]
         }
     },
     {
@@ -288,9 +332,15 @@ mcp_tools = [
                 "campaign_id": {
                     "type": "string",
                     "description": "The ID of the campaign."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["campaign_id"]
+            "required": [
+                "campaign_id"
+            ]
         }
     },
     {
@@ -302,6 +352,10 @@ mcp_tools = [
                 "timeframe": {
                     "type": "integer",
                     "description": "Number of days to look back. 0 means all time."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
                 }
             },
             "required": []
@@ -320,6 +374,10 @@ mcp_tools = [
                 "campaign_id": {
                     "type": "string",
                     "description": "Campaign ID to filter by."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
             "required": []
@@ -338,6 +396,10 @@ mcp_tools = [
                 "timeframe": {
                     "type": "integer",
                     "description": "Timeframe in days."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
                 }
             },
             "required": []
@@ -356,9 +418,20 @@ mcp_tools = [
                 "asset_b": {
                     "type": "string",
                     "description": "Name or URL of the second asset."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["asset_a", "asset_b"]
+            "required": [
+                "asset_a",
+                "asset_b"
+            ]
         }
     },
     {
@@ -370,9 +443,19 @@ mcp_tools = [
                 "account_identifier": {
                     "type": "string",
                     "description": "The name of the company or account (e.g., 'Shell', 'BP')."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["account_identifier"]
+            "required": [
+                "account_identifier"
+            ]
         }
     },
     {
@@ -384,9 +467,19 @@ mcp_tools = [
                 "account_identifier": {
                     "type": "string",
                     "description": "The name of the company or account."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["account_identifier"]
+            "required": [
+                "account_identifier"
+            ]
         }
     },
     {
@@ -404,10 +497,11 @@ mcp_tools = [
                     "description": "Timeframe in days, default is 0."
                 }
             },
-            "required": ["campaign_id"]
+            "required": [
+                "campaign_id"
+            ]
         }
-    }
-,
+    },
     {
         "name": "get_user_journey",
         "description": "Returns the chronological, cross-channel touchpoints (interactions) of a specific lead.",
@@ -421,9 +515,20 @@ mcp_tools = [
                 "company": {
                     "type": "string",
                     "description": "The company the user works for, e.g., 'Petrobras'"
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["name", "company"]
+            "required": [
+                "name",
+                "company"
+            ]
         }
     },
     {
@@ -439,9 +544,20 @@ mcp_tools = [
                 "variable": {
                     "type": "string",
                     "description": "The variable to test, e.g., 'Subject Line', 'Hero Copy'."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["asset_id", "variable"]
+            "required": [
+                "asset_id",
+                "variable"
+            ]
         }
     },
     {
@@ -457,9 +573,20 @@ mcp_tools = [
                 "context_data": {
                     "type": "string",
                     "description": "The context or reason for outreach (e.g., 'High intent on Digital Twin Insights')."
+                },
+                "campaign_id": {
+                    "type": "string",
+                    "description": "Optional campaign ID to scope the metrics."
+                },
+                "timeframe": {
+                    "type": "integer",
+                    "description": "Optional timeframe in days."
                 }
             },
-            "required": ["persona", "context_data"]
+            "required": [
+                "persona",
+                "context_data"
+            ]
         }
     }
 ]
