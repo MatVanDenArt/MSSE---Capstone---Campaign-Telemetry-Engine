@@ -285,8 +285,8 @@ mcp_tools = [
                     "description": "The marketing channel to simulate (e.g., 'linkedin')."
                 },
                 "budget": {
-                    "type": "number",
-                    "description": "The new proposed budget amount in dollars."
+                    "type": ["number", "string"],
+                    "description": "The new proposed budget amount in dollars, or the exact string 'REMAINING_BUDGET' to dynamically simulate shifting the exact remaining unspent budget across all channels."
                 },
                 "campaign_id": {
                     "type": "string",

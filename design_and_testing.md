@@ -264,6 +264,11 @@ Moving beyond the capstone into a production enterprise environment requires arc
   - API Costs: $0. Once the hardware is purchased, infinite AI queries can be made without paying token fees.
 - **Pros**: Absolute data sovereignty. Zero risk of proprietary CRM or pipeline data leaking to public cloud AI providers.
 
+### 3. MCP Tool Execution Architecture (Sequential vs Parallel)
+The application utilizes **Parallel Function Calling** (batching multiple tool execution requests into a single API roundtrip) to drastically reduce LLM latency and minimize token expenditure. However, parallel execution introduces a Dependency Resolution challenge: an LLM cannot logically chain tools together if it executes them simultaneously (e.g., simulating a budget shift before knowing the available budget constraints).
+
+To achieve both high-speed parallel execution and absolute data accuracy, the architecture utilizes **Abstract Late Binding**. Rather than forcing the LLM to guess numeric variables, MCP tools accept string constants (e.g., `budget="REMAINING_BUDGET"`). The Python backend intercepts these abstract strings, resolves the dependencies locally against the database, and injects the precise values into the mathematical models. This completely eliminates LLM hallucinations while maintaining zero-latency parallel execution.
+
 ## 9. Software Testing Strategy
 
 Testing an Agentic AI-integrated telemetry engine requires a paradigm shift from traditional web application testing. While standard applications rely on deterministic unit and E2E testing, integrating an autonomous LLM via the Model Context Protocol (MCP) introduces non-deterministic behavior, schema drift, and hallucination risks.
@@ -322,3 +327,6 @@ The core `app/services/analytics_v2.py` service currently acts as a monolithic "
 ### 2. Full Rollout of Dependency Injection
 While FastAPI's native **Dependency Injection** (`Depends(get_db)`) has been successfully implemented in the V2 UI routing layer (`dashboard_v2.py`) to manage database connection lifecycles via the Unit of Work pattern, the core MCP AI Tools in `analytics_v2.py` currently manage their own internal connections.
 - **Roadmap Action:** A future refactor will decouple the AI tool schema definitions from the underlying Python functions. This will allow us to inject the database dependencies cleanly into the analytics layer without accidentally exposing the `db` connection parameter to the LLM's automated function calling schema.
+
+### 3. Declarative Tool Chaining Engine (MCP Orchestration)
+To fully eliminate the need for hardcoded Late Binding in complex agentic workflows, the system will eventually adopt a full **Declarative Tool Chaining** engine (Option 3). Instead of the LLM guessing parameters or using hardcoded string enums, the LLM will construct a Directed Acyclic Graph (DAG) using JSON references (e.g., `budget: "$ref.get_budget_pacing.shortfall"`). This will require building a robust Python orchestration layer capable of parsing the LLM's graph, executing tools sequentially, mapping dynamic output variables to inputs, and handling execution failures gracefully.
