@@ -2021,10 +2021,12 @@ def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: 
         cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE 1=1 {campaign_cond} {tf_condition}")
         li_spend = cursor.fetchone()["s"] or 0.0
         
-        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {f'AND campaign_id LIKE \'%{campaign_id}%\'' if campaign_id else ''} {tf_condition}")
+        camp_cond_em = f"AND campaign_id LIKE '%{campaign_id}%'" if campaign_id else ""
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {camp_cond_em} {tf_condition}")
         em_spend = (cursor.fetchone()["c"] or 0) * 1.50
         
-        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {f'AND utm_campaign = \'{campaign_id}\'' if campaign_id else ''} {tf_condition}")
+        camp_cond_ga = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {camp_cond_ga} {tf_condition}")
         web_spend = (cursor.fetchone()["c"] or 0) * 0.80
         
         if channel.lower() == 'linkedin':
@@ -2081,7 +2083,8 @@ def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None,
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute(f"SELECT page_viewed, COUNT(*) as hits FROM ga4_events WHERE page_viewed IN (?, ?) {f'AND utm_campaign = \'{campaign_id}\'' if campaign_id else ''} GROUP BY page_viewed", (asset_a, asset_b))
+        camp_cond = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+        cursor.execute(f"SELECT page_viewed, COUNT(*) as hits FROM ga4_events WHERE page_viewed IN (?, ?) {camp_cond} GROUP BY page_viewed", (asset_a, asset_b))
         results = {row['page_viewed']: row['hits'] for row in cursor.fetchall()}
         conn.close()
         
