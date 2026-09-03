@@ -33,7 +33,7 @@ chat_history = []
 active_chat_tasks = {}
 
 @router.post("/chat", response_class=HTMLResponse)
-def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None), reset_context: str = Form("false")):
+def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context: str = Form(None), trigger_id: str = Form(None), intent: str = Form(None), reset_context: str = Form("false"), campaign_id: str = Form(None)):
     global chat_history
     
     context_breakers = [
@@ -142,7 +142,8 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
         "time_context": time_context,
         "trigger_id": trigger_id,
         "intent": intent,
-        "reset_context": reset_context
+        "reset_context": reset_context,
+        "campaign_id": campaign_id
     }
     
     sse_html = f'''
@@ -182,6 +183,7 @@ def chat_stream(task_id: str):
         trigger_id = task_data["trigger_id"]
         intent = task_data["intent"]
         reset_context = task_data["reset_context"]
+        campaign_id = task_data.get("campaign_id")
         
         try:
             from app.services.llm_rotator import get_genai_client
@@ -192,6 +194,8 @@ def chat_stream(task_id: str):
                 context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\n{time_context}. You MUST scope your analysis to this specific timeframe anomaly and ignore the global timeframe."
             else:
                 context_prompt = SYSTEM_PROMPT + f"\n\nCURRENT UI CONTEXT:\nThe user currently has their dashboard timeframe filtered to: {timeframe} days (0 means All Time). If they ask for metrics without specifying a date, use this timeframe."
+            if campaign_id:
+                context_prompt += f"\nThe user is currently viewing the campaign '{campaign_id}'. You MUST scope all your data and analysis specifically to this campaign by passing it to your tools."
                 
             if intent == "review" and trigger_id:
                 context_prompt += f"""\n\nCRITICAL INSTRUCTION FOR THIS PROMPT:
@@ -203,7 +207,7 @@ def chat_stream(task_id: str):
     To format this, you MUST place a `### Recommended Action(s)` header immediately before the buttons.
     Then, for EACH suggested action, output an HTML button using this EXACT structure, replacing [ACTION NAME] with a short label (e.g. "Draft Email"), [ACTION COMMAND] with the specific automated instruction you would want the user to click, and [INTENT] with either 'automate' (if pushing data to a CRM/System) or 'chat' (if generating content like drafting an email):
     
-    <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[ACTION COMMAND]", "intent": "[INTENT]", "trigger_id": "{trigger_id}"}}' class="mb-2 w-full py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
+    <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[ACTION COMMAND]", "intent": "[INTENT]", "trigger_id": "{trigger_id}", "campaign_id": "{campaign_id}", "timeframe": "{timeframe}"}}' class="mb-2 w-full py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
     """
             
             response = None

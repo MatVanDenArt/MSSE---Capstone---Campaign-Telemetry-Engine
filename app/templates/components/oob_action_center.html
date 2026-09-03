@@ -94,7 +94,9 @@
                          time_context: 'Strict Context: Target event occurred around ' + task.created_at,
                          trigger_id: task.id,
                          intent: 'review',
-                         reset_context: 'true'
+                         reset_context: 'true',
+                         campaign_id: document.getElementById('current_campaign') ? document.getElementById('current_campaign').value : null,
+                         timeframe: document.querySelector('[name=\'timeframe\']') ? document.querySelector('[name=\'timeframe\']').value : 0
                      }
                  });
              },

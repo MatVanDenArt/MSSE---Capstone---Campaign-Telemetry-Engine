@@ -10,7 +10,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def calculate_blended_cpa() -> dict:
+def calculate_blended_cpa(campaign_id: str = None, **kwargs) -> dict:
     """
     Query total LinkedIn spend divided by total CRM opportunities.
     """
@@ -19,19 +19,19 @@ def calculate_blended_cpa() -> dict:
         cursor = conn.cursor()
         
         # Get total spend
-        cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
+        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
         li_spend = cursor.fetchone()["total_spend"] or 0.0
         
-        cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
         em_spend = (cursor.fetchone()["c"] or 0) * 1.50
         
-        cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
         web_spend = (cursor.fetchone()["c"] or 0) * 0.80
         
         total_spend = li_spend + em_spend + web_spend
         
         # Get total closed won opps
-        cursor.execute("SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won'")
+        cursor.execute(f"SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won' AND utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won'")
         opps_row = cursor.fetchone()
         total_opps = opps_row["total_opps"] if opps_row and opps_row["total_opps"] else 0
         
@@ -45,7 +45,7 @@ def calculate_blended_cpa() -> dict:
         }
     except Exception as e:
         raise e
-def get_account_penetration(campaign_id: str) -> dict:
+def get_account_penetration(campaign_id: str, **kwargs) -> dict:
     """
     Group users by company_name and seniority to return a summarized dictionary.
     Filtered by those who interacted with the specified campaign.
@@ -78,7 +78,7 @@ def get_account_penetration(campaign_id: str) -> dict:
         return {"account_penetration": result}
     except Exception as e:
         raise e
-def evaluate_trickle_threshold(campaign_id: str) -> dict:
+def evaluate_trickle_threshold(campaign_id: str, **kwargs) -> dict:
     """
     Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days.
     """
@@ -120,7 +120,7 @@ def evaluate_trickle_threshold(campaign_id: str) -> dict:
         }
     except Exception as e:
         raise e
-def simulate_budget_shift(channel: str, budget: float) -> dict:
+def simulate_budget_shift(channel: str, budget: float, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Use historical baseline conversion rates to mathematically project new pipeline volume based on the new budget.
     """
@@ -131,25 +131,28 @@ def simulate_budget_shift(channel: str, budget: float) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
+        tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        campaign_cond = f"AND campaign_id = '{campaign_id}'" if campaign_id else ""
+        
+        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE 1=1 {campaign_cond} {tf_condition}")
         li_hist = cursor.fetchone()["total_spend"] or 0.0
         
-        cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {campaign_cond} {tf_condition}")
         em_hist = (cursor.fetchone()["c"] or 0) * 1.50
         
-        cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {f'AND utm_campaign = \'{campaign_id}\'' if campaign_id else ''} {tf_condition}")
         web_hist = (cursor.fetchone()["c"] or 0) * 0.80
         
         historical_spend = li_hist + em_hist + web_hist
         
-        cursor.execute("SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE event_type = 'Closed Won'")
+        cursor.execute(f"SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE event_type = 'Closed Won' {f'AND utm_campaign = \'{campaign_id}\'' if campaign_id else ''} {tf_condition}")
         pipe_row = cursor.fetchone()
         historical_pipeline = pipe_row["total_pipeline"] if pipe_row and pipe_row["total_pipeline"] else 0.0
         
         conn.close()
         
         if historical_spend == 0:
-            return {"error": "No historical spend to calculate baseline."}
+            return {"error": "No historical spend to calculate baseline in this timeframe."}
             
         roi_multiplier = historical_pipeline / historical_spend
         projected_pipeline = budget * roi_multiplier
@@ -1863,29 +1866,50 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str) -> li
     conn.close()
     return users
 
-def get_tam_penetration(campaign_id: str) -> dict:
+def get_tam_penetration(campaign_id: str, **kwargs) -> dict:
     """
-    Mock calculation for Target Account Penetration scoped to a campaign.
+    Actual calculation for Target Account Penetration scoped to a campaign.
     Returns the percentage of assigned Tier 1 accounts that have engaged.
     """
-    import random
-    
-    # Base penetration based on campaign phase
-    if campaign_id and "LIVE" in campaign_id:
-        penetration = round(random.uniform(15.0, 45.0), 1)
-    else:
-        penetration = round(random.uniform(60.0, 85.0), 1)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-    return {
-        "metric_name": "Campaign Account Penetration",
-        "value": f"{penetration}%",
-        "raw_value": penetration,
-        "delta": round(random.uniform(-5.0, 15.0), 1),
-        "total_target_accounts": 150,
-        "engaged_accounts": int(150 * (penetration/100))
-    }
+        cursor.execute("SELECT COUNT(DISTINCT company_name) as c FROM crm_users")
+        total_accounts = cursor.fetchone()["c"] or 1
+        
+        camp_filter = f"AND campaign_id = '{campaign_id}'" if campaign_id else ""
+        utm_filter = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+        
+        query = f"""
+        SELECT COUNT(DISTINCT u.company_name) as c
+        FROM crm_users u
+        WHERE u.user_id IN (
+            SELECT user_id FROM linkedin_events WHERE 1=1 {camp_filter}
+            UNION
+            SELECT user_id FROM mailchimp_events WHERE 1=1 {camp_filter}
+            UNION
+            SELECT user_id FROM ga4_events WHERE 1=1 {utm_filter}
+        )
+        """
+        cursor.execute(query)
+        engaged_accounts = cursor.fetchone()["c"] or 0
+        
+        penetration = round((engaged_accounts / total_accounts) * 100, 1) if total_accounts > 0 else 0.0
+        conn.close()
+        
+        return {
+            "metric_name": "Campaign Account Penetration",
+            "value": f"{penetration}%",
+            "raw_value": penetration,
+            "delta": 0.0,
+            "total_target_accounts": total_accounts,
+            "engaged_accounts": engaged_accounts
+        }
+    except Exception as e:
+        raise e
 
-def calculate_share_of_voice(campaign_id: str) -> dict:
+def calculate_share_of_voice(campaign_id: str, **kwargs) -> dict:
     """
     Mock calculation for Topic Share of Voice (SOV) against competitors.
     """
@@ -1912,20 +1936,33 @@ def calculate_share_of_voice(campaign_id: str) -> dict:
     }
 
 
-def get_executive_pipeline_kpis(timeframe: int = 0) -> dict:
+def get_executive_pipeline_kpis(timeframe: int = 0, campaign_id: str = None, **kwargs) -> dict:
     '''Query crm_opps for top-level ROI and Pipeline KPIs.'''
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        date_filter = ""
+        filters = []
         if timeframe > 0:
-            date_filter = f"WHERE timestamp >= date('now', '-{timeframe} days')"
+            filters.append(f"timestamp >= date('now', '-{timeframe} days')")
+        if campaign_id:
+            filters.append(f"utm_campaign = '{campaign_id}'")
             
+        date_filter = "WHERE " + " AND ".join(filters) if filters else ""
+        
         cursor.execute(f"SELECT COUNT(*) as opp_count, SUM(pipeline_value) as total_pipeline FROM crm_opps {date_filter}")
         row = cursor.fetchone()
         
-        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events {date_filter}")
+        # Spend filter requires campaign_id column on linkedin_events
+        spend_filters = []
+        if timeframe > 0:
+            spend_filters.append(f"timestamp >= date('now', '-{timeframe} days')")
+        if campaign_id:
+            spend_filters.append(f"campaign_id = '{campaign_id}'")
+            
+        spend_date_filter = "WHERE " + " AND ".join(spend_filters) if spend_filters else ""
+        
+        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events {spend_date_filter}")
         spend_row = cursor.fetchone()
         
         conn.close()
@@ -1941,26 +1978,42 @@ def get_executive_pipeline_kpis(timeframe: int = 0) -> dict:
         }
     except Exception as e:
         raise e
-def get_budget_pacing(channel: str = 'all', campaign_id: str = None) -> dict:
+def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query spend data vs. pipeline creation.'''
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        campaign_cond = f"AND campaign_id = '{campaign_id}'" if campaign_id else ""
+        
+        cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE 1=1 {campaign_cond} {tf_condition}")
+        li_spend = cursor.fetchone()["s"] or 0.0
+        
+        # Determine allocated budget dynamically or return 0 if no timeframe
+        allocated_budget = 500000 if not timeframe else (500000 * (timeframe / 365.0))
+        
+        conn.close()
         return {
             "channel": channel,
             "campaign_id": campaign_id,
-            "allocated_budget": 500000,
-            "spent_budget": 350000,
-            "pacing_status": "On Track",
-            "projected_shortfall": 0
+            "timeframe": timeframe,
+            "allocated_budget": round(allocated_budget, 2),
+            "spent_budget": round(li_spend, 2),
+            "pacing_status": "On Track" if li_spend <= allocated_budget else "Over Budget",
+            "projected_shortfall": max(0, round(allocated_budget - li_spend, 2))
         }
     except Exception as e:
         raise e
-def run_attribution_model(model_type: str = 'linear', timeframe: int = 0) -> dict:
+def run_attribution_model(model_type: str = 'linear', timeframe: int = 0, campaign_id: str = None, **kwargs) -> dict:
     '''Query ga4_events to distribute pipeline credit across touches.'''
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT utm_source, COUNT(*) as touch_count FROM ga4_events GROUP BY utm_source ORDER BY touch_count DESC")
+        camp_filter = f"utm_campaign = '{campaign_id}'" if campaign_id else "1=1"
+        tf_filter = f"AND timestamp >= date('now', '-{timeframe} days')" if timeframe > 0 else ""
+        cursor.execute(f"SELECT utm_source, COUNT(*) as touch_count FROM ga4_events WHERE {camp_filter} {tf_filter} GROUP BY utm_source ORDER BY touch_count DESC")
         rows = cursor.fetchall()
         conn.close()
         
@@ -1976,13 +2029,13 @@ def run_attribution_model(model_type: str = 'linear', timeframe: int = 0) -> dic
         }
     except Exception as e:
         raise e
-def compare_asset_baselines(asset_a: str, asset_b: str) -> dict:
+def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None, **kwargs) -> dict:
     '''Query ga4_events to isolate performance gaps between two assets.'''
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT page_viewed, COUNT(*) as hits FROM ga4_events WHERE page_viewed IN (?, ?) GROUP BY page_viewed", (asset_a, asset_b))
+        cursor.execute(f"SELECT page_viewed, COUNT(*) as hits FROM ga4_events WHERE page_viewed IN (?, ?) {f'AND utm_campaign = \'{campaign_id}\'' if campaign_id else ''} GROUP BY page_viewed", (asset_a, asset_b))
         results = {row['page_viewed']: row['hits'] for row in cursor.fetchall()}
         conn.close()
         
@@ -1996,7 +2049,7 @@ def compare_asset_baselines(asset_a: str, asset_b: str) -> dict:
         }
     except Exception as e:
         raise e
-def map_buying_committee(account_identifier: str) -> dict:
+def map_buying_committee(account_identifier: str, campaign_id: str = None, **kwargs) -> dict:
     '''Query crm_users and ga4_events for a specific account to highlight engaged vs. unengaged personas.'''
     try:
         conn = get_db_connection()
@@ -2034,7 +2087,7 @@ def map_buying_committee(account_identifier: str) -> dict:
         }
     except Exception as e:
         raise e
-def get_intent_surge_signals(account_identifier: str) -> dict:
+def get_intent_surge_signals(account_identifier: str, campaign_id: str = None, **kwargs) -> dict:
     '''Query ga4_events for 48-hour velocity spikes.'''
     try:
         conn = get_db_connection()
@@ -2053,7 +2106,7 @@ def get_intent_surge_signals(account_identifier: str) -> dict:
         }
     except Exception as e:
         raise e
-def get_user_journey(name: str, company: str) -> dict:
+def get_user_journey(name: str, company: str, campaign_id: str = None, **kwargs) -> dict:
     from datetime import datetime
     conn = get_db_connection()
     conn.row_factory = __import__('sqlite3').Row
@@ -2136,56 +2189,22 @@ def get_user_journey(name: str, company: str) -> dict:
     return {"html_timeline": history_items}
 
 
-def generate_ab_test_variants(asset_id: str, variable: str) -> dict:
-    asset_lower = asset_id.lower()
-    
-    # Infer theme from synthetic asset names
-    if 'twin' in asset_lower:
-        theme = 'Digital Twin Operations'
-        benefit = 'Optimize factory output by 20% with real-time digital twins'
-        pain = 'Stop losing margin to operational blind spots'
-    elif 'decarb' in asset_lower:
-        theme = 'Industrial Decarbonization'
-        benefit = 'Achieve Net-Zero goals 3 years ahead of schedule'
-        pain = 'Stay ahead of upcoming ESG compliance penalties'
-    elif 'asset' in asset_lower or 'performance' in asset_lower:
-        theme = 'Predictive Maintenance'
-        benefit = 'Reduce unplanned downtime by 40% with AI-driven insights'
-        pain = 'Equipment failure is costing you millions'
-    else:
-        theme = 'Enterprise Operations'
-        benefit = 'Transform your operational efficiency'
-        pain = 'Overcome legacy system bottlenecks'
+def generate_ab_test_variants(asset_id: str, variable: str, campaign_id: str = None, **kwargs) -> dict:
+    from app.services.llm_rotator import get_genai_client
+    import json
+    try:
+        client = get_genai_client()
+        prompt = f"You are an expert B2B copywriter. Create A/B test variants for an asset named '{asset_id}' (in the context of campaign '{campaign_id}'). The variable to test is '{variable}'. Output a JSON object with keys: 'control', 'variant_a', 'variant_b', and 'rationale'."
+        response = client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        return {"error": str(e)}
 
-    if variable.lower() == 'subject line':
-        return {
-            "asset": asset_id,
-            "variable_tested": variable,
-            "control": f"[Whitepaper] New Insights on {theme}",
-            "variant_a": f"How to {benefit.lower()}",
-            "variant_b": f"{pain}? Read this.",
-            "rationale": "Testing a direct benefit statement (A) against a loss-aversion/pain-point statement (B) to see which drives higher open rates."
-        }
-    elif variable.lower() == 'hero copy':
-        return {
-            "asset": asset_id,
-            "variable_tested": variable,
-            "control": f"Unlock the Power of {theme}. Download our latest report.",
-            "variant_a": f"{benefit}. Start your transformation today.",
-            "variant_b": f"{pain}. Discover the solution in our comprehensive guide.",
-            "rationale": "Testing value-add messaging vs risk-mitigation messaging on the landing page."
-        }
-    else:
-        return {
-            "asset": asset_id,
-            "variable_tested": variable,
-            "control": f"Standard {variable} for {theme}",
-            "variant_a": f"Action-oriented {variable} for {theme}",
-            "variant_b": f"Urgency-driven {variable} for {theme}",
-            "rationale": "Testing different tones for the selected variable."
-        }
-
-def draft_outreach_sequence(persona: str, context_data: str) -> dict:
+def draft_outreach_sequence(persona: str, context_data: str, campaign_id: str = None, **kwargs) -> dict:
     persona_lower = persona.lower()
     
     # Adjust tone based on persona

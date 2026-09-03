@@ -21,7 +21,7 @@
                     show = true;
                 " @mouseleave="show = false" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend"
                 hx-indicator="#loading-indicator"
-                hx-vals='{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true"}'
+                hx-vals='javascript:{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true", "campaign_id": document.getElementById("current_campaign").value, "timeframe": document.querySelector("[name=\"timeframe\"]") ? document.querySelector("[name=\"timeframe\"]").value : 0}'
                 class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
 
                 <i

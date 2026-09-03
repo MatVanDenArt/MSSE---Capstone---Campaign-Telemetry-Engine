@@ -113,6 +113,11 @@ This abstraction provides immense adaptability:
 - **Model Agnosticism**: The core telemetry application passes generic text prompts and data dictionaries to the rotator. The rotator handles the provider-specific SDK logic. 
 - **Future-Proofing & Swapping**: If a new, highly specialized marketing model is released, or if the team wishes to migrate to an open-source local model, the developer only needs to update the adapter inside `llm_rotator.py`. The rest of the application remains completely untouched.
 
+### Recursive AI Generation (Secondary `get_genai_client`)
+Beyond the primary Copilot chat interface, the system implements a powerful pattern of "recursive" AI invocation. Specific Python MCP tools (such as `generate_ab_test_variants` and `draft_outreach_sequence`) utilize a secondary internal call to `get_genai_client()`. 
+
+Instead of relying on faked data or static templates for copywriting, these analytical functions transparently spawn a secondary, specialized Gemini execution thread in the background. This allows the primary Copilot to request an A/B test, triggering a backend tool that autonomously uses the LLM to write high-quality copy, and returns that generated text to the Copilot. This recursive pattern replaces hardcoded "prototype debt" with true dynamic generation.
+
 ## 5. Core Technology Stack
 
 The project adopts a modern, lightweight, server-driven architecture to prioritize development speed and performance.
