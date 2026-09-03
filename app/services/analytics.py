@@ -15,31 +15,23 @@ def calculate_blended_cpa(campaign_id: str = None, timeframe: int = 0, **kwargs)
     Query total LinkedIn spend divided by total CRM opportunities.
     """
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         # Get total spend
-        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
+        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
         li_spend = cursor.fetchone()["total_spend"] or 0.0
         
-        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
         em_spend = (cursor.fetchone()["c"] or 0) * 1.50
         
-        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
         web_spend = (cursor.fetchone()["c"] or 0) * 0.80
         
         total_spend = li_spend + em_spend + web_spend
         
         # Get total closed won opps
-        cursor.execute(f"SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won' AND utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won'")
+        cursor.execute(f"SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won' AND utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won' AND utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won'")
         opps_row = cursor.fetchone()
         total_opps = opps_row["total_opps"] if opps_row and opps_row["total_opps"] else 0
         
@@ -53,20 +45,12 @@ def calculate_blended_cpa(campaign_id: str = None, timeframe: int = 0, **kwargs)
         }
     except Exception as e:
         raise e
-def get_account_penetration(campaign_id: str, timeframe: int = 0, **kwargs) -> dict:
+def get_account_penetration(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Group users by company_name and seniority to return a summarized dictionary.
     Filtered by those who interacted with the specified campaign.
     """
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -94,19 +78,11 @@ def get_account_penetration(campaign_id: str, timeframe: int = 0, **kwargs) -> d
         return {"account_penetration": result}
     except Exception as e:
         raise e
-def evaluate_trickle_threshold(campaign_id: str, timeframe: int = 0, **kwargs) -> dict:
+def evaluate_trickle_threshold(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days.
     """
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -150,13 +126,11 @@ def simulate_budget_shift(channel: str, budget: float | str, campaign_id: str = 
     """
     try:
         if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
             from app.services.analytics import get_budget_pacing
             pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
             budget = pacing.get("projected_shortfall", 0.0)
             
         budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -224,14 +198,6 @@ def simulate_budget_shift(channel: str, budget: float | str, campaign_id: str = 
         raise e
 def get_all_campaigns() -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -268,14 +234,6 @@ def get_all_campaigns() -> list:
 @lru_cache(maxsize=128)
 def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -434,14 +392,6 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         raise e
 def get_campaign_start_date(campaign_id: str) -> str:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         query = f"""
@@ -469,16 +419,8 @@ def format_pipeline(val: float) -> str:
     return f"${val:.0f}"
 
 @lru_cache(maxsize=128)
-def get_asset_impact_matrix(campaign_id: str, timeframe: int = 90) -> list:
+def get_asset_impact_matrix(campaign_id: str = None, timeframe: int = 0, **kwargs) -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -745,14 +687,6 @@ Format in plain text without markdown."""
 # --- Advanced Analytics for Sprint B ---
 def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -821,14 +755,6 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         raise e
 def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1187,14 +1113,6 @@ tool_functions = {
 
 def get_scoped_audience_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1302,14 +1220,6 @@ def get_audience_network_data() -> dict:
     Interaction count is based on raw sum of mc_events and ga4_events from master_summary.
     """
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1464,14 +1374,6 @@ def get_audience_network_data() -> dict:
 @lru_cache(maxsize=128)
 def get_sankey_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1554,14 +1456,6 @@ def get_sankey_data(campaign_id: str) -> dict:
         raise e
 def get_asset_timeline_data(campaign_id: str = None) -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1650,14 +1544,6 @@ def get_asset_timeline_data(campaign_id: str = None) -> list:
         raise e
 def get_channel_roi_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1723,14 +1609,6 @@ def get_channel_roi_data(campaign_id: str) -> dict:
         raise e
 def get_ui_lab_funnel_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1755,14 +1633,6 @@ def get_ui_lab_funnel_data(campaign_id: str) -> dict:
         raise e
 def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -1784,14 +1654,6 @@ def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
         raise e
 def get_prioritized_sales_targets(campaign_id: str) -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2035,20 +1897,12 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str) -> li
     conn.close()
     return users
 
-def get_tam_penetration(campaign_id: str, timeframe: int = 0, **kwargs) -> dict:
+def get_tam_penetration(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Actual calculation for Target Account Penetration scoped to a campaign.
     Returns the percentage of assigned Tier 1 accounts that have engaged.
     """
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2086,7 +1940,7 @@ def get_tam_penetration(campaign_id: str, timeframe: int = 0, **kwargs) -> dict:
     except Exception as e:
         raise e
 
-def calculate_share_of_voice(campaign_id: str, timeframe: int = 0, **kwargs) -> dict:
+def calculate_share_of_voice(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Mock calculation for Topic Share of Voice (SOV) against competitors.
     """
@@ -2113,17 +1967,9 @@ def calculate_share_of_voice(campaign_id: str, timeframe: int = 0, **kwargs) -> 
     }
 
 
-def get_executive_pipeline_kpis(timeframe: int = 0, campaign_id: str = None, **kwargs) -> dict:
+def get_executive_pipeline_kpis(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query crm_opps for top-level ROI and Pipeline KPIs.'''
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2166,14 +2012,6 @@ def get_executive_pipeline_kpis(timeframe: int = 0, campaign_id: str = None, **k
 def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query spend data vs. pipeline creation.'''
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2213,17 +2051,9 @@ def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: 
         }
     except Exception as e:
         raise e
-def run_attribution_model(model_type: str = 'linear', timeframe: int = 0, campaign_id: str = None, **kwargs) -> dict:
+def run_attribution_model(model_type: str = 'linear', campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query ga4_events to distribute pipeline credit across touches.'''
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2248,14 +2078,6 @@ def run_attribution_model(model_type: str = 'linear', timeframe: int = 0, campai
 def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query ga4_events to isolate performance gaps between two assets.'''
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2276,14 +2098,6 @@ def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None,
 def map_buying_committee(account_identifier: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query crm_users and ga4_events for a specific account to highlight engaged vs. unengaged personas.'''
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2322,14 +2136,6 @@ def map_buying_committee(account_identifier: str, campaign_id: str = None, timef
 def get_intent_surge_signals(account_identifier: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     '''Query ga4_events for 48-hour velocity spikes.'''
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2486,14 +2292,6 @@ def draft_outreach_sequence(persona: str, context_data: str, campaign_id: str = 
 
 def get_scoped_audience_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2628,14 +2426,6 @@ def get_scoped_audience_data(campaign_id: str) -> dict:
 
 def get_channel_roi_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2704,14 +2494,6 @@ def get_channel_roi_data(campaign_id: str) -> dict:
 
 def get_ui_lab_funnel_data(campaign_id: str, timeframe: int = 0) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2752,14 +2534,6 @@ def get_ui_lab_funnel_data(campaign_id: str, timeframe: int = 0) -> dict:
 
 def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -2782,14 +2556,6 @@ def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
 
 def get_prioritized_sales_targets(campaign_id: str) -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -3044,14 +2810,6 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
 
 def get_funnel_drilldown_data(campaign_id: str, stage: str, timeframe: int = 0) -> list:
     try:
-        if str(budget).upper() == "REMAINING_BUDGET":
-            # Dynamic Late Binding: Calculate total spent across all channels to find remaining budget
-            from app.services.analytics import get_budget_pacing
-            pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
-            
-        budget = float(budget)
-        
         conn = get_db_connection()
         cursor = conn.cursor()
         
