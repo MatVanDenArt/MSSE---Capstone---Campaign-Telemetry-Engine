@@ -9,7 +9,7 @@ def test_pacing_parity():
     """
     Test that the get_budget_pacing MCP tool matches the data returned by the UI endpoint.
     """
-    campaign = "CMP_LIVE_DECARBONIZATION_25_26"
+    campaign = "CMP_TEST"
     tf = 0
     
     # UI Truth
@@ -35,7 +35,7 @@ def test_simulate_budget_shift_boundaries():
     Test that the simulate_budget_shift MCP tool properly utilizes Late Binding
     and respects boundaries.
     """
-    campaign = "CMP_LIVE_DECARBONIZATION_25_26"
+    campaign = "CMP_TEST"
     tf = 0
     
     # Execute with Late Binding String
@@ -54,7 +54,7 @@ def test_executive_pipeline_parity():
     """
     Test that get_executive_pipeline_kpis matches the UI top-level cards.
     """
-    campaign = "CMP_LIVE_DECARBONIZATION_25_26"
+    campaign = "CMP_TEST"
     tf = 0
     
     # UI Truth (Overview cards)
