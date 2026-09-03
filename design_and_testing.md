@@ -285,17 +285,27 @@ As the AI Copilot relies on a strictly defined JSON schema (`mcp_tools`) to unde
 - **Methodology**: The `tests/test_mcp_contracts.py` suite programmatically iterates over every tool defined in the JSON schema. It utilizes Python's `inspect.signature` to read the actual backend function in `app/services/analytics.py`.
 - **Coverage**: It mathematically asserts that every tool listed in the schema actually exists as a callable function, and that the parameters promised to the LLM exactly match the parameters the Python function accepts, making Schema Drift impossible.
 
-### 3. LLM Fuzzing & Graceful Fallback Testing
+### 3. MCP Integration & Data Parity Testing (Deterministic)
+While unit tests prove the core math, integration tests are required to ensure the backend MCP tools generate outputs that mathematically match the data served by the frontend API routes.
+- **Methodology**: The `tests/test_mcp_data_parity.py` suite executes priority MCP tools (e.g., `simulate_budget_shift`, `get_budget_pacing`) utilizing FastAPIs `TestClient` to simultaneously fetch the raw UI data points.
+- **Coverage**: It mathematically asserts that the backend tools (e.g., spend and pipeline logic) match the frontend source-of-truth exactly. This completely eliminates Data Divergence and forces strict alignment on cross-campaign scoping (using `timeframe` and `campaign_id`).
+
+### 4. LLM-as-a-Judge Evaluation Matrix (Qualitative)
+Traditional deterministic testing (asserting 1+1=2) is insufficient for evaluating the "usefulness" of LLM-generated telemetry. An output can be mathematically perfect but contextually absurd (e.g., projecting $66 Billion in pipeline from $100 of ad spend).
+- **Methodology**: The `scripts/ai_evals_matrix.py` harness runs a cross-product matrix test. It executes Priority MCP tools across multiple isolated timeframes and campaigns, bypassing the UI. The output payload is fed into a secondary Gemini LLM "Judge" via `llm_rotator.py` (with exponential backoff protection).
+- **Coverage**: The Judge strictly evaluates the payload on **Actionability** and **Contextual Relevance** (1-5 scale). This catches data anomalies and hallucinations in the mock DB seed data that unit tests fundamentally cannot detect.
+
+### 5. LLM Fuzzing & Graceful Fallback Testing
 Because LLMs are non-deterministic, the backend parser must be resilient to hallucinations, missing JSON brackets, and incorrect data types.
 - **Methodology**: The `tests/test_llm_parsers.py` suite utilizes `unittest.mock.patch` to intercept the Gemini API call and inject synthetic, malformed payloads.
 - **Coverage**: It asserts that when the LLM returns catastrophic garbage (e.g., `I am an AI. [ { oops } ]`), the backend gracefully catches the `JSONDecodeError` and devolves to a safe fallback state (rendering an empty UI state or an "AI Unavailable" warning) rather than crashing the application with a `500 Internal Server Error`.
 
-### 4. Presentation Layer Testing (API Routes)
+### 6. Presentation Layer Testing (API Routes)
 Because the frontend relies on HTMX for dynamic swapping, the FastAPI backend acts as the presentation layer.
 - **Methodology**: The `tests/test_api.py` suite utilizes `fastapi.testclient.TestClient` to programmatically fire HTTP `GET` requests against the core endpoints (e.g., `/api/dashboard/overview`).
 - **Coverage**: It asserts that the HTMX endpoints correctly return `200 OK` status codes and valid HTML fragments, ensuring the UI remains intact even as the underlying analytics engine is refactored.
 
-### 5. Continuous Integration (GitHub Actions)
+### 7. Continuous Integration (GitHub Actions)
 To enforce quality control across the team and prevent broken code from reaching production, the entire testing suite is automated via CI/CD.
 - **Methodology**: A GitHub Actions workflow (`.github/workflows/ci.yml`) is triggered on every push and pull request to the `main` branch. It provisions a clean Ubuntu environment, installs dependencies, and executes the full `pytest` suite.
 - **Deployment Gate**: The Render deployment pipeline is configured to monitor the GitHub commit status. If any test fails (e.g., an MCP contract mismatch), Render blocks the deployment, ensuring the live dashboard remains stable.
