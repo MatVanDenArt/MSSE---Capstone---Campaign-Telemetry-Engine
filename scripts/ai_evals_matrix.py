@@ -35,10 +35,10 @@ MATRIX_TOOLS = [
     {"name": "get_budget_pacing", "func": get_budget_pacing, "kwargs": {"channel": "all"}},
     {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "w_shaped"}},
     {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper", "asset_b": "/demo"}},
-    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Acme Corp"}},
-    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "Acme Corp"}},
+    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Shell"}},
+    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "Shell"}},
     {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {"asset_type": "Web"}},
-    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "Test User", "company": "Acme Corp"}},
+    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "Danielle Johnson", "company": "Shell"}},
     {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"asset_id": "landing_page_1", "variable": "headline"}}
 ]
 
