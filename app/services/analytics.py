@@ -128,7 +128,7 @@ def simulate_budget_shift(channel: str, budget: float | str, campaign_id: str = 
         if str(budget).upper() == "REMAINING_BUDGET":
             from app.services.analytics import get_budget_pacing
             pacing = get_budget_pacing(channel='all', campaign_id=campaign_id, timeframe=timeframe)
-            budget = pacing.get("projected_shortfall", 0.0)
+            budget = pacing.get("remaining_budget", 0.0)
             
         budget = float(budget)
         conn = get_db_connection()
@@ -2041,39 +2041,72 @@ def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: 
         # Determine allocated budget dynamically or return 0 if no timeframe
         allocated_budget = 500000 if not timeframe else (500000 * (timeframe / 365.0))
         
+        spend_ratio = spent_budget / allocated_budget if allocated_budget > 0 else 0
+        if spend_ratio > 1.1:
+            status = "Over Budget"
+        elif spend_ratio < 0.5:
+            status = "Underspending (Requires Reallocation)"
+        else:
+            status = "On Track"
+            
+        daily_run_rate = spent_budget / timeframe if timeframe > 0 else 0
+        projected_yearly_spend = daily_run_rate * 365
+        projected_variance = projected_yearly_spend - 500000
+
         conn.close()
         return {
             "channel": channel,
             "campaign_id": campaign_id,
-            "timeframe": timeframe,
+            "timeframe_days": timeframe,
             "allocated_budget": round(allocated_budget, 2),
             "spent_budget": round(spent_budget, 2),
-            "pacing_status": "On Track" if spent_budget <= allocated_budget else "Over Budget",
-            "projected_shortfall": max(0, round(allocated_budget - spent_budget, 2))
+            "remaining_budget": max(0, round(allocated_budget - spent_budget, 2)),
+            "pacing_status": status,
+            "daily_run_rate": round(daily_run_rate, 2),
+            "projected_yearly_variance": round(projected_variance, 2)
         }
     except Exception as e:
         raise e
 def run_attribution_model(model_type: str = 'linear', campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
-    '''Query ga4_events to distribute pipeline credit across touches.'''
+    '''Query ga4_events and crm_opps to distribute pipeline revenue credit across marketing touches.'''
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        camp_filter = f"utm_campaign = '{campaign_id}'" if campaign_id else "1=1"
-        tf_filter = f"AND timestamp >= date('now', '-{timeframe} days')" if timeframe > 0 else ""
-        cursor.execute(f"SELECT utm_source, COUNT(*) as touch_count FROM ga4_events WHERE {camp_filter} {tf_filter} GROUP BY utm_source ORDER BY touch_count DESC")
+        camp_cond = f"g.utm_campaign = '{campaign_id}'" if campaign_id else "1=1"
+        tf_cond = f"AND g.timestamp >= date('now', '-{timeframe} days')" if timeframe > 0 else ""
+        
+        query = f"""
+            SELECT 
+                g.utm_source, 
+                COUNT(DISTINCT g.session_id) as touch_count,
+                SUM(COALESCE(o.pipeline_value, 0)) as attributed_revenue
+            FROM ga4_events g
+            LEFT JOIN crm_opps o ON g.user_id = o.user_id
+            WHERE {camp_cond} {tf_cond}
+            GROUP BY g.utm_source
+            ORDER BY attributed_revenue DESC, touch_count DESC
+        """
+        cursor.execute(query)
         rows = cursor.fetchall()
         conn.close()
         
         attribution = {}
+        total_revenue = 0
         for r in rows:
             src = r['utm_source'] or 'direct'
-            attribution[src] = r['touch_count']
+            revenue = round(r['attributed_revenue'] or 0, 2)
+            attribution[src] = {
+                "touch_count": r['touch_count'],
+                "attributed_revenue": revenue
+            }
+            total_revenue += revenue
             
         return {
             "model_type": model_type,
             "timeframe_days": timeframe,
-            "touch_distribution": attribution
+            "total_attributed_revenue": round(total_revenue, 2),
+            "channel_distribution": attribution
         }
     except Exception as e:
         raise e
