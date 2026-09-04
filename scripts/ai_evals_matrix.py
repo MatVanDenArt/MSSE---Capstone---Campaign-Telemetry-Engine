@@ -10,6 +10,7 @@ env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(env_path)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.services.analytics import (
+    get_db_connection,
     calculate_blended_cpa, get_account_penetration, evaluate_trickle_threshold,
     simulate_budget_shift, get_tam_penetration, calculate_share_of_voice,
     get_executive_pipeline_kpis, get_budget_pacing, run_attribution_model,
@@ -35,12 +36,44 @@ MATRIX_TOOLS = [
     {"name": "get_budget_pacing", "func": get_budget_pacing, "kwargs": {"channel": "all"}},
     {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "w_shaped"}},
     {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper", "asset_b": "/demo"}},
-    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Shell"}},
-    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "Shell"}},
+    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
+    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
     {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {"asset_type": "Web"}},
-    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "Danielle Johnson", "company": "Shell"}},
+    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "DYNAMIC_USER", "company": "DYNAMIC_ACCOUNT"}},
     {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"asset_id": "landing_page_1", "variable": "headline"}}
 ]
+
+
+def get_dynamic_test_data(campaign_id: str) -> dict:
+    '''Dynamically queries the database for a valid user and account in this campaign context.'''
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get a valid company name
+        cursor.execute('''
+            SELECT DISTINCT c.company_name 
+            FROM crm_users c 
+            JOIN ga4_events g ON c.user_id = g.user_id
+            WHERE g.utm_campaign = ? LIMIT 1
+        ''', (campaign_id,))
+        company_row = cursor.fetchone()
+        company = company_row[0] if company_row else "Acme Corp"
+        
+        # Get a valid user name
+        cursor.execute('''
+            SELECT DISTINCT c.first_name || ' ' || c.last_name 
+            FROM crm_users c 
+            JOIN ga4_events g ON c.user_id = g.user_id
+            WHERE g.utm_campaign = ? LIMIT 1
+        ''', (campaign_id,))
+        user_row = cursor.fetchone()
+        user = user_row[0] if user_row else "Test User"
+        
+        return {"account_identifier": company, "company": company, "name": user}
+    except Exception as e:
+        print("Warning: Dynamic fetch failed, falling back to dummy data.", e)
+        return {"account_identifier": "Acme Corp", "company": "Acme Corp", "name": "Test User"}
 
 def heuristic_sparsity_score(data) -> int:
     """Zero-cost Python evaluation for data sparsity. 1-5 scale."""
@@ -120,6 +153,14 @@ def main():
                 kwargs = tool["kwargs"].copy()
                 kwargs["campaign_id"] = camp
                 kwargs["timeframe"] = tf
+                
+                # Inject dynamic mock data if requested
+                dyn_data = get_dynamic_test_data(camp)
+                for k, v in kwargs.items():
+                    if v == "DYNAMIC_ACCOUNT":
+                        kwargs[k] = dyn_data.get("company", "Acme Corp")
+                    elif v == "DYNAMIC_USER":
+                        kwargs[k] = dyn_data.get("name", "Test User")
                 
                 start_time = time.time()
                 try:
