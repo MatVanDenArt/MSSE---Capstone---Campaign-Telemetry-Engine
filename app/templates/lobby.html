@@ -69,7 +69,11 @@
                     </div>
                 </div>
                 
-                <h2 class="text-xl font-bold text-slate-100 mb-6">{{ campaign.name }}</h2>
+                <h2 class="text-xl font-bold text-slate-100 mb-2">{{ campaign.name }}</h2>
+                <div class="flex items-center gap-4 text-xs font-mono text-slate-500 mb-6">
+                    <span title="Start Date"><i class="fa-solid fa-play text-brand-500/70 mr-1"></i> {{ campaign.start_date }}</span>
+                    <span title="End Date/Last Active"><i class="fa-solid fa-stop text-brand-500/70 mr-1"></i> {{ campaign.end_date }}</span>
+                </div>
                 
                 <div class="pt-4 border-t border-dark-700/50 mb-6">
                     <p class="text-xs text-slate-500 uppercase font-semibold mb-1">Pipeline Generated</p>
