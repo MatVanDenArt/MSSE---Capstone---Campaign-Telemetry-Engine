@@ -38,11 +38,13 @@
         }
 
         @keyframes gradient-x {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+            0% { background-position: 0% 50%; }
+            100% { background-position: -200% 50%; }
         }
         .animate-gradient-x {
-            animation: gradient-x 3s ease infinite;
+            background: repeating-linear-gradient(to right, #34d399, #06b6d4 50%, #34d399 100%);
+            background-size: 200% 100%;
+            animation: gradient-x 3s linear infinite;
         }
     </style>
 </head>
@@ -58,7 +60,7 @@
         <div class="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-6 border-b border-dark-800 pb-6">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight text-slate-200 mb-1">Campaign Telemetry Engine</h1>
-                <p class="text-slate-500 text-sm">Select a campaign to view performance metrics.</p>
+                <p class="text-slate-400 text-sm">Select a campaign to view performance metrics.</p>
             </div>
 
             <!-- Filters -->
@@ -84,7 +86,7 @@
 
                 <!-- Accent Line -->
                 <div
-                    class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r {% if campaign.is_active %}from-emerald-400 via-cyan-500 to-emerald-400 bg-[length:200%_auto] animate-gradient-x{% else %}from-slate-700 to-dark-700{% endif %}">
+                    class="absolute top-0 left-0 w-full h-1 {% if campaign.is_active %}animate-gradient-x{% else %}bg-gradient-to-r from-slate-700 to-dark-700{% endif %}">
                 </div>
 
                 <div class="flex items-center justify-between mb-4 mt-2">
