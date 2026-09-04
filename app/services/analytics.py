@@ -201,40 +201,74 @@ def get_all_campaigns() -> list:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Get all unique campaign IDs from linkedin_events
-        cursor.execute("SELECT DISTINCT campaign_id FROM linkedin_events WHERE campaign_id IS NOT NULL")
+        # Get all unique campaign IDs across ALL tables
+        cursor.execute("""
+            SELECT DISTINCT campaign_id FROM (
+                SELECT utm_campaign as campaign_id FROM ga4_events WHERE utm_campaign IS NOT NULL
+                UNION
+                SELECT campaign_id FROM linkedin_events WHERE campaign_id IS NOT NULL
+                UNION
+                SELECT utm_campaign as campaign_id FROM crm_opps WHERE utm_campaign IS NOT NULL
+            )
+        """)
         rows = cursor.fetchall()
         
         campaigns = []
+        from datetime import datetime
+        now = datetime.now()
+        
         for row in rows:
             cid = row["campaign_id"]
             name = cid.replace("CMP_LIVE_", "").replace("CMP_PAST_", "").replace("_", " ").title()
-            
-            # Use the naming convention to determine active status since ghosts generate noise
-            is_active = "LIVE" in cid
             
             # Fetch pipeline value
             cursor.execute(f"SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE utm_campaign = '{cid}'")
             pipeline_row = cursor.fetchone()
             total_pipeline = pipeline_row["total_pipeline"] if pipeline_row and pipeline_row["total_pipeline"] else 0.0
             
-            # Fetch start and end dates
-            date_query = f"""
-            SELECT MIN(min_ts) as min_ts, MAX(max_ts) as max_ts FROM (
-                SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM ga4_events WHERE utm_campaign = '{cid}'
-                UNION ALL
-                SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM linkedin_events WHERE campaign_id = '{cid}'
-                UNION ALL
-                SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM mailchimp_events WHERE campaign_id LIKE '%{cid}%'
-            )
-            """
-            cursor.execute(date_query)
-            date_row = cursor.fetchone()
-            start_date_str = str(date_row["min_ts"]).split(" ")[0] if date_row and date_row["min_ts"] else None
-            end_date_str = str(date_row["max_ts"]).split(" ")[0] if date_row and date_row["max_ts"] else None
+            # Fetch start date (absolute minimum across all tables)
+            cursor.execute(f"""
+                SELECT MIN(timestamp) as start_date FROM (
+                    SELECT MIN(timestamp) as timestamp FROM ga4_events WHERE utm_campaign = '{cid}'
+                    UNION ALL
+                    SELECT MIN(timestamp) as timestamp FROM linkedin_events WHERE campaign_id = '{cid}'
+                    UNION ALL
+                    SELECT MIN(timestamp) as timestamp FROM mailchimp_events WHERE campaign_id LIKE '%{cid}%'
+                    UNION ALL
+                    SELECT MIN(timestamp) as timestamp FROM crm_opps WHERE utm_campaign = '{cid}'
+                )
+            """)
+            start_row = cursor.fetchone()
+            start_date_str = str(start_row["start_date"]).split(" ")[0] if start_row and start_row["start_date"] else None
             
-            from datetime import datetime
+            # Option 1 Implementation: CRM Pipeline Timeout Rule
+            # To cut through the noisy long-tail ghost traffic, we define the campaign's lifespan
+            # by its ability to generate CRM pipeline. If no opps are generated in 100 days, it's complete.
+            cursor.execute(f"SELECT MAX(timestamp) as last_opp_date FROM crm_opps WHERE utm_campaign = '{cid}'")
+            opp_row = cursor.fetchone()
+            last_opp_date_str = str(opp_row["last_opp_date"]).split(" ")[0] if opp_row and opp_row["last_opp_date"] else None
             
+            is_active = True
+            end_date_str = "Present"
+            
+            if last_opp_date_str:
+                last_opp_date = datetime.strptime(last_opp_date_str, "%Y-%m-%d")
+                days_since_opp = (now - last_opp_date).days
+                if days_since_opp > 100:
+                    is_active = False
+                    end_date_str = last_opp_date_str
+            else:
+                # Fallback if campaign has literally 0 opps
+                cursor.execute(f"SELECT MAX(timestamp) as last_event FROM ga4_events WHERE utm_campaign = '{cid}'")
+                fallback = cursor.fetchone()
+                if fallback and fallback["last_event"]:
+                    fallback_date_str = str(fallback["last_event"]).split(" ")[0]
+                    fallback_date = datetime.strptime(fallback_date_str, "%Y-%m-%d")
+                    if (now - fallback_date).days > 100:
+                        is_active = False
+                        end_date_str = fallback_date_str
+            
+            # Format dates for UI
             start_date = "Unknown"
             if start_date_str:
                 try:
@@ -242,8 +276,8 @@ def get_all_campaigns() -> list:
                 except ValueError:
                     start_date = start_date_str
                     
-            end_date = "Unknown"
-            if end_date_str:
+            end_date = "Present"
+            if end_date_str and end_date_str != "Present":
                 try:
                     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%d %b %Y")
                 except ValueError:
@@ -259,7 +293,7 @@ def get_all_campaigns() -> list:
             })
             
         conn.close()
-        # Sort active first
+        # Sort active first, then by name
         campaigns.sort(key=lambda x: (not x["is_active"], x["name"]))
         return campaigns
     except Exception as e:
