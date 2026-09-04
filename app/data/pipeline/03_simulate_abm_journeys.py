@@ -232,7 +232,7 @@ def simulate_abm_journeys():
                 
                 linkedin_events.append({
                     "event_id": str(uuid.uuid4()), "campaign_id": user_campaign, "ad_id": ad, 
-                    "click_id": cookie_id, "utm_source": "linkedin", "spend_consumed": round(random.uniform(1.5, 8.5), 2), 
+                    "click_id": cookie_id, "utm_source": "linkedin", "spend_consumed": round(random.uniform(250.0, 1500.0), 2), 
                     "timestamp": t_stamp
                 })
                 
