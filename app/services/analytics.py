@@ -219,7 +219,14 @@ def get_all_campaigns() -> list:
         
         for row in rows:
             cid = row["campaign_id"]
-            name = cid.replace("CMP_LIVE_", "").replace("CMP_PAST_", "").replace("_", " ").title()
+            raw_name = cid.replace("CMP_LIVE_", "").replace("CMP_PAST_", "")
+            custom_names = {
+                "OIL_GAS_US": "Oil & Gas US",
+                "O_M_2026": "O&M 2026",
+                "OTC_2026": "OTC 2026",
+                "DECARBONIZATION_25_26": "Decarbonization '25/'26"
+            }
+            name = custom_names.get(raw_name, raw_name.replace("_", " ").title())
             
             # Fetch pipeline value
             cursor.execute(f"SELECT SUM(pipeline_value) as total_pipeline FROM crm_opps WHERE utm_campaign = '{cid}'")
