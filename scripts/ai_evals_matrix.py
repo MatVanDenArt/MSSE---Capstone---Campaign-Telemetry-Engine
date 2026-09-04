@@ -36,10 +36,10 @@ MATRIX_TOOLS = [
     {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "w_shaped"}},
     {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper", "asset_b": "/demo"}},
     {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Acme Corp"}},
-    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {}},
+    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "Acme Corp"}},
     {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {"asset_type": "Web"}},
-    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"email": "test@acme.com"}},
-    {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"base_copy": "Improve your ROI today."}}
+    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "Test User", "company": "Acme Corp"}},
+    {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"asset_id": "landing_page_1", "variable": "headline"}}
 ]
 
 def heuristic_sparsity_score(data) -> int:
