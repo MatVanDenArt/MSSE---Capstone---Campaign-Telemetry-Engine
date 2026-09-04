@@ -36,6 +36,14 @@
             background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
         }
+
+        @keyframes gradient-x {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .animate-gradient-x {
+            animation: gradient-x 3s ease infinite;
+        }
     </style>
 </head>
 
@@ -47,7 +55,7 @@
 
     <div class="max-w-6xl w-full z-10 mt-10">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6 border-b border-dark-800 pb-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-6 border-b border-dark-800 pb-6">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight text-slate-200 mb-1">Campaign Telemetry Engine</h1>
                 <p class="text-slate-500 text-sm">Select a campaign to view performance metrics.</p>
@@ -57,7 +65,7 @@
             <div class="flex items-center gap-2 bg-black p-1 rounded border border-dark-800">
                 <button onclick="filterCampaigns('all')"
                     class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded bg-brand-500/20 text-brand-300 border border-brand-500/50 shadow-[0_0_10px_rgba(56,189,248,0.2)] transition-all"
-                    id="btn-all">Global</button>
+                    id="btn-all">All</button>
                 <button onclick="filterCampaigns('active')"
                     class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded text-slate-400 hover:text-slate-300 hover:bg-dark-800 border border-transparent transition-all"
                     id="btn-active"><i class="fa-solid fa-bolt text-emerald-400 mr-1.5"></i>Active</button>
@@ -76,7 +84,7 @@
 
                 <!-- Accent Line -->
                 <div
-                    class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r {% if campaign.is_active %}from-emerald-500 to-cyan-500{% else %}from-slate-700 to-dark-700{% endif %}">
+                    class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r {% if campaign.is_active %}from-emerald-400 via-cyan-500 to-emerald-400 bg-[length:200%_auto] animate-gradient-x{% else %}from-slate-700 to-dark-700{% endif %}">
                 </div>
 
                 <div class="flex items-center justify-between mb-4 mt-2">
