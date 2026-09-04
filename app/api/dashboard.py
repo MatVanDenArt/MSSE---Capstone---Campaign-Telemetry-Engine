@@ -23,9 +23,11 @@ def get_db():
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
 def get_workspace(request: Request, campaign_id: str):
-    from app.services.analytics import get_campaign_start_date
-    start_date = get_campaign_start_date(campaign_id)
-    return templates.TemplateResponse(request=request, name="workspace.html", context={"campaign_id": campaign_id, "start_date": start_date})
+    from app.services.analytics import get_all_campaigns
+    campaigns = get_all_campaigns()
+    campaign = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
+    is_active = campaign["is_active"] if campaign else True
+    return templates.TemplateResponse(request=request, name="workspace.html", context={"campaign_id": campaign_id, "is_active": is_active})
 
 @router.get("/dashboard/sidebar", response_class=HTMLResponse)
 def get_sidebar(request: Request):

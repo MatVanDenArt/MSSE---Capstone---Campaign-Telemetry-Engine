@@ -757,6 +757,39 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Calculate true start/end dates for zoom framing
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        
+        # Start date
+        cursor.execute(f"""
+            SELECT MIN(timestamp) as start_date FROM (
+                SELECT MIN(timestamp) as timestamp FROM ga4_events WHERE utm_campaign = '{campaign_id}'
+                UNION ALL
+                SELECT MIN(timestamp) as timestamp FROM linkedin_events WHERE campaign_id = '{campaign_id}'
+                UNION ALL
+                SELECT MIN(timestamp) as timestamp FROM mailchimp_events WHERE campaign_id LIKE '%{campaign_id}%'
+                UNION ALL
+                SELECT MIN(timestamp) as timestamp FROM crm_opps WHERE utm_campaign = '{campaign_id}'
+            )
+        """)
+        s_row = cursor.fetchone()
+        official_start = str(s_row["start_date"]).split(" ")[0] if s_row and s_row["start_date"] else None
+        
+        # CRM End Date Rule
+        cursor.execute(f"SELECT MAX(timestamp) as last_opp_date FROM crm_opps WHERE utm_campaign = '{campaign_id}'")
+        opp_row = cursor.fetchone()
+        last_opp = str(opp_row["last_opp_date"]).split(" ")[0] if opp_row and opp_row["last_opp_date"] else None
+        
+        official_end = None
+        is_completed = False
+        if last_opp:
+            l_opp_dt = datetime.strptime(last_opp, "%Y-%m-%d")
+            if (now - l_opp_dt).days > 100:
+                is_completed = True
+                # Option 1B Soft Crop: pad the end date by 14 days so the chart visually ends gracefully after the last pipeline
+                official_end = (l_opp_dt + timedelta(days=14)).strftime("%Y-%m-%d")
+        
         # Determine grouping and timeframe conditions
         tf_condition = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
         date_format = "'%Y-%m-%d'"
@@ -765,11 +798,11 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM ga4_events WHERE utm_campaign = '{campaign_id}' {tf_condition} GROUP BY period ORDER BY period")
         traffic_rows = cursor.fetchall()
         
-        # Group CRM opps (Only Opportunity Created for the green line)
+        # Group CRM opps
         cursor.execute(f"SELECT strftime({date_format}, timestamp) as period, COUNT(*) as count FROM crm_opps WHERE utm_campaign = '{campaign_id}' AND event_type = 'Opportunity Created' {tf_condition} GROUP BY period ORDER BY period")
         opps_rows = cursor.fetchall()
         
-        # Get specific CRM opp details (Sprint 3)
+        # Get specific CRM opp details
         cursor.execute(f"SELECT o.event_type as type, strftime({date_format}, o.timestamp) as period, o.pipeline_value, u.company_name FROM crm_opps o JOIN (SELECT DISTINCT account_id, company_name FROM crm_users) u ON o.account_id = u.account_id WHERE o.utm_campaign = '{campaign_id}' {tf_condition}")
         opps_details_rows = cursor.fetchall()
         
@@ -810,13 +843,28 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         merge_into_map(mailchimp_rows, "email")
             
         sorted_periods = sorted(data_map.keys())
+        
+        # Make sure the official start and end dates exist in the labels so the X-axis doesn't break
+        if official_start and official_start not in sorted_periods:
+            sorted_periods.insert(0, official_start)
+            data_map[official_start] = {"traffic": 0, "opps": 0, "ads": 0, "email": 0}
+            sorted_periods.sort()
+            
+        if official_end and official_end not in sorted_periods:
+            sorted_periods.append(official_end)
+            data_map[official_end] = {"traffic": 0, "opps": 0, "ads": 0, "email": 0}
+            sorted_periods.sort()
+        
         return {
             "labels": sorted_periods,
             "traffic": [data_map[p]["traffic"] for p in sorted_periods],
             "opps": [data_map[p]["opps"] for p in sorted_periods],
             "ads": [data_map[p]["ads"] for p in sorted_periods],
             "email": [data_map[p]["email"] for p in sorted_periods],
-            "opps_details": {p: opps_details_map.get(p, []) for p in sorted_periods}
+            "opps_details": {p: opps_details_map.get(p, []) for p in sorted_periods},
+            "start_date": official_start,
+            "end_date": official_end,
+            "is_completed": is_completed
         }
     except Exception as e:
         raise e
