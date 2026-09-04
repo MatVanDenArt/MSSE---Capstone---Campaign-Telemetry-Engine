@@ -230,8 +230,24 @@ def get_all_campaigns() -> list:
             """
             cursor.execute(date_query)
             date_row = cursor.fetchone()
-            start_date = str(date_row["min_ts"]).split(" ")[0] if date_row and date_row["min_ts"] else "Unknown"
-            end_date = str(date_row["max_ts"]).split(" ")[0] if date_row and date_row["max_ts"] else "Unknown"
+            start_date_str = str(date_row["min_ts"]).split(" ")[0] if date_row and date_row["min_ts"] else None
+            end_date_str = str(date_row["max_ts"]).split(" ")[0] if date_row and date_row["max_ts"] else None
+            
+            from datetime import datetime
+            
+            start_date = "Unknown"
+            if start_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%d %b %Y")
+                except ValueError:
+                    start_date = start_date_str
+                    
+            end_date = "Unknown"
+            if end_date_str:
+                try:
+                    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%d %b %Y")
+                except ValueError:
+                    end_date = end_date_str
             
             campaigns.append({
                 "campaign_id": cid,
