@@ -218,11 +218,28 @@ def get_all_campaigns() -> list:
             pipeline_row = cursor.fetchone()
             total_pipeline = pipeline_row["total_pipeline"] if pipeline_row and pipeline_row["total_pipeline"] else 0.0
             
+            # Fetch start and end dates
+            date_query = f"""
+            SELECT MIN(min_ts) as min_ts, MAX(max_ts) as max_ts FROM (
+                SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM ga4_events WHERE utm_campaign = '{cid}'
+                UNION ALL
+                SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM linkedin_events WHERE campaign_id = '{cid}'
+                UNION ALL
+                SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM mailchimp_events WHERE campaign_id LIKE '%{cid}%'
+            )
+            """
+            cursor.execute(date_query)
+            date_row = cursor.fetchone()
+            start_date = str(date_row["min_ts"]).split(" ")[0] if date_row and date_row["min_ts"] else "Unknown"
+            end_date = str(date_row["max_ts"]).split(" ")[0] if date_row and date_row["max_ts"] else "Unknown"
+            
             campaigns.append({
                 "campaign_id": cid,
                 "name": name,
                 "is_active": is_active,
-                "total_pipeline": total_pipeline
+                "total_pipeline": total_pipeline,
+                "start_date": start_date,
+                "end_date": end_date
             })
             
         conn.close()
