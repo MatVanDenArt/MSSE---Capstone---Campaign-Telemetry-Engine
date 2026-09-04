@@ -276,15 +276,13 @@
             <div class="flex flex-col sm:flex-row items-end sm:items-center gap-4">
 
                 <!-- Tabs -->
-                <div class="flex items-center bg-black p-1 rounded-lg border border-dark-800">
+                <div class="flex items-center bg-black p-1 rounded-md border border-dark-800 gap-1">
                     <button @click="activeTab = 'accounts'"
-                        :class="activeTab === 'accounts' ? 'bg-emerald-900/50 border border-emerald-500/50 text-emerald-400' : 'text-slate-500 hover:text-slate-300 border border-transparent'"
-                        class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors rounded">Target
-                        Accounts</button>
+                        :class="activeTab === 'accounts' ? 'bg-brand-500/20 text-brand-300 border border-brand-500/50 shadow-[0_0_10px_rgba(56,189,248,0.2)]' : 'text-slate-500 hover:text-slate-300 hover:bg-dark-800 border border-transparent'"
+                        class="px-3 py-1.5 text-[10px] font-bold uppercase transition rounded">Target Accounts</button>
                     <button @click="activeTab = 'pipeline'"
-                        :class="activeTab === 'pipeline' ? 'bg-blue-900/50 border border-blue-600/50 text-blue-500' : 'text-slate-500 hover:text-slate-300 border border-transparent'"
-                        class="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ml-1 rounded">Lead
-                        Pipeline</button>
+                        :class="activeTab === 'pipeline' ? 'bg-brand-500/20 text-brand-300 border border-brand-500/50 shadow-[0_0_10px_rgba(56,189,248,0.2)]' : 'text-slate-500 hover:text-slate-300 hover:bg-dark-800 border border-transparent'"
+                        class="px-3 py-1.5 text-[10px] font-bold uppercase transition rounded">Lead Pipeline</button>
                 </div>
             </div>
         </div>
@@ -292,8 +290,7 @@
         <!-- TAB A: TARGET ACCOUNTS -->
         <div x-show="activeTab === 'accounts'">
             <!-- Section 1: Ranked Target Accounts & Buying Committee -->
-            <h3 class="text-sm font-bold text-white tracking-widest uppercase mb-4 mt-8"><i
-                    class="fa-solid fa-building mr-2 text-emerald-400"></i> Account Penetration</h3>
+
 
             <div class="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mb-12">
                 <template x-for="(account, index) in accounts" :key="account.company">
@@ -309,7 +306,7 @@
                                 <div class="inline-flex flex-col items-end">
                                     <span class="text-sm font-mono font-bold text-slate-300"
                                         x-text="account.total_interactions"></span>
-                                    <span class="text-[9px] text-slate-500 uppercase tracking-widest">Signals</span>
+                                    <span class="text-[9px] text-slate-400 uppercase tracking-widest">Signals</span>
                                 </div>
                             </div>
 
@@ -419,7 +416,7 @@
                 <!-- Cold Leads -->
                 <div class="flex flex-col bg-dark-900/50 border border-dark-800 rounded-xl overflow-hidden">
                     <div class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center">
-                        <h4 class="font-bold text-slate-500 text-[10px] uppercase tracking-widest">Cold Leads</h4>
+                        <h4 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest">Cold Leads</h4>
                         <span
                             class="bg-dark-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-dark-700"
                             x-text="coldLeads.length"></span>
@@ -469,7 +466,7 @@
                                 </div>
                                 <div class="pl-2">
                                     <div class="font-bold text-slate-200 text-sm mb-0.5" x-text="user.name"></div>
-                                    <div class="text-[10px] text-slate-500 font-medium uppercase tracking-widest mb-3"
+                                    <div class="text-xs text-slate-400 font-medium uppercase tracking-widest mb-3"
                                         x-text="user.title"></div>
                                     <div class="flex justify-between items-end">
                                         <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400"
@@ -505,7 +502,7 @@
                                 </div>
                                 <div class="pl-2">
                                     <div class="font-bold text-white text-sm mb-0.5" x-text="user.name"></div>
-                                    <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest mb-3"
+                                    <div class="text-xs text-slate-400 font-medium uppercase tracking-widest mb-3"
                                         x-text="user.title"></div>
                                     <div class="flex justify-between items-end">
                                         <div class="text-[10px] font-bold uppercase tracking-widest text-slate-300"
@@ -760,355 +757,73 @@
         <h3 class="text-sm font-bold text-white tracking-widest uppercase mb-4 mt-10"><i
                 class="fa-solid fa-sitemap mr-2 text-blue-500"></i> Account Personnel Structure</h3>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-6">
-
-            <!-- C-SUITE COLUMN -->
-            <div
-                class="flex flex-col bg-dark-950 border border-dark-800 rounded-xl overflow-hidden shadow-lg h-fit max-h-[800px]">
-                <div
-                    class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center sticky top-0 z-20">
-                    <h4 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest"><i
-                            class="fa-solid fa-chess-king mr-1.5"></i> C-Suite</h4>
-                    <span
-                        class="bg-dark-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-dark-700"
-                        x-text="accountCSuite.length"></span>
-                </div>
-                <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
-                    <template x-for="user in accountCSuite" :key="user.id">
-                        <!-- User Card logic here (reusable template) -->
-                        <div class="bg-black border border-dark-800 rounded-lg overflow-hidden group">
-                            <!-- Card Header -->
-                            <div @click="toggleUserTimeline(user.id)"
-                                class="p-4 hover:bg-dark-900/50 cursor-pointer transition-colors flex justify-between items-start">
-                                <div>
-                                    <div class="font-bold text-slate-200 text-sm mb-0.5" x-text="user.name"></div>
-                                    <div class="text-[10px] text-slate-500/70 font-medium tracking-widest mb-1.5"
-                                        x-text="user.title"></div>
-                                    <div class="flex gap-1.5 mb-2">
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.interactions > 5 ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : (user.interactions > 2 ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span
-                                                x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
-                                        </div>
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span x-text="user.persona_type || 'Unknown'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <div
-                                        class="text-[10px] font-bold text-slate-300 bg-dark-900 px-2 py-0.5 rounded border border-dark-700">
-                                        <i class="fa-solid fa-chart-line mr-1 text-slate-500"></i><span
-                                            x-text="user.interactions"></span>
-                                    </div>
-                                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-600 transition-transform"
-                                        :class="expandedUserId === user.id ? 'rotate-180' : ''"></i>
-                                </div>
-                            </div>
-                            <!-- Inline Timeline Expansion -->
-                            <div x-show="expandedUserId === user.id" x-collapse
-                                class="bg-dark-900/40 border-t border-dark-800 p-4">
-                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">
-                                    Engagement Journey</div>
-                                <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
-                                    <template x-for="(asset, index) in user.timeline" :key="index">
-                                        <li class="relative pl-5">
-                                            <!-- Node dot -->
-                                            <div
-                                                class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600">
+                <div class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-6">
+            <template x-for="col in [
+                { title: 'C-Suite', icon: 'fa-chess-king', list: accountCSuite },
+                { title: 'VP / Director', icon: 'fa-chess-knight', list: accountVp },
+                { title: 'Manager', icon: 'fa-chess-rook', list: accountManager },
+                { title: 'Contributor', icon: 'fa-chess-pawn', list: accountIC }
+            ]" :key="col.title">
+                <div class="flex flex-col bg-dark-950 border border-dark-800 rounded-xl overflow-hidden shadow-lg h-fit max-h-[800px]">
+                    <div class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center sticky top-0 z-20">
+                        <h4 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest">
+                            <i class="fa-solid mr-1.5" :class="col.icon"></i> <span x-text="col.title"></span>
+                        </h4>
+                        <span class="bg-dark-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-dark-700" x-text="col.list.length"></span>
+                    </div>
+                    <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
+                        <template x-for="user in col.list" :key="user.id">
+                            <div class="bg-black border border-dark-800 rounded-lg overflow-hidden group">
+                                <div @click="toggleUserTimeline(user.id)" class="p-4 hover:bg-dark-900/50 cursor-pointer transition-colors flex justify-between items-start">
+                                    <div>
+                                        <div class="font-bold text-slate-200 text-sm mb-0.5" x-text="user.name"></div>
+                                        <div class="text-xs text-slate-400 font-medium tracking-widest mb-1.5" x-text="user.title"></div>
+                                        <div class="flex gap-1.5 mb-2">
+                                            <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
+                                                :class="user.interactions > 5 ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : (user.interactions > 2 ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
+                                                <span x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
                                             </div>
-
-                                            <div class="flex flex-col">
-                                                <!-- Date -->
-                                                <span
-                                                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5"
-                                                    x-text="asset.date"></span>
-
-                                                <!-- Asset name -->
-                                                <div class="flex items-center text-[11px] font-medium w-full rounded pr-2 py-0.5 text-slate-300"
-                                                    :title="asset.asset">
-                                                    <i class="mr-2 text-xs opacity-70" :class="{
-                                                         'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
-                                                         'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
-                                                         'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
-                                                     }"></i>
-                                                    <span class="truncate" x-text="asset.asset"></span>
+                                            <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
+                                                :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
+                                                <span x-text="user.persona_type || 'Unknown'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-2">
+                                        <div class="text-[10px] font-bold text-slate-300 bg-dark-900 px-2 py-0.5 rounded border border-dark-700">
+                                            <i class="fa-solid fa-chart-line mr-1 text-slate-500"></i><span x-text="user.interactions"></span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-600 transition-transform" :class="expandedUserId === user.id ? 'rotate-180' : ''"></i>
+                                    </div>
+                                </div>
+                                <div x-show="expandedUserId === user.id" x-collapse class="bg-dark-900/40 border-t border-dark-800 p-4">
+                                    <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">Engagement Journey</div>
+                                    <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
+                                        <template x-for="(asset, index) in user.timeline" :key="index">
+                                            <li class="relative pl-5">
+                                                <div class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600"></div>
+                                                <div class="flex flex-col">
+                                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5" x-text="asset.date"></span>
+                                                    <div class="flex items-center text-xs font-medium w-full rounded pr-2 py-0.5 text-slate-300" :title="asset.asset">
+                                                        <i class="mr-2 text-xs opacity-70" :class="{
+                                                            'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
+                                                            'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
+                                                            'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
+                                                        }"></i>
+                                                        <span class="truncate" x-text="asset.asset"></span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                    </template>
-                                    <li x-show="!user.timeline || user.timeline.length === 0"
-                                        class="text-sm text-slate-500 italic pl-5">
-                                        No specific assets recorded.
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-                    <div x-show="accountCSuite.length === 0" class="p-6 text-center text-xs text-slate-600 font-medium">
-                        No users in this segment.</div>
-                </div>
-            </div>
-
-            <!-- VP / DIRECTOR COLUMN -->
-            <div
-                class="flex flex-col bg-dark-950 border border-dark-800 rounded-xl overflow-hidden shadow-lg h-fit max-h-[800px]">
-                <div
-                    class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center sticky top-0 z-20">
-                    <h4 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest"><i
-                            class="fa-solid fa-chess-knight mr-1.5"></i> VP / Director</h4>
-                    <span
-                        class="bg-dark-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-dark-700"
-                        x-text="accountVp.length"></span>
-                </div>
-                <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
-                    <template x-for="user in accountVp" :key="user.id">
-                        <div class="bg-black border border-dark-800 rounded-lg overflow-hidden group">
-                            <div @click="toggleUserTimeline(user.id)"
-                                class="p-4 hover:bg-dark-900/50 cursor-pointer transition-colors flex justify-between items-start">
-                                <div>
-                                    <div class="font-bold text-slate-200 text-sm mb-0.5" x-text="user.name"></div>
-                                    <div class="text-[10px] text-slate-500/70 font-medium tracking-widest mb-1.5"
-                                        x-text="user.title"></div>
-                                    <div class="flex gap-1.5 mb-2">
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.interactions > 5 ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : (user.interactions > 2 ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span
-                                                x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
-                                        </div>
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span x-text="user.persona_type || 'Unknown'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <div
-                                        class="text-[10px] font-bold text-slate-300 bg-dark-900 px-2 py-0.5 rounded border border-dark-700">
-                                        <i class="fa-solid fa-chart-line mr-1 text-slate-500"></i><span
-                                            x-text="user.interactions"></span>
-                                    </div>
-                                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-600 transition-transform"
-                                        :class="expandedUserId === user.id ? 'rotate-180' : ''"></i>
+                                            </li>
+                                        </template>
+                                        <li x-show="!user.timeline || user.timeline.length === 0" class="text-sm text-slate-500 italic pl-5">No specific assets recorded.</li>
+                                    </ul>
                                 </div>
                             </div>
-                            <div x-show="expandedUserId === user.id" x-collapse
-                                class="bg-dark-900/40 border-t border-dark-800 p-4">
-                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">
-                                    Engagement Journey</div>
-                                <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
-                                    <template x-for="(asset, index) in user.timeline" :key="index">
-                                        <li class="relative pl-5">
-                                            <!-- Node dot -->
-                                            <div
-                                                class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600">
-                                            </div>
-
-                                            <div class="flex flex-col">
-                                                <!-- Date -->
-                                                <span
-                                                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5"
-                                                    x-text="asset.date"></span>
-
-                                                <!-- Asset name -->
-                                                <div class="flex items-center text-[11px] font-medium w-full rounded pr-2 py-0.5 text-slate-300"
-                                                    :title="asset.asset">
-                                                    <i class="mr-2 text-xs opacity-70" :class="{
-                                                         'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
-                                                         'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
-                                                         'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
-                                                     }"></i>
-                                                    <span class="truncate" x-text="asset.asset"></span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    </template>
-                                    <li x-show="!user.timeline || user.timeline.length === 0"
-                                        class="text-sm text-slate-500 italic pl-5">
-                                        No specific assets recorded.
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-                    <div x-show="accountVp.length === 0" class="p-6 text-center text-xs text-slate-600 font-medium">No
-                        users in this segment.</div>
+                        </template>
+                        <div x-show="col.list.length === 0" class="p-6 text-center text-xs text-slate-600 font-medium">No users in this segment.</div>
+                    </div>
                 </div>
-            </div>
-
-            <!-- MANAGER COLUMN -->
-            <div
-                class="flex flex-col bg-dark-950 border border-dark-800 rounded-xl overflow-hidden shadow-lg h-fit max-h-[800px]">
-                <div
-                    class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center sticky top-0 z-20">
-                    <h4 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest"><i
-                            class="fa-solid fa-chess-rook mr-1.5"></i> Manager</h4>
-                    <span
-                        class="bg-dark-800 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-dark-700"
-                        x-text="accountManager.length"></span>
-                </div>
-                <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
-                    <template x-for="user in accountManager" :key="user.id">
-                        <div class="bg-black border border-dark-800 rounded-lg overflow-hidden group">
-                            <div @click="toggleUserTimeline(user.id)"
-                                class="p-4 hover:bg-dark-900/50 cursor-pointer transition-colors flex justify-between items-start">
-                                <div>
-                                    <div class="font-bold text-slate-200 text-sm mb-0.5" x-text="user.name"></div>
-                                    <div class="text-[10px] text-slate-500/70 font-medium tracking-widest mb-1.5"
-                                        x-text="user.title"></div>
-                                    <div class="flex gap-1.5 mb-2">
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.interactions > 5 ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : (user.interactions > 2 ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span
-                                                x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
-                                        </div>
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span x-text="user.persona_type || 'Unknown'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <div
-                                        class="text-[10px] font-bold text-slate-300 bg-dark-900 px-2 py-0.5 rounded border border-dark-700">
-                                        <i class="fa-solid fa-chart-line mr-1 text-slate-500"></i><span
-                                            x-text="user.interactions"></span>
-                                    </div>
-                                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-600 transition-transform"
-                                        :class="expandedUserId === user.id ? 'rotate-180' : ''"></i>
-                                </div>
-                            </div>
-                            <div x-show="expandedUserId === user.id" x-collapse
-                                class="bg-dark-900/40 border-t border-dark-800 p-4">
-                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">
-                                    Engagement Journey</div>
-                                <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
-                                    <template x-for="(asset, index) in user.timeline" :key="index">
-                                        <li class="relative pl-5">
-                                            <!-- Node dot -->
-                                            <div
-                                                class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600">
-                                            </div>
-
-                                            <div class="flex flex-col">
-                                                <!-- Date -->
-                                                <span
-                                                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5"
-                                                    x-text="asset.date"></span>
-
-                                                <!-- Asset name -->
-                                                <div class="flex items-center text-[11px] font-medium w-full rounded pr-2 py-0.5 text-slate-300"
-                                                    :title="asset.asset">
-                                                    <i class="mr-2 text-xs opacity-70" :class="{
-                                                         'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
-                                                         'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
-                                                         'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
-                                                     }"></i>
-                                                    <span class="truncate" x-text="asset.asset"></span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    </template>
-                                    <li x-show="!user.timeline || user.timeline.length === 0"
-                                        class="text-sm text-slate-500 italic pl-5">
-                                        No specific assets recorded.
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-                    <div x-show="accountManager.length === 0"
-                        class="p-6 text-center text-xs text-slate-600 font-medium">No users in this segment.</div>
-                </div>
-            </div>
-
-            <!-- IC COLUMN -->
-            <div
-                class="flex flex-col bg-dark-950 border border-dark-800 rounded-xl overflow-hidden shadow-lg h-fit max-h-[800px]">
-                <div
-                    class="p-4 border-b border-dark-800 bg-dark-900 flex justify-between items-center sticky top-0 z-20">
-                    <h4 class="font-bold text-slate-400 text-[10px] uppercase tracking-widest"><i
-                            class="fa-solid fa-chess-pawn mr-1.5"></i> Contributor</h4>
-                    <span
-                        class="bg-dark-800/50 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-dark-700/50"
-                        x-text="accountIC.length"></span>
-                </div>
-                <div class="p-3 overflow-y-auto custom-scrollbar space-y-3">
-                    <template x-for="user in accountIC" :key="user.id">
-                        <div class="bg-black border border-dark-800 rounded-lg overflow-hidden group">
-                            <div @click="toggleUserTimeline(user.id)"
-                                class="p-4 hover:bg-dark-900/50 cursor-pointer transition-colors flex justify-between items-start">
-                                <div>
-                                    <div class="font-bold text-slate-200 text-sm mb-0.5" x-text="user.name"></div>
-                                    <div class="text-[10px] text-slate-500/70 font-medium tracking-widest mb-1.5"
-                                        x-text="user.title"></div>
-                                    <div class="flex gap-1.5 mb-2">
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.interactions > 5 ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : (user.interactions > 2 ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span
-                                                x-text="user.interactions > 5 ? 'SQL' : (user.interactions > 2 ? 'MQL' : 'Cold')"></span>
-                                        </div>
-                                        <div class="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded border"
-                                            :class="user.persona_type === 'Technical' ? 'bg-cyan-900/30 text-cyan-400 border-cyan-800/50' : (user.persona_type === 'Commercial' ? 'bg-blue-900/30 text-blue-500 border-blue-800/50' : 'bg-dark-800 text-slate-400 border-dark-700')">
-                                            <span x-text="user.persona_type || 'Unknown'"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex flex-col items-end gap-2">
-                                    <div
-                                        class="text-[10px] font-bold text-slate-300 bg-dark-900 px-2 py-0.5 rounded border border-dark-700">
-                                        <i class="fa-solid fa-chart-line mr-1 text-slate-500"></i><span
-                                            x-text="user.interactions"></span>
-                                    </div>
-                                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-600 transition-transform"
-                                        :class="expandedUserId === user.id ? 'rotate-180' : ''"></i>
-                                </div>
-                            </div>
-                            <div x-show="expandedUserId === user.id" x-collapse
-                                class="bg-dark-900/40 border-t border-dark-800 p-4">
-                                <div class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-3">
-                                    Engagement Journey</div>
-                                <ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2">
-                                    <template x-for="(asset, index) in user.timeline" :key="index">
-                                        <li class="relative pl-5">
-                                            <!-- Node dot -->
-                                            <div
-                                                class="absolute -left-[6.5px] top-1 w-3 h-3 rounded-full border-2 border-dark-900 z-10 transition-colors bg-dark-600">
-                                            </div>
-
-                                            <div class="flex flex-col">
-                                                <!-- Date -->
-                                                <span
-                                                    class="text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-0.5"
-                                                    x-text="asset.date"></span>
-
-                                                <!-- Asset name -->
-                                                <div class="flex items-center text-[11px] font-medium w-full rounded pr-2 py-0.5 text-slate-300"
-                                                    :title="asset.asset">
-                                                    <i class="mr-2 text-xs opacity-70" :class="{
-                                                         'fa-solid fa-globe text-cyan-500': asset.type === 'Web',
-                                                         'fa-solid fa-envelope text-violet-500': asset.type === 'Email',
-                                                         'fa-brands fa-linkedin text-blue-500': asset.type === 'LinkedIn'
-                                                     }"></i>
-                                                    <span class="truncate" x-text="asset.asset"></span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    </template>
-                                    <li x-show="!user.timeline || user.timeline.length === 0"
-                                        class="text-sm text-slate-500 italic pl-5">
-                                        No specific assets recorded.
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </template>
-                    <div x-show="accountIC.length === 0" class="p-6 text-center text-xs text-slate-600 font-medium">No
-                        users in this segment.</div>
-                </div>
-            </div>
-
+            </template>
         </div>
     </div>
 
