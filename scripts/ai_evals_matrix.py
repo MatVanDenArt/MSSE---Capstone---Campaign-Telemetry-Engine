@@ -35,7 +35,7 @@ MATRIX_TOOLS = [
     {"name": "calculate_share_of_voice", "func": calculate_share_of_voice, "kwargs": {}},
     {"name": "get_budget_pacing", "func": get_budget_pacing, "kwargs": {"channel": "all"}},
     {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "w_shaped"}},
-    {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper", "asset_b": "/demo"}},
+    {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper-download", "asset_b": "/contact-sales"}},
     {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
     {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
     {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {"asset_type": "Web"}},
