@@ -55,10 +55,10 @@
                 });
         }
     }">
-        <div class="relative py-8 xl:py-12 flex flex-col xl:flex-row xl:items-center xl:justify-between px-8 xl:px-4">
+        <div class="relative pl-10 py-4 xl:p-0 xl:mt-12 xl:mb-4 flex flex-col xl:flex-row xl:items-start">
             
             <!-- Connecting line (vertical on mobile, horizontal on xl) -->
-            <div class="absolute left-[36px] xl:left-12 top-12 bottom-12 w-px xl:w-auto xl:h-px xl:top-[4.5rem] xl:left-8 xl:right-8 bg-dark-700"></div>
+            <div class="absolute left-[20px] top-4 bottom-4 w-px xl:w-auto xl:h-px xl:top-0 xl:left-10 xl:right-10 bg-dark-700"></div>
 
             <template x-for="(stage, index) in stages" :key="index">
                 <div class="relative flex-1 mb-12 xl:mb-0 last:mb-0 transition-transform duration-300 flex flex-col xl:items-center"
@@ -67,12 +67,12 @@
 
                     <!-- The Glowing Dot -->
                     <div
-                        :class="`absolute -left-1 xl:left-1/2 xl:-translate-x-1/2 top-1.5 xl:-top-2.5 w-2.5 h-2.5 rounded-full ${stage.dot} z-10 transition-transform ${stage.id ? 'group-hover:scale-150' : ''}`">
+                        :class="`absolute -left-[24px] top-2.5 xl:left-1/2 xl:-translate-x-1/2 xl:-top-[5px] w-2.5 h-2.5 rounded-full ${stage.dot} z-10 transition-transform ${stage.id ? 'group-hover:scale-150' : ''}`">
                     </div>
 
                     <!-- Conversion Pill -->
                     <div x-show="index > 0"
-                        class="absolute -top-7 xl:-top-8 left-[-4px] xl:left-0 xl:-translate-x-1/2 flex items-center z-10 xl:-ml-[50%]">
+                        class="absolute -top-7 left-[-20px] -translate-x-1/2 xl:top-0 xl:left-0 xl:-translate-y-1/2 flex items-center z-10">
                         <span
                             class="bg-black border border-dark-700 px-2 py-0.5 rounded text-[9px] text-slate-400 flex items-center shadow-sm whitespace-nowrap"
                             x-text="stage.rate">
@@ -80,7 +80,7 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="pl-6 xl:pl-0 xl:text-center xl:mt-8">
+                    <div class="pl-2 xl:pl-0 xl:text-center xl:mt-6">
                         <div class="flex items-center xl:justify-center gap-2 mb-1">
                             <h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest"
                                 x-text="stage.name"></h4>
@@ -91,10 +91,10 @@
                         </div>
                         <div class="flex items-baseline xl:justify-center gap-2">
                             <template x-if="stage.val">
-                                <div class="flex items-baseline gap-2">
+                                <div class="flex items-baseline xl:flex-col xl:items-center gap-2 xl:gap-0">
                                     <p :class="`text-xl lg:text-2xl font-black ${stage.valColor} tracking-tight`"
                                         x-text="stage.val"></p>
-                                    <p class="text-xs lg:text-sm font-bold text-slate-500"
+                                    <p class="text-[11px] lg:text-xs font-bold text-slate-500 uppercase tracking-wider"
                                         x-text="(stage.count ? stage.count.toLocaleString() : '0') + ' ' + stage.countLabel">
                                     </p>
                                 </div>
