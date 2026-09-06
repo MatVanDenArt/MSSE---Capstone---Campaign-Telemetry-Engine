@@ -1,63 +1,6 @@
-<div id="copilot-action-chips" hx-swap-oob="true" class="px-4">
-    <style>
-        .custom-scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-
-        .custom-scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-    <div class="flex overflow-x-auto gap-2 py-3 custom-scrollbar-hide"
-        @wheel="if(Math.abs($event.deltaY) > Math.abs($event.deltaX)) { $event.preventDefault(); $el.scrollLeft += $event.deltaY; }">
-        {% for action in copilot_actions %}
-        <div class="relative group shrink-0" x-data="{ show: false, x: 0, y: 0 }">
-            <button @click="activeSidebarView = 'chat'; show = false" @mouseenter="
-                    let rect = $el.getBoundingClientRect();
-                    x = rect.left + (rect.width / 2);
-                    y = rect.top;
-                    show = true;
-                " @mouseleave="show = false" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend"
-                hx-indicator="#loading-indicator"
-                hx-vals='javascript:{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true", "campaign_id": document.getElementById("current_campaign").value, "timeframe": document.querySelector("[name=\"timeframe\"]") ? document.querySelector("[name=\"timeframe\"]").value : 0}'
-                class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
-
-                <i
-                    class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
-                <span
-                    class="text-xs font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{
-                    action.label }}</span>
-            </button>
-
-            <!-- Tooltip using Fixed positioning to escape overflow hidden -->
-            <div x-show="show" @scroll.window="show = false"
-                x-transition:enter="transition ease-out duration-200 delay-300" x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed z-[99999] -translate-x-1/2 -translate-y-full mb-2 w-48 p-2.5 bg-black border border-dark-600 rounded-lg text-[10px] leading-relaxed text-slate-300 shadow-xl pointer-events-none"
-                :style="`left: ${x}px; top: ${y - 4}px;`" style="display: none;">
-                {{ action.command }}
-                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                </div>
-                <div
-                    class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black mt-[-1px]">
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-<!-- OOB Swap for Copilot Context Update Message -->
-<div id="chat-history" hx-swap-oob="beforeend">
-    <!-- Removed context switch message to keep chat clean -->
-</div>
-
-<!-- OOB Swap for Proactive Tasks Container -->
-<div id="copilot-tasks-container" hx-swap-oob="true">
+<div id="copilot-action-center-wrapper" class="flex flex-col h-full w-full bg-dark-900" hx-swap-oob="true">
     {% if copilot_tasks %}
-    <div class="bg-black border-b border-dark-800 flex flex-col" x-data="{
+    <div class="flex flex-col h-full w-full" x-data="{
              tasks: {{ copilot_tasks | tojson | forceescape }},
              visibleTasks: [],
              queue: [],
@@ -70,10 +13,6 @@
                  window.addEventListener('task-resolved', (e) => {
                      if (e.detail && e.detail.id) {
                          this.removeTask(e.detail.id, 'handoff');
-                         htmx.ajax('DELETE', '/api/dashboard/trigger/' + e.detail.id, {source: '#chat-history', target: '#chat-history', swap: 'none'});
-                         if (this.reviewingTaskId === e.detail.id) {
-                             this.reviewingTaskId = null;
-                         }
                      }
                  });
              },
@@ -82,16 +21,17 @@
                      return 'border-fuchsia-500/50 bg-white/5 opacity-80 cursor-default';
                  }
                  const title = task.title || '';
-                 if (task.type === 'ai') {
+                 const color = task.icon_color || '';
+                 if (task.type === 'ai' || color.includes('fuchsia')) {
                      return 'border-fuchsia-900/60 bg-white/5 hover:border-fuchsia-500/50 hover:bg-white/10 cursor-pointer';
-                 } else if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                 } else if (color.includes('rose') || title.includes('Threat') || task.type === 'alert') {
                      return 'border-rose-900/60 bg-white/5 hover:border-rose-500/50 hover:bg-white/10 cursor-pointer';
-                 } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                 } else if (color.includes('emerald') || title.includes('Surge') || task.type === 'opportunity') {
                      return 'border-emerald-900/60 bg-white/5 hover:border-emerald-500/50 hover:bg-white/10 cursor-pointer';
                  }
                  return 'border-amber-900/60 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 cursor-pointer';
              },
-             getCategoryBadge(task) {
+            getCategoryBadge(task) {
                 const title = task.title || '';
                 const color = task.icon_color || '';
                 if (task.type === 'ai' || color.includes('fuchsia') || title.includes('AI Recommendation')) {
@@ -119,7 +59,7 @@
                         el.style.transitionDuration = '400ms';
                         el.style.height = el.offsetHeight + 'px';
                         el.style.overflow = 'hidden';
-                        void el.offsetHeight; // force reflow
+                        void el.offsetHeight;
                         el.style.height = '0px';
                         el.style.paddingTop = '0px';
                         el.style.paddingBottom = '0px';
@@ -151,7 +91,9 @@
                          time_context: 'Strict Context: Target event occurred around ' + task.created_at,
                          trigger_id: task.id,
                          intent: 'review',
-                         reset_context: 'true'
+                         reset_context: 'true',
+                         campaign_id: document.getElementById('current_campaign') ? document.getElementById('current_campaign').value : null,
+                         timeframe: document.querySelector('[name=\'timeframe\']') ? document.querySelector('[name=\'timeframe\']').value : 0
                      }
                  });
              },
@@ -161,75 +103,96 @@
              }
          }">
 
-        <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
-            <span class="text-sm font-bold text-fuchsia-500">Priority Actions</span>
-            <span class="text-xs text-slate-500 font-mono flex items-center gap-2">
-                <span x-show="queue.length > 0" class="animate-pulse text-fuchsia-400">
-                    <i class="fa-solid fa-layer-group"></i> <span x-text="queue.length"></span> Queued
+        <!-- Dynamic Header with Queue -->
+        <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
+            <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Action Center
+            </h2>
+            <div class="flex items-center gap-3">
+                <span class="text-xs text-slate-500 font-mono flex items-center gap-2">
+                    <span x-show="queue.length > 0" class="animate-pulse text-fuchsia-400">
+                        <i class="fa-solid fa-layer-group"></i> <span x-text="queue.length"></span> Queued
+                    </span>
+                    <span>[<span x-text="totalTasks"></span>]</span>
                 </span>
-                <span>[<span x-text="totalTasks"></span>]</span>
-            </span>
+                <button @click="sidebarOpen = false" class="xl:hidden w-8 h-8 flex items-center justify-center rounded bg-dark-800 text-slate-400 hover:text-white hover:bg-dark-700 transition" title="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
         </div>
 
-        <div class="flex flex-col p-2 space-y-2 overflow-y-auto custom-scrollbar relative">
-            <template x-for="(task, index) in visibleTasks" :key="task.id">
-                <div @click="if(reviewingTaskId !== task.id) executeTask(task)"
-                    class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
-                    :class="getGlowClass(task)" :id="'task-card-' + task.id"
-                    x-transition:enter="transition ease-out duration-500 transform"
-                    x-transition:enter-start="opacity-0 translate-y-8 scale-95"
-                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                    x-transition:leave="transition ease-in duration-300 transform"
-                    x-transition:leave-start="opacity-100 translate-x-0"
-                    x-transition:leave-end="opacity-0 -translate-x-full">
+        <div class="flex-1 overflow-y-auto custom-scrollbar bg-black">
+            <div class="flex flex-col p-2 space-y-2 relative">
+                <template x-for="(task, index) in visibleTasks" :key="task.id">
+                    <div @click="if(reviewingTaskId !== task.id) executeTask(task)"
+                        class="group p-4 text-left transition-all duration-300 ease-in-out flex flex-col w-full relative border rounded-lg backdrop-blur-sm transform"
+                        :class="getGlowClass(task)" :id="'task-card-' + task.id"
+                        x-transition:enter="transition ease-out duration-500 transform"
+                        x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-300 transform"
+                        x-transition:leave-start="opacity-100 translate-x-0"
+                        x-transition:leave-end="opacity-0 -translate-x-full">
 
-                    <!-- Header Row -->
-                    <div class="flex items-start justify-between w-full mb-2">
-                        <div class="flex flex-col gap-1 w-5/6">
-                            <span
-                                class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-widest w-fit"
-                                :class="getCategoryBadge(task).color" x-text="getCategoryBadge(task).label"></span>
-                            <div class="flex items-center gap-2 mt-1">
-                                <div class="text-xs font-bold text-slate-200 tracking-wide truncate"
-                                    x-text="task.title"></div>
+                        <!-- Header Row -->
+                        <div class="flex items-start justify-between w-full mb-2">
+                            <div class="flex flex-col gap-1 w-5/6">
+                                <span
+                                    class="text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-widest w-fit"
+                                    :class="getCategoryBadge(task).color" x-text="getCategoryBadge(task).label"></span>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <div class="text-xs font-bold text-slate-200 tracking-wide truncate"
+                                        x-text="task.title"></div>
+                                </div>
                             </div>
+                            <!-- Dismiss Button -->
+                            <button @click.stop.prevent="dismissTask(task)"
+                                class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0"
+                                title="Dismiss">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
                         </div>
-                        <!-- Dismiss Button -->
-                        <button @click.stop.prevent="dismissTask(task)"
-                            class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0"
-                            title="Dismiss">
-                            <i class="fa-solid fa-times"></i>
-                        </button>
-                    </div>
 
-                    <!-- Context Row -->
-                    <div class="mb-2 pr-2">
-                        <div class="text-xs text-slate-400 line-clamp-2 leading-relaxed"
-                            x-text="task.subtitle || task.message"></div>
-                    </div>
+                        <!-- Context Row -->
+                        <div class="mb-2 pr-2">
+                            <div class="text-xs text-slate-400 line-clamp-2 leading-relaxed"
+                                x-text="task.subtitle || task.message"></div>
+                        </div>
 
-                    <!-- Action Row -->
-                    <div class="flex justify-end mt-1">
-                        <button @click.prevent="executeTask(task)"
-                            class="flex items-center gap-1.5 text-xs font-mono font-bold transition-all duration-300"
-                            :class="reviewingTaskId === task.id ? 'text-fuchsia-600 cursor-default' : 'text-fuchsia-500/80 group-hover:text-fuchsia-300'">
-                            <span class="transition-colors"
-                                x-text="reviewingTaskId === task.id ? 'Reviewing...' : (task.action_payload || 'Send to Copilot')"></span>
-                            <i class="fa-solid transition-transform duration-300"
-                                :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin' : 'fa-arrow-right group-hover:translate-x-1'"></i>
-                        </button>
+                        <!-- Action Row -->
+                        <div class="flex justify-end mt-1">
+                            <button @click.prevent="executeTask(task)"
+                                class="flex items-center gap-1.5 text-xs font-mono font-bold transition-all duration-300"
+                                :class="reviewingTaskId === task.id ? 'text-fuchsia-600 cursor-default' : 'text-fuchsia-500/80 group-hover:text-fuchsia-300'">
+                                <span class="transition-colors"
+                                    x-text="reviewingTaskId === task.id ? 'Reviewing...' : (task.action_payload || 'Send to Copilot')"></span>
+                                <i class="fa-solid transition-transform duration-300"
+                                    :class="reviewingTaskId === task.id ? 'fa-spinner fa-spin' : 'fa-arrow-right group-hover:translate-x-1'"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </template>
+                </template>
+            </div>
         </div>
     </div>
     {% else %}
-    <div class="px-4 py-3 flex justify-between items-center bg-dark-900 border-b border-dark-800">
-        <span class="text-sm font-bold text-fuchsia-500">Priority Actions</span>
+    <!-- Empty state fallback if no tasks -->
+    <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
+        <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-list-check"></i> Action Center
+        </h2>
+        <button @click="sidebarOpen = false" class="xl:hidden w-8 h-8 flex items-center justify-center rounded bg-dark-800 text-slate-400 hover:text-white hover:bg-dark-700 transition" title="Close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
-    <div class="p-8 flex flex-col items-center justify-center space-y-3">
-        <i class="fa-solid fa-circle-notch fa-spin text-fuchsia-500/50 text-2xl"></i>
-        <span class="text-xs text-slate-500 font-mono tracking-widest uppercase animate-pulse">Generating AI Actions...</span>
+    <div class="flex-1 flex flex-col items-center justify-center p-8 bg-black">
+        <div class="w-12 h-12 rounded-full bg-dark-800 flex items-center justify-center mb-4">
+            <i class="fa-solid fa-check-double text-slate-500 text-xl"></i>
+        </div>
+        <h3 class="text-sm font-bold text-slate-300 mb-1">Inbox Zero</h3>
+        <p class="text-xs text-slate-500 text-center leading-relaxed">
+            All priority actions have been addressed or triaged.
+        </p>
     </div>
     {% endif %}
 </div>
