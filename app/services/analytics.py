@@ -186,13 +186,24 @@ def simulate_budget_shift(channel: str, budget: float | str, campaign_id: str = 
             return {"error": "No historical spend to calculate baseline in this timeframe."}
             
         roi_multiplier = historical_pipeline / historical_spend
-        projected_pipeline = budget * roi_multiplier
+        
+        # Dampener: for every 20% increase in budget over historical spend, reduce ROI multiplier by 5%
+        # because you start exhausting the high-intent audience and CAC increases.
+        budget_increase_ratio = budget / historical_spend if historical_spend > 0 else 1
+        dampener_steps = max(0, int((budget_increase_ratio - 1) / 0.20))
+        dampened_multiplier = roi_multiplier * (0.95 ** dampener_steps)
+        
+        projected_pipeline = budget * dampened_multiplier
         
         return {
             "channel": channel,
             "proposed_budget": round(budget, 2),
+            "historical_spend": round(historical_spend, 2),
+            "historical_pipeline_won": round(historical_pipeline, 2),
             "historical_roi_multiplier": round(roi_multiplier, 2),
-            "projected_pipeline_value": round(projected_pipeline, 2)
+            "dampened_roi_multiplier": round(dampened_multiplier, 2),
+            "projected_pipeline_value": round(projected_pipeline, 2),
+            "insight": f"Applied a {round((1 - (dampened_multiplier/roi_multiplier))*100, 1)}% dampener to account for Audience Saturation and CAC decay at scale." if dampened_multiplier < roi_multiplier else "Budget shift is within historical bounds; no scale dampener applied."
         }
     except Exception as e:
         raise e
@@ -2103,8 +2114,13 @@ def get_executive_pipeline_kpis(campaign_id: str = None, timeframe: int = 0, **k
             
         date_filter = "WHERE " + " AND ".join(filters) if filters else ""
         
-        cursor.execute(f"SELECT COUNT(*) as opp_count, SUM(pipeline_value) as total_pipeline FROM crm_opps {date_filter}")
-        row = cursor.fetchone()
+        # Open Pipeline
+        cursor.execute(f"SELECT COUNT(*) as opp_count, SUM(pipeline_value) as total_pipeline FROM crm_opps {date_filter} AND event_type = 'Opportunity Created'")
+        open_row = cursor.fetchone()
+        
+        # Closed Won Revenue
+        cursor.execute(f"SELECT COUNT(*) as won_count, SUM(pipeline_value) as won_pipeline FROM crm_opps {date_filter} AND event_type = 'Closed Won'")
+        won_row = cursor.fetchone()
         
         # Spend filter requires campaign_id column on linkedin_events
         spend_filters = []
@@ -2120,14 +2136,22 @@ def get_executive_pipeline_kpis(campaign_id: str = None, timeframe: int = 0, **k
         
         conn.close()
         
-        total_pipeline = row['total_pipeline'] if row and row['total_pipeline'] else 0
+        open_pipeline = open_row['total_pipeline'] if open_row and open_row['total_pipeline'] else 0
+        won_pipeline = won_row['won_pipeline'] if won_row and won_row['won_pipeline'] else 0
         total_spend = spend_row['total_spend'] if spend_row and spend_row['total_spend'] else 0
         
+        opp_count = open_row['opp_count'] if open_row else 0
+        won_count = won_row['won_count'] if won_row else 0
+        win_rate = (won_count / opp_count * 100) if opp_count > 0 else 0
+        
         return {
-            "total_opportunities": row['opp_count'] if row else 0,
-            "total_pipeline_value": round(total_pipeline, 2),
+            "total_open_opportunities": opp_count,
+            "total_open_pipeline": round(open_pipeline, 2),
+            "total_closed_won_revenue": round(won_pipeline, 2),
             "total_spend": round(total_spend, 2),
-            "roi_percentage": round((total_pipeline / total_spend * 100), 2) if total_spend > 0 else 0
+            "win_rate_percentage": round(win_rate, 2),
+            "roi_percentage": round(((won_pipeline - total_spend) / total_spend * 100), 2) if total_spend > 0 else 0,
+            "roas": round((won_pipeline / total_spend), 2) if total_spend > 0 else 0
         }
     except Exception as e:
         raise e
@@ -2233,23 +2257,62 @@ def run_attribution_model(model_type: str = 'linear', campaign_id: str = None, t
     except Exception as e:
         raise e
 def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
-    '''Query ga4_events to isolate performance gaps between two assets.'''
+    '''Compare two assets based on pipeline influence and conversion metrics rather than vanity views.'''
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        from app.services.analytics import get_asset_impact_matrix
         
-        camp_cond = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
-        cursor.execute(f"SELECT page_viewed, COUNT(*) as hits FROM ga4_events WHERE page_viewed IN (?, ?) {camp_cond} GROUP BY page_viewed", (asset_a, asset_b))
-        results = {row['page_viewed']: row['hits'] for row in cursor.fetchall()}
-        conn.close()
+        # We need campaign_id for the matrix, default if not provided
+        if not campaign_id:
+            campaign_id = 'CMP_LIVE_DECARBONIZATION_25_26'
+            
+        assets_data = get_asset_impact_matrix(campaign_id=campaign_id, timeframe=timeframe)
         
-        a_hits = results.get(asset_a, 0)
-        b_hits = results.get(asset_b, 0)
+        data_a = next((item for item in assets_data if item["asset_name"] == asset_a), None)
+        data_b = next((item for item in assets_data if item["asset_name"] == asset_b), None)
         
+        if not data_a and not data_b:
+            return {"error": f"Neither asset '{asset_a}' nor '{asset_b}' found in campaign {campaign_id}."}
+            
+        def extract_metrics(data, name):
+            if not data:
+                return {"name": name, "views_or_clicks": 0, "pipeline_influenced": 0.0, "impact_score": 0}
+            return {
+                "name": name,
+                "views_or_clicks": data.get('engagement', 0),
+                "pipeline_influenced": data.get('pipeline_influenced', 0.0),
+                "impact_score": data.get('impact_score', 0)
+            }
+            
+        metrics_a = extract_metrics(data_a, asset_a)
+        metrics_b = extract_metrics(data_b, asset_b)
+        
+        pipe_a = metrics_a['pipeline_influenced']
+        pipe_b = metrics_b['pipeline_influenced']
+        
+        if pipe_a > pipe_b:
+            winner = asset_a
+        elif pipe_b > pipe_a:
+            winner = asset_b
+        else:
+            # Fallback to impact score if tied in pipeline
+            score_a = metrics_a['impact_score']
+            score_b = metrics_b['impact_score']
+            if score_a > score_b:
+                winner = asset_a
+            elif score_b > score_a:
+                winner = asset_b
+            else:
+                winner = "tie"
+                
+        warning = ""
+        if (metrics_a['views_or_clicks'] < 50 and metrics_b['views_or_clicks'] < 50):
+            warning = "Statistical significance is very low (both assets under 50 engagements). Recommend extending timeframe."
+            
         return {
-            "asset_a": {"name": asset_a, "views": a_hits},
-            "asset_b": {"name": asset_b, "views": b_hits},
-            "winner": asset_a if a_hits > b_hits else asset_b if b_hits > a_hits else "tie"
+            "asset_a": metrics_a,
+            "asset_b": metrics_b,
+            "winner": winner,
+            "strategic_warning": warning if warning else "Sufficient data volume for comparison."
         }
     except Exception as e:
         raise e

@@ -25,9 +25,9 @@ from app.services.llm_rotator import get_genai_client, mark_key_exhausted
 MATRIX_CAMPAIGNS = ["CMP_LIVE_DECARBONIZATION_25_26"]
 MATRIX_TIMEFRAMES = [30, 90]
 MATRIX_TOOLS = [
-    {"name": "draft_outreach_sequence", "func": draft_outreach_sequence, "kwargs": {"persona": "CMO", "context_data": "High intent on sustainability"}},
-    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Shell"}},
-    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "Elizabeth Hodge", "company": "Eni"}},
+    {"name": "get_executive_pipeline_kpis", "func": get_executive_pipeline_kpis, "kwargs": {}},
+    {"name": "simulate_budget_shift", "func": simulate_budget_shift, "kwargs": {"channel": "linkedin", "budget": 100000}},
+    {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/solutions/decarbonization", "asset_b": "/insights/ccus-infrastructure-2030"}},
 ]
 
 
