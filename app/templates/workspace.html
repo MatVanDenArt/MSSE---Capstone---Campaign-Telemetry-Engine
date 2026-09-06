@@ -143,19 +143,22 @@
                  x-transition:leave="transition ease-in duration-200"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0">
-                <!-- Header -->
-                <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
-                    <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check"></i> Action Center
-                    </h2>
-                    <button @click="sidebarOpen = false" class="xl:hidden w-8 h-8 flex items-center justify-center rounded bg-dark-800 text-slate-400 hover:text-white hover:bg-dark-700 transition" title="Close">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
                 
-                <!-- Proactive Tasks Container -->
-                <div class="flex-1 overflow-y-auto custom-scrollbar">
-                    <div id="copilot-tasks-container"></div>
+                <div id="copilot-action-center-wrapper" class="flex flex-col h-full w-full">
+                    <!-- Header -->
+                    <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
+                        <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check"></i> Action Center
+                        </h2>
+                        <button @click="sidebarOpen = false" class="xl:hidden w-8 h-8 flex items-center justify-center rounded bg-dark-800 text-slate-400 hover:text-white hover:bg-dark-700 transition" title="Close">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Proactive Tasks Container -->
+                    <div class="flex-1 overflow-y-auto custom-scrollbar flex items-center justify-center">
+                        <i class="fa-solid fa-circle-notch fa-spin text-slate-700 text-xl"></i>
+                    </div>
                 </div>
             </div>
 
