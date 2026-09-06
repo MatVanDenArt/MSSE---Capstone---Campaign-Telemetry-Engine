@@ -1,10 +1,12 @@
 <div class="max-w-7xl mx-auto pb-48">
     <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
+
+    <!-- Section 1: ER Diagram -->
     <div class="glass-panel p-6 rounded-xl border-t-4 border-t-fuchsia-500 mb-6">
         <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
-            <i class="fa-solid fa-network-wired text-fuchsia-400"></i> Omnichannel Data Model & Identity Resolution
+            <i class="fa-solid fa-network-wired text-fuchsia-400"></i> Omnichannel data model & identity resolution
         </h2>
-        <p class="text-xs text-slate-400">
+        <p class="text-xs text-slate-400 mb-6">
             This graph illustrates the underlying SQLite schema used in this application, mapping how anonymous top-of-funnel events (LinkedIn Ads) are eventually resolved to known identities (Mailchimp/CRM) via cookies and UTM tracking.
         </p>
         <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
@@ -14,32 +16,31 @@
                         string event_id PK
                         string campaign_id
                         string ad_id
-                        string click_id "Cookie Identifier"
+                        string cookie_id "Cookie identifier"
                         string utm_source
                         float spend_consumed
                         datetime timestamp
+                        float user_id "Resolved CRM ID"
                     }
-                    
                     GA4_EVENTS {
                         string session_id PK
-                        string cookie_id "Matches LI click_id"
+                        string cookie_id "Matches LI cookie_id"
                         string utm_source
                         string utm_campaign
                         string page_viewed
                         boolean bounce_flag
-                        int user_id_captured "Resolved CRM ID"
                         datetime timestamp
+                        float user_id "Resolved CRM ID"
                     }
-                    
                     MAILCHIMP_EVENTS {
                         string event_id PK
-                        string email "Matches CRM Email"
+                        string email "Matches CRM email"
                         string campaign_id
                         string action "Open / Click"
                         string url_clicked
                         datetime timestamp
+                        int user_id "Resolved CRM ID"
                     }
-                    
                     CRM_USERS {
                         int user_id PK
                         int account_id FK
@@ -47,9 +48,10 @@
                         string company_name
                         string first_name
                         string last_name
+                        string job_title
                         string seniority
+                        string persona_type
                     }
-                    
                     CRM_OPPS {
                         string event_id PK
                         int user_id FK
@@ -57,126 +59,138 @@
                         string event_type "Created / Won"
                         float pipeline_value
                         datetime timestamp
+                        string utm_campaign
                     }
-
-                    %% Relationships
-                    LINKEDIN_EVENTS ||--o| GA4_EVENTS : "Drives Traffic (cookie_id)"
-                    MAILCHIMP_EVENTS ||--o| GA4_EVENTS : "Drives Traffic (email -> user_id)"
-                    GA4_EVENTS }o--o| CRM_USERS : "Resolves Identity (user_id_captured)"
-                    MAILCHIMP_EVENTS }o--|| CRM_USERS : "Nurtures Identity (email)"
-                    CRM_USERS ||--o{ CRM_OPPS : "Generates Pipeline (user_id)"
+                    CONTENT_METADATA {
+                        string url PK
+                        string title
+                        string asset_type
+                        string intent_topic
+                    }
+                    ACTION_TRIGGERS {
+                        string id PK
+                        string campaign_id
+                        string type
+                        string message
+                        string action_payload
+                        boolean resolved_status
+                        datetime created_at
+                        datetime expires_at
+                    }
+                    MASTER_SUMMARY {
+                        int user_id PK
+                        int account_id
+                        string company_name
+                        string email
+                        string persona_type
+                        int ga4_events
+                        int mc_events
+                        int li_events
+                        float spend_consumed
+                        int opp_count
+                    }
+                    LINKEDIN_EVENTS ||--o{ GA4_EVENTS : "Drives traffic (cookie_id)"
+                    MAILCHIMP_EVENTS }o--|| CRM_USERS : "Nurtures identity (email)"
+                    GA4_EVENTS }o--o| CRM_USERS : "Resolves identity (user_id)"
+                    LINKEDIN_EVENTS }o--o| CRM_USERS : "Resolves identity (user_id)"
+                    CRM_USERS ||--o{ CRM_OPPS : "Generates pipeline (user_id)"
+                    GA4_EVENTS }o--o| CONTENT_METADATA : "Tracks asset (page_viewed)"
+                    ACTION_TRIGGERS }o--o| CRM_OPPS : "Scoped to campaign"
+                    CRM_USERS ||--|| MASTER_SUMMARY : "Pre-aggregated view (user_id)"
             </div>
         </div>
     </div>
-    
-    <div class="glass-panel p-8 rounded-xl border-t-4 border-t-blue-500">
-        <h2 class="text-2xl font-bold text-slate-100 mb-2 flex items-center gap-3">
-            <i class="fa-solid fa-project-diagram text-blue-400"></i> Identity Resolution Data Flow
+
+    <!-- Section 2: Data Flow -->
+    <div class="glass-panel p-6 rounded-xl border-t-4 border-t-blue-500 mb-6">
+        <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+            <i class="fa-solid fa-project-diagram text-blue-400"></i> Identity resolution data flow
         </h2>
-        <p class="text-slate-400 mb-8">
+        <p class="text-xs text-slate-400 mb-6">
             This graph maps exactly how an anonymous Ad Click is stitched via cookie and UTM tracking to a known user session across GA4, Mailchimp, and the CRM.
         </p>
-
         <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
             <div class="mermaid text-center">
                 graph TD
                     subgraph Channel Sources
-                        LI[LinkedIn Ads<br>Anonymous Click]
-                        MC[Mailchimp<br>Known Email: j.doe@shell.com]
+                        LI[LinkedIn Ads Anonymous Click]
+                        MC[Mailchimp Known Email: j.doe@shell.com]
                     end
-
                     subgraph Website Telemetry GA4
-                        GA4_Anon[GA4 Session<br>cookie_id: 12345<br>user_id_captured: NULL]
-                        GA4_Known[GA4 Session<br>cookie_id: 67890<br>user_id_captured: 101]
-                        Form[Form Fill / Content Download<br>Captures user_id: 101]
+                        GA4_Anon[GA4 Session cookie_id: 12345 user_id_captured: NULL]
+                        GA4_Known[GA4 Session cookie_id: 67890 user_id_captured: 101]
+                        Form[Form Fill / Content Download Captures user_id: 101]
                     end
-
                     subgraph CRM System
                         CRM_C[Company: Shell Plc.]
-                        CRM_U[User_ID: 101<br>Email: j.doe@shell.com]
+                        CRM_U[User_ID: 101 Email: j.doe@shell.com]
                         CRM_C --- CRM_U
                     end
-
-                    subgraph Python Pandas ETL
+                    subgraph Python ETL
                         Match1[Match on user_id_captured]
                         Merge[Outer Join on user_id]
                         Ghost[Outer Join on cookie_id]
                     end
-
                     LI -->|UTM Source| GA4_Anon
                     GA4_Anon -->|Reads Content| Form
                     Form -->|Generates ID| Match1
-                    
                     MC -->|URL Parameter| GA4_Known
                     GA4_Known -->|Passes ID| Match1
-
                     Match1 -->|Lookup ID| CRM_U
                     CRM_U --> Merge
                     GA4_Anon -.->|Retroactive cookie stitch| Merge
-                    
                     LI -->|Bounces immediately| Ghost
                     Ghost -->|Remains Anonymous| Ghost
             </div>
         </div>
     </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+    <!-- Section 3: Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="glass-panel p-6 rounded-xl">
-            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-brand-400"></i> The Simulation Funnel</h3>
-            <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
-                <p>The backend simulation (<code>generator.py</code>) builds synthetic B2B buying journeys using a weighted Markov-style funnel approach.</p>
+            <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+                <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i> The simulation funnel
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">The backend simulation (<code>generator.py</code>) builds synthetic B2B buying journeys using a weighted Markov-style funnel approach.</p>
+            <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
                 <ol class="list-decimal pl-5 space-y-2">
-                    <li><strong class="text-blue-500/30">Top of Funnel (Ad Spend)</strong>: A simulated user clicks a LinkedIn Ad. This generates a row in <code>linkedin_events</code> with a unique <code>click_id</code> (cookie) and burns ad spend.</li>
-                    <li><strong class="text-blue-500/50">Mid Funnel (Website)</strong>: Moments later, a <code>ga4_events</code> row is created using the exact same <code>cookie_id</code>. If they bounce, the journey ends. If they convert, they provide their email.</li>
+                    <li><strong class="text-blue-500/30">Top of funnel (Ad Spend)</strong>: A simulated user clicks a LinkedIn Ad. Generates a row in <code>linkedin_events</code> with a unique <code>click_id</code> (cookie) and burns ad spend.</li>
+                    <li><strong class="text-blue-500/50">Mid funnel (Website)</strong>: A <code>ga4_events</code> row is created using the same <code>cookie_id</code>. If they bounce, the journey ends. If they convert, they provide their email.</li>
                     <li><strong class="text-blue-500/80">Nurture (Email)</strong>: Over the next 15 days, they receive automated emails, generating <code>mailchimp_events</code> tied to their email address.</li>
-                    <li><strong class="text-blue-400">Bottom Funnel (Revenue)</strong>: If engagement is high, they are resolved into <code>crm_users</code>. 30-90 days later, a massive pipeline event is pushed to <code>crm_opps</code>.</li>
+                    <li><strong class="text-blue-400">Bottom funnel (Revenue)</strong>: If engagement is high, they are resolved into <code>crm_users</code>. 30-90 days later, a pipeline event is pushed to <code>crm_opps</code>.</li>
                 </ol>
             </div>
         </div>
-        
+
         <div class="glass-panel p-6 rounded-xl">
-            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-fingerprint text-brand-400"></i> Identity Resolution</h3>
-            <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
-                <p>This application mimics a modern Customer Data Platform (CDP). The hardest problem in marketing telemetry is tying an anonymous click to a $20M closed deal.</p>
-                <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg">
-                    <p class="font-mono text-xs text-brand-300 mb-2">// The Identity Chain</p>
-                    <p class="mb-2"><span class="text-blue-500/40 font-bold">1. Anonymous</span>: User has only a <code>cookie_id</code> (LinkedIn -> GA4).</p>
-                    <p class="mb-2"><span class="text-blue-500/70 font-bold">2. Known</span>: User submits a form. GA4 updates with <code>user_id_captured</code>.</p>
-                    <p><span class="text-blue-400 font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on the <code>user_id</code>, matching it to their Mailchimp <code>email</code>, allowing full attribution of the original ad spend.</p>
-                </div>
+            <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+                <i class="fa-solid fa-fingerprint text-fuchsia-400"></i> Identity resolution
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">This application mimics a modern Customer Data Platform (CDP). The hardest problem in marketing telemetry is tying an anonymous click to a closed deal.</p>
+            <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg text-sm text-slate-300">
+                <p class="font-mono text-xs text-fuchsia-300 mb-2">// The identity chain</p>
+                <p class="mb-2"><span class="text-blue-500/40 font-bold">1. Anonymous</span>: User has only a <code>cookie_id</code> (LinkedIn -> GA4).</p>
+                <p class="mb-2"><span class="text-blue-500/70 font-bold">2. Known</span>: User submits a form. GA4 updates with <code>user_id_captured</code>.</p>
+                <p><span class="text-blue-400 font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on the <code>user_id</code>, matching it to their Mailchimp <code>email</code>, allowing full attribution of the original ad spend.</p>
             </div>
         </div>
-        
+
         <div class="glass-panel p-6 rounded-xl md:col-span-2">
-            <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-brain text-fuchsia-400"></i> Copilot Context Heuristics</h3>
-            <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
-                <p>The AI Copilot maintains chat memory (context) during a session, but relies on a backend rule engine to automatically wipe its slate clean when the user shifts to a brand new investigation. This prevents cross-contamination of context between different targets or campaigns.</p>
-                <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg">
-                    <p class="font-mono text-xs text-brand-300 mb-2">// Context Breakers (app/api/chat.py)</p>
-                    <p class="mb-2"><span class="text-fuchsia-500/80 font-bold">WIPE CONTEXT:</span> If the prompt starts with major dashboard action triggers (e.g., <code>"review priority action:"</code>, <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).</p>
-                    <p><span class="text-emerald-500/80 font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up or a direct LLM execution command (e.g., <code>"Execute: /api/draft..."</code>).</p>
-                </div>
+            <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+                <i class="fa-solid fa-brain text-fuchsia-400"></i> Copilot context heuristics
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">The AI Copilot maintains chat memory during a session, but relies on a backend rule engine to automatically wipe its slate clean when the user shifts to a new investigation, preventing cross-contamination between different targets or campaigns.</p>
+            <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg text-sm text-slate-300">
+                <p class="font-mono text-xs text-fuchsia-300 mb-2">// Context breakers (app/api/chat.py)</p>
+                <p class="mb-2"><span class="text-fuchsia-500/80 font-bold">WIPE CONTEXT:</span> If the prompt starts with major dashboard action triggers (e.g., <code>"review priority action:"</code>, <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).</p>
+                <p><span class="text-emerald-500/80 font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up or a direct LLM execution command (e.g., <code>"Execute: /api/draft..."</code>).</p>
             </div>
         </div>
     </div>
+</div>
 
 <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ 
-        startOnLoad: false, 
-        theme: 'dark',
-        fontFamily: 'Inter, sans-serif'
-    });
-    // Since we are loading via HTMX, we must manually trigger rendering
-    setTimeout(() => {
-        mermaid.run({
-            querySelector: '.mermaid'
-        });
-    }, 100);
+    mermaid.initialize({ startOnLoad: false, theme: 'dark', fontFamily: 'Inter, sans-serif' });
+    setTimeout(() => { mermaid.run({ querySelector: '.mermaid' }); }, 100);
 </script>
-
-
-    <div class="mt-8 space-y-8">
-        <!-- Velocity Funnel -->
-        {% include 'components/mod_velocity_funnel.html' %}
-    </div>
