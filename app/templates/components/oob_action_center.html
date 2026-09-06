@@ -26,26 +26,28 @@
                      return 'border-fuchsia-500/50 bg-white/5 opacity-80 cursor-default';
                  }
                  const title = task.title || '';
-                 if (task.type === 'ai') {
+                 const color = task.icon_color || '';
+                 if (task.type === 'ai' || color.includes('fuchsia')) {
                      return 'border-fuchsia-900/60 bg-white/5 hover:border-fuchsia-500/50 hover:bg-white/10 cursor-pointer';
-                 } else if (title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                 } else if (color.includes('rose') || title.includes('Threat') || task.type === 'alert') {
                      return 'border-rose-900/60 bg-white/5 hover:border-rose-500/50 hover:bg-white/10 cursor-pointer';
-                 } else if (title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                 } else if (color.includes('emerald') || title.includes('Surge') || task.type === 'opportunity') {
                      return 'border-emerald-900/60 bg-white/5 hover:border-emerald-500/50 hover:bg-white/10 cursor-pointer';
                  }
                  return 'border-amber-900/60 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 cursor-pointer';
              },
-             getCategoryBadge(task) {
-                 const title = task.title || '';
-                 if (task.type === 'ai' || title.includes('AI Recommendation')) {
-                     return { label: 'AI RECOMMENDED', color: 'text-fuchsia-400 bg-fuchsia-950 border-fuchsia-900' };
-                 } else if (title.includes('Optimize') || title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
-                     return { label: 'ACTION REQUIRED', color: 'text-rose-400 bg-rose-950 border-rose-900' };
-                 } else if (title.includes('Scale') || title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
-                     return { label: 'GROWTH OPPTY', color: 'text-emerald-400 bg-emerald-950 border-emerald-900' };
-                 }
-                 return { label: 'INSIGHT', color: 'text-amber-400 bg-amber-950 border-amber-900' };
-             },
+            getCategoryBadge(task) {
+                const title = task.title || '';
+                const color = task.icon_color || '';
+                if (task.type === 'ai' || color.includes('fuchsia') || title.includes('AI Recommendation')) {
+                    return { label: 'AI RECOMMENDED', color: 'text-fuchsia-400 bg-fuchsia-950 border-fuchsia-900' };
+                } else if (color.includes('rose') || title.includes('Optimize') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                    return { label: 'ACTION REQUIRED', color: 'text-rose-400 bg-rose-950 border-rose-900' };
+                } else if (color.includes('emerald') || title.includes('Scale') || title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                    return { label: 'GROWTH OPPTY', color: 'text-emerald-400 bg-emerald-950 border-emerald-900' };
+                }
+                return { label: 'INSIGHT', color: 'text-amber-400 bg-amber-950 border-amber-900' };
+            },
              removeTask(id, type) {
                 const el = document.getElementById('task-card-' + id);
                 if (el) {
