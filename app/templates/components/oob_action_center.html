@@ -12,7 +12,13 @@
                  
                  window.addEventListener('task-resolved', (e) => {
                      if (e.detail && e.detail.id) {
-                         this.removeTask(e.detail.id, 'handoff');
+                         const task = this.tasks.find(t => t.id === e.detail.id);
+                         if (task && task.type !== 'ai') {
+                             this.removeTask(e.detail.id, 'handoff');
+                         }
+                         if (this.reviewingTaskId === e.detail.id) {
+                             this.reviewingTaskId = null;
+                         }
                      }
                  });
              },
