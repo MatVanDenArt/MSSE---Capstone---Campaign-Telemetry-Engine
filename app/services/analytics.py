@@ -2254,19 +2254,20 @@ def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None,
     except Exception as e:
         raise e
 def map_buying_committee(account_identifier: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
-    '''Query crm_users and ga4_events for a specific account to highlight engaged vs. unengaged personas.'''
+    '''Query crm_users and ga4_events for a specific account to highlight engaged vs. unengaged personas, segmented by seniority.'''
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
         query = """
             SELECT 
-                u.company_name, u.first_name, u.last_name, u.seniority, 
+                u.company_name, u.first_name, u.last_name, u.seniority, u.persona_type, u.job_title,
                 COUNT(g.user_id) as hits 
             FROM crm_users u
             LEFT JOIN ga4_events g ON u.user_id = g.user_id
             WHERE u.company_name = ?
             GROUP BY u.user_id
+            ORDER BY hits DESC
         """
         cursor.execute(query, (account_identifier,))
         users = cursor.fetchall()
@@ -2275,19 +2276,41 @@ def map_buying_committee(account_identifier: str, campaign_id: str = None, timef
         if not users:
             return {"error": f"Account '{account_identifier}' not found."}
             
-        committee = []
+        # Segment by seniority
+        segments = {
+            "C-Suite": {"Technical": [], "Commercial": []},
+            "VP/Director": {"Technical": [], "Commercial": []},
+            "Manager": {"Technical": [], "Commercial": []},
+            "Contributor": {"Technical": [], "Commercial": []}
+        }
+        
         for u in users:
             hits = u['hits']
-            committee.append({
+            seniority = u['seniority']
+            # Fallback for unexpected seniorities
+            if seniority not in segments:
+                seniority = "Contributor"
+                
+            persona = u['persona_type']
+            if persona not in ["Technical", "Commercial"]:
+                persona = "Commercial"
+                
+            segments[seniority][persona].append({
                 "name": f"{u['first_name']} {u['last_name']}",
-                "seniority": u['seniority'],
+                "job_title": u['job_title'],
                 "engagement_level": "High" if hits > 5 else "Medium" if hits > 0 else "None",
                 "interactions": hits
             })
             
+        # Limit to top 5 engaged per category to avoid dumping 50 unengaged contacts
+        for sen in segments:
+            for per in segments[sen]:
+                segments[sen][per] = sorted(segments[sen][per], key=lambda x: x['interactions'], reverse=True)[:5]
+            
         return {
             "company_name": users[0]['company_name'],
-            "committee_members": committee
+            "buying_committee_segments": segments,
+            "insights": "Segmented by seniority (C-Suite, VP/Director, Manager, Contributor) and persona type (Technical vs Commercial)."
         }
     except Exception as e:
         raise e
@@ -2328,31 +2351,48 @@ def get_user_journey(name: str, company: str, campaign_id: str = None, timeframe
     user_id = user['user_id']
     email = user['email']
     
-    # Step 2: Query events using pre-fetched identifiers
+    # Step 2: Query events using pre-fetched identifiers + CRM Opps for milestones
     opt_query = '''
-        SELECT page_viewed as asset, timestamp, utm_source as source, 'Website' as channel
+        SELECT page_viewed as asset, timestamp, utm_source as source, 'Website' as channel, 0 as value
         FROM ga4_events WHERE user_id = ?
         
         UNION ALL
         
-        SELECT campaign_id || ' (' || action || ')' as asset, timestamp, 'Email' as source, 'Email' as channel
+        SELECT campaign_id || ' (' || action || ')' as asset, timestamp, 'Email' as source, 'Email' as channel, 0 as value
         FROM mailchimp_events WHERE email = ?
         
         UNION ALL
         
-        SELECT ad_id as asset, timestamp, 'LinkedIn' as source, 'LinkedIn' as channel
+        SELECT ad_id as asset, timestamp, 'LinkedIn' as source, 'LinkedIn' as channel, 0 as value
         FROM linkedin_events
         WHERE cookie_id IN (SELECT DISTINCT cookie_id FROM ga4_events WHERE user_id = ?)
+        
+        UNION ALL
+        
+        SELECT 'Milestone: ' || event_type as asset, timestamp, 'CRM' as source, 'CRM' as channel, pipeline_value as value
+        FROM crm_opps WHERE user_id = ?
         
         ORDER BY timestamp DESC
         LIMIT 20
     '''
-    cursor.execute(opt_query, (user_id, email, user_id))
+    cursor.execute(opt_query, (user_id, email, user_id, user_id))
     rows = cursor.fetchall()
     conn.close()
     
     if not rows:
         return {"html_timeline": "<div class='text-slate-500 text-xs py-2'>No specific interaction data found.</div>"}
+        
+    # Calculate Business Metrics
+    total_touchpoints = len(rows)
+    total_value = sum([r['value'] for r in rows if r['value'] is not None])
+    milestones = [r['asset'] for r in rows if r['channel'] == 'CRM']
+    
+    try:
+        first_touch = datetime.strptime(rows[-1]['timestamp'].split('.')[0], "%Y-%m-%d %H:%M:%S")
+        last_touch = datetime.strptime(rows[0]['timestamp'].split('.')[0], "%Y-%m-%d %H:%M:%S")
+        days_elapsed = (last_touch - first_touch).days
+    except:
+        days_elapsed = 0
         
     history_items = '<ul class="relative border-l border-dark-600 ml-2 space-y-4 pt-1 pb-2 list-none">'
     for idx, r in enumerate(rows):
@@ -2361,6 +2401,8 @@ def get_user_journey(name: str, company: str, campaign_id: str = None, timeframe
             icon = 'fa-brands fa-linkedin text-sky-500'
         elif 'email' in channel:
             icon = 'fa-solid fa-envelope text-amber-500'
+        elif 'crm' in channel:
+            icon = 'fa-solid fa-trophy text-yellow-400'
         else:
             icon = 'fa-solid fa-globe text-emerald-500'
             
@@ -2371,6 +2413,10 @@ def get_user_journey(name: str, company: str, campaign_id: str = None, timeframe
             date_str = r['timestamp'].split(' ')[0] if r['timestamp'] else 'Unknown'
             
         asset_clean = r['asset'].strip('/').replace('/', ' ').replace('-', ' ').title()
+        
+        if 'crm' in channel:
+            val_str = f" (${r['value']:,.2f})" if r['value'] else ""
+            asset_clean = f"<span class='text-yellow-400 font-bold'>{asset_clean}{val_str}</span>"
             
         dot_class = 'bg-brand-500 shadow-[0_0_8px_rgba(56,189,248,0.6)]' if idx == 0 else 'bg-dark-600'
         text_class = 'text-brand-300 bg-brand-900/10' if idx == 0 else 'text-slate-300'
@@ -2390,7 +2436,15 @@ def get_user_journey(name: str, company: str, campaign_id: str = None, timeframe
         """
     history_items += '</ul>'
     
-    return {"html_timeline": history_items}
+    return {
+        "metrics": {
+            "total_touchpoints": total_touchpoints,
+            "days_elapsed": days_elapsed,
+            "total_influenced_value": total_value,
+            "milestones_achieved": milestones
+        },
+        "html_timeline": history_items
+    }
 
 
 def generate_ab_test_variants(asset_id: str, variable: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
@@ -2409,41 +2463,50 @@ def generate_ab_test_variants(asset_id: str, variable: str, campaign_id: str = N
         return {"error": str(e)}
 
 def draft_outreach_sequence(persona: str, context_data: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
-    persona_lower = persona.lower()
-    
-    # Adjust tone based on persona
-    if 'executive' in persona_lower or 'c-suite' in persona_lower or 'vp' in persona_lower:
-        tone = 'strategic and concise, focusing on ROI and risk'
-        intro = 'As a leader driving operational strategy, I know your time is valuable.'
-    elif 'director' in persona_lower or 'manager' in persona_lower:
-        tone = 'pragmatic, focusing on efficiency and team enablement'
-        intro = 'I noticed your team is actively exploring new operational frameworks.'
-    else:
-        tone = 'direct and value-oriented'
-        intro = 'I saw your recent engagement with our content.'
-
-    return {
-        "persona": persona,
-        "context": context_data,
-        "sequence": [
-            {
-                "step": "Day 1: Contextual Intro",
-                "channel": "Email",
-                "content": f"{intro} Based on your recent interaction ({context_data}), I thought you might be interested in how we help similar companies achieve a 20% efficiency gain. Are you open to a brief chat next week?"
-            },
-            {
-                "step": "Day 3: Value Add",
-                "channel": "LinkedIn Message",
-                "content": f"Hi! Following up on my email. Here is a recent case study directly relevant to your interest in {context_data}. Let me know what you think!"
-            },
-            {
-                "step": "Day 7: The Breakup / Final Offer",
-                "channel": "Email",
-                "content": f"I don't want to flood your inbox. If {context_data} is still a priority, feel free to book a time on my calendar. Otherwise, I'll stop reaching out. Best of luck!"
-            }
-        ],
-        "strategic_note": f"This sequence uses a {tone} tone, specifically tailored for the {persona} persona."
-    }
+    from app.services.llm_rotator import get_genai_client
+    import json
+    try:
+        client = get_genai_client()
+        prompt = f"""
+        You are an expert B2B sales development representative. 
+        Write a 3-step outreach sequence (Email -> LinkedIn -> Email) tailored for a '{persona}' persona.
+        They recently showed intent around: '{context_data}'.
+        
+        Write the email and message body naturally. Do not just blindly copy/paste the intent data into a template. 
+        Weave the context organically into the copy.
+        
+        Return a JSON object with this exact structure:
+        {{
+            "persona": "{persona}",
+            "context": "{context_data}",
+            "sequence": [
+                {{
+                    "step": "Day 1: Contextual Intro",
+                    "channel": "Email",
+                    "content": "..."
+                }},
+                {{
+                    "step": "Day 3: Value Add",
+                    "channel": "LinkedIn Message",
+                    "content": "..."
+                }},
+                {{
+                    "step": "Day 7: Breakup",
+                    "channel": "Email",
+                    "content": "..."
+                }}
+            ],
+            "strategic_note": "A 1-sentence note explaining the tone and angle used."
+        }}
+        """
+        response = client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # --- MIGRATED FROM V1 ANALYTICS ---

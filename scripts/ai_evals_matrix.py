@@ -25,22 +25,9 @@ from app.services.llm_rotator import get_genai_client, mark_key_exhausted
 MATRIX_CAMPAIGNS = ["CMP_LIVE_DECARBONIZATION_25_26"]
 MATRIX_TIMEFRAMES = [30, 90]
 MATRIX_TOOLS = [
-    {"name": "get_executive_pipeline_kpis", "func": get_executive_pipeline_kpis, "kwargs": {}},
-    {"name": "simulate_budget_shift", "func": simulate_budget_shift, "kwargs": {"channel": "linkedin", "budget": "REMAINING_BUDGET"}},
     {"name": "draft_outreach_sequence", "func": draft_outreach_sequence, "kwargs": {"persona": "CMO", "context_data": "High intent on sustainability"}},
-    {"name": "calculate_blended_cpa", "func": calculate_blended_cpa, "kwargs": {}},
-    {"name": "get_account_penetration", "func": get_account_penetration, "kwargs": {"account_identifier": "Acme Corp"}},
-    {"name": "evaluate_trickle_threshold", "func": evaluate_trickle_threshold, "kwargs": {}},
-    {"name": "get_tam_penetration", "func": get_tam_penetration, "kwargs": {}},
-    {"name": "calculate_share_of_voice", "func": calculate_share_of_voice, "kwargs": {}},
-    {"name": "get_budget_pacing", "func": get_budget_pacing, "kwargs": {"channel": "all"}},
-    {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "w_shaped"}},
-    {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/whitepaper-download", "asset_b": "/contact-sales"}},
-    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
-    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
-    {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {"asset_type": "Web"}},
-    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "DYNAMIC_USER", "company": "DYNAMIC_ACCOUNT"}},
-    {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"asset_id": "landing_page_1", "variable": "headline"}}
+    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "Shell"}},
+    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "Elizabeth Hodge", "company": "Eni"}},
 ]
 
 
@@ -201,7 +188,16 @@ def main():
         
         report.append(f"| `{r['tool']}` | {r['timeframe']}d | {r['sparsity']}/5 | {r['actionability']}/5 | {r['relevance']}/5 | {r['exec_ms']}ms | {notes} |")
         
-    artifact_path = os.path.join(os.path.dirname(__file__), '..', 'ai_evals_report.md')
+    import glob
+    
+    reports_dir = os.path.join(os.path.dirname(__file__), '..', 'tests', 'eval_reports')
+    os.makedirs(reports_dir, exist_ok=True)
+    
+    existing_reports = glob.glob(os.path.join(reports_dir, 'ai_evals_report_v*.md'))
+    version = len(existing_reports) + 1
+    
+    artifact_path = os.path.join(reports_dir, f'ai_evals_report_v{version}.md')
+    
     with open(artifact_path, 'w', encoding='utf-8') as f:
         f.write("\n".join(report))
         
