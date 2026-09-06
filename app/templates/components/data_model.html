@@ -186,6 +186,137 @@
                 <p><span class="text-emerald-500/80 font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up or a direct LLM execution command (e.g., <code>"Execute: /api/draft..."</code>).</p>
             </div>
         </div>
+</div>
+
+<!-- Section 4: Action Center Architecture -->
+<div class="glass-panel p-6 rounded-xl border-t-4 border-t-emerald-500 mt-6">
+    <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+        <i class="fa-solid fa-list-check text-emerald-400"></i> Action center architecture & trigger logic
+    </h2>
+    <p class="text-xs text-slate-400 mb-6">
+        The Action Center populates differently across the three main dashboard interfaces. Each interface has its own trigger source, card type, dismissal rules, and MCP functions it invokes when a card is executed.
+    </p>
+    <div class="bg-dark-900 rounded-lg border border-dark-700 mb-6 overflow-hidden">
+
+        <!-- Column headers -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
+            <div class="px-4 py-3 bg-dark-800">
+                <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Executive overview</span>
+                <p class="text-[10px] text-slate-500 mt-0.5">generate_next_best_actions()</p>
+            </div>
+            <div class="px-4 py-3 bg-dark-800">
+                <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Asset performance</span>
+                <p class="text-[10px] text-slate-500 mt-0.5">get_asset_impact_matrix()</p>
+            </div>
+            <div class="px-4 py-3 bg-dark-800">
+                <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Audience & ABM</span>
+                <p class="text-[10px] text-slate-500 mt-0.5">get_prioritized_sales_targets()</p>
+            </div>
+        </div>
+
+        <!-- Swim lanes -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
+
+            <!-- Executive Overview cards -->
+            <div class="p-4 space-y-3">
+                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">CPA anomaly detected</div>
+                    <div class="text-[10px] text-slate-400 mb-1"><code>live_spend &gt; 1000</code> AND <code>cpa_diff &gt; 30%</code></div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>get_budget_pacing</code>, <code>calculate_blended_cpa</code></div>
+                </div>
+                <div class="border-l-2 border-amber-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Conversion bottleneck</div>
+                    <div class="text-[10px] text-slate-400 mb-1"><code>conversion_rate &lt; 2.5%</code> with sufficient traffic</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>get_executive_pipeline_kpis</code></div>
+                </div>
+                <div class="border-l-2 border-amber-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">TAM penetration stalled</div>
+                    <div class="text-[10px] text-slate-400 mb-1"><code>days_active &gt; 30</code> AND <code>penetration &lt; 15%</code></div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>get_tam_penetration</code></div>
+                </div>
+                <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Gemini generates 3 strategic tasks from live KPIs. Cached in <code>action_triggers</code>. No dismiss button.</div>
+                    <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
+                </div>
+                <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>DELETE /api/dashboard/trigger/:id</code></div>
+            </div>
+
+            <!-- Asset Performance cards -->
+            <div class="p-4 space-y-3">
+                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Top performing asset</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Highest <code>impact_score</code> in the asset matrix.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
+                </div>
+                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Fatigued asset warning</div>
+                    <div class="text-[10px] text-slate-400 mb-1"><code>asset.health == Fatigued</code> or <code>ai_recommendation</code> is set.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code>, <code>generate_ab_test_variants</code></div>
+                </div>
+                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">High bounce rate asset</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Matrix index 1 — traffic high but conversion &lt; 1%.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
+                </div>
+                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Signal · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Spiking asset detected</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Matrix index 2 — converting at 3× historical baseline.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code></div>
+                </div>
+                <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>GET /api/dashboard/investigate-asset</code></div>
+            </div>
+
+            <!-- Audience & ABM cards -->
+            <div class="p-4 space-y-3">
+                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven ×4 · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">SQL follow-up targets</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Top 4 from <code>get_prioritized_sales_targets()</code>, ranked by engagement.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>map_buying_committee</code>, <code>get_intent_surge_signals</code></div>
+                </div>
+                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Stalled account: BP plc</div>
+                    <div class="text-[10px] text-slate-400 mb-1">High early engagement, zero activity in 14 days.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>draft_outreach_sequence</code></div>
+                </div>
+                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Cross-dept expansion: Shell</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Engineering and Marketing consuming content simultaneously.</div>
+                    <div class="text-[10px] text-slate-500">MCP: <code>get_account_penetration</code>, <code>map_buying_committee</code></div>
+                </div>
+                <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>GET /api/dashboard/investigate-target</code></div>
+            </div>
+        </div>
+
+        <!-- Shared execution flow -->
+        <div class="border-t border-dark-700 px-4 py-3 bg-dark-800/40">
+            <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Shared execution flow</div>
+            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                <span>User clicks card</span>
+                <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                <code>executeTask(task)</code>
+                <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                <code>POST /api/chat</code>
+                <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                <span class="text-fuchsia-400">Gemini invokes MCP tool</span>
+                <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                <span>Result rendered in Copilot</span>
+            </div>
+            <div class="mt-1 text-[10px] text-slate-600">
+                Rules-based & programmatic: <code>reset_context = true</code> &nbsp;·&nbsp; AI cards: context retained, card never dismissed
+            </div>
+        </div>
     </div>
 </div>
 
