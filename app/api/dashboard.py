@@ -58,11 +58,7 @@ def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
         "tam": tam,
         "sov": sov,
         "copilot_context_name": "Executive Overview",
-        "copilot_actions": [
-            {"label": "Forecast Shortfall", "command": "Forecast Q4 Pipeline shortfall and recommend precise budget reallocations.", "intent": "analyze", "icon": "fa-chart-pie"},
-            {"label": "Pacing Analysis", "command": "Analyze budget pacing against pipeline generation targets.", "intent": "analyze", "icon": "fa-money-bill-trend-up"},
-            {"label": "Executive KPIs", "command": "Pull executive pipeline KPIs and blended CPA.", "intent": "analyze", "icon": "fa-briefcase"}
-        ],
+        "copilot_actions": [],
         "copilot_tasks": None
     })
 
@@ -752,7 +748,7 @@ def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
     web_opps = row[1] or 0
     
     # Total Pipeline for Share calculation
-    cursor.execute(f"SELECT SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ? {tf_crm}", (campaign_id,))
+    cursor.execute(f"SELECT SUM(o.pipeline_value) FROM crm_opps o WHERE o.utm_campaign = ? {tf_crm}", (campaign_id,))
     total_pipe = cursor.fetchone()[0] or 1.0  # avoid division by zero
     
     # LinkedIn Engaged Accounts
