@@ -181,6 +181,20 @@
             </div>
         </div>
     </div>
+    {% elif copilot_tasks is none %}
+    <!-- Loading state when HTMX is fetching tasks -->
+    <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
+        <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+            <i class="fa-solid fa-list-check"></i> Action Center
+        </h2>
+        <button @click="sidebarOpen = false" class="xl:hidden w-8 h-8 flex items-center justify-center rounded bg-dark-800 text-slate-400 hover:text-white hover:bg-dark-700 transition" title="Close">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="flex-1 flex flex-col items-center justify-center p-8 bg-black space-y-3">
+        <i class="fa-solid fa-circle-notch fa-spin text-fuchsia-500/50 text-2xl"></i>
+        <span class="text-xs text-slate-500 font-mono tracking-widest uppercase animate-pulse">Generating AI Actions...</span>
+    </div>
     {% else %}
     <!-- Empty state fallback if no tasks -->
     <div class="h-16 border-b border-dark-800 flex items-center justify-between px-4 shrink-0 bg-dark-900">
