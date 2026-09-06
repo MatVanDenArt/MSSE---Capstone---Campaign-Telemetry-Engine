@@ -106,7 +106,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "id": tid,
                 "icon": "fa-battery-quarter",
                 "icon_color": "text-rose-500",
-                "title": f"Fatigue: {asset.get('asset_name', 'Asset')}",
+                "title": asset.get('title', asset.get('asset_name', 'Asset')),
                 "subtitle": short_subtitle,
                 "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
                 "is_programmatic": True
@@ -114,27 +114,31 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
 
         # Simulated Triggers based on Optimal Comparator Outline
         if len(matrix) > 2:
-            bounce_asset = matrix[1].get('asset_name', 'Landing Page')
+            bounce_item = matrix[1]
+            bounce_asset = bounce_item.get('asset_name', 'Landing Page')
+            bounce_title = bounce_item.get('title', bounce_asset)
             enc_bounce = urllib.parse.quote(bounce_asset)
             tid2 = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
                 "id": tid2,
                 "icon": "fa-arrow-right-from-bracket",
                 "icon_color": "text-rose-500",
-                "title": f"High Bounce Rate: {bounce_asset}",
+                "title": bounce_title,
                 "subtitle": "Traffic is high but conversion is < 1%",
                 "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid2}",
                 "is_programmatic": True
             })
             
-            spike_asset = matrix[2].get('asset_name', 'Webinar')
+            spike_item = matrix[2]
+            spike_asset = spike_item.get('asset_name', 'Webinar')
+            spike_title = spike_item.get('title', spike_asset)
             enc_spike = urllib.parse.quote(spike_asset)
             tid3 = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
                 "id": tid3,
                 "icon": "fa-bolt",
                 "icon_color": "text-emerald-500",
-                "title": f"Conversion Spike: {spike_asset}",
+                "title": spike_title,
                 "subtitle": "Converting at 3x the historical baseline",
                 "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid3}",
                 "is_programmatic": True
