@@ -1,14 +1,14 @@
 <div class="max-w-7xl mx-auto pb-48">
     <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
 
-    <div class="flex items-center gap-3 mb-6">
+    <div class="flex items-center gap-3 mb-6 relative z-10">
         <div
-            class="w-8 h-8 rounded bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/30">
+            class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/30">
             <i class="fa-solid fa-chart-line text-[12px] text-emerald-400"></i>
         </div>
         <div>
-            <h2 class="text-lg font-bold text-slate-100 tracking-wide uppercase">The CMO Lobby</h2>
-            <p class="text-xs text-slate-500">Executive Strategic Overview & ROI</p>
+            <h2 class="text-lg font-bold text-slate-100 tracking-wide">The CMO Lobby</h2>
+            <p class="text-xs text-slate-400">Executive Strategic Overview & ROI</p>
         </div>
     </div>
     <style>
@@ -54,7 +54,6 @@
 
     <!-- V2 North Star Visualizations -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 ">
-        {% include 'components/mod_channel_roi.html' %}
         {% include 'components/mod_pipeline_efficiency.html' %}
         {% include 'components/mod_velocity_funnel.html' %}
     </div>
