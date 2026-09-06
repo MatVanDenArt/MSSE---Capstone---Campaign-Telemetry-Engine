@@ -63,12 +63,23 @@
                     // TOP CHART: Small Multiples
                     const tooltipTitleCallback = function(tooltipItems) {
                         if (!tooltipItems.length) return '';
-                        let label = tooltipItems[0].label;
-                        if (label && label.length === 10) {
-                            const d = new Date(label);
-                            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+                        
+                        // Handle both categorical and scatter point label types
+                        let label = tooltipItems[0].label || '';
+                        let dateStr = label;
+                        
+                        if (tooltipItems[0].raw && tooltipItems[0].raw.x) {
+                            dateStr = tooltipItems[0].raw.x;
+                        } else if (label.includes(',')) {
+                            // Chart.js scatter labels default to (x, y) strings
+                            dateStr = label.split(',')[0].replace('(', '').trim();
                         }
-                        return label;
+                        
+                        if (dateStr && dateStr.length >= 10) {
+                            const d = new Date(dateStr.substring(0, 10));
+                            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+                        }
+                        return dateStr;
                     };
 
                     const handleHover = (e, activeElements, chart) => {

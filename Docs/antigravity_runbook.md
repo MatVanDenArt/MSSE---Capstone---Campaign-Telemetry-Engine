@@ -1,73 +1,59 @@
-Antigravity Development Runbook (High-Fidelity)
-===============================================
+Antigravity Master Runbook (A-to-Z Prompts)
+===========================================
 
-This runbook contains the master prompts to initialize and build the Telemetry Engine according to our agreed-upon architecture. Execute these sequentially in Antigravity.
+This document contains the exact sequence of prompts you will feed into Antigravity. Do not paste them all at once. Paste them one by one, wait for Antigravity to write and verify the code, and then move to the next.
 
-1\. Environment & Base Foundation (Repository & Router Setup)
--------------------------------------------------------------
+Phase 0: Context Initialization
+-------------------------------
 
-> **PROMPT:** "Initialize a FastAPI project following a strict Domain-Driven folder structure: /app (main.py, /api, /services, /data, /templates), /tests, and a Dockerfile. Use requirements.txt to include fastapi, uvicorn, pandas, faker, sqlite3, python-dotenv, and jinja2. Set up pytest. In main.py, establish a FastAPI lifespan event that will eventually trigger our database seeding. Do not write the database logic yet, just set up the scaffolding and ensure the app boots successfully on port 8000."
+**PROMPT 0 (The Context Seed):**
 
-2\. Data Engineering: The B2B Identity Graph (Pandas ETL)
----------------------------------------------------------
+> "We are building the 'Wood Group Campaign Telemetry Engine,' a B2B marketing dashboard for my MSSE Capstone project. I have the architecture completely planned. We will use FastAPI, SQLite, Pandas for ETL, and HTMX for the frontend. We are implementing a strict Service/Repository pattern and will use the native Gemini API (NO LangChain) with MCP-style tool calling. Do not write any code yet. Just acknowledge you understand these strict constraints and are ready to begin Sprint 1."
 
-> **PROMPT:** "Create a DataGenerator service in /app/data/generator.py. Implement a Faker-based B2B relational generator for 15 target accounts (e.g., Shell, Aramco).
+Phase 1: Setup & Synthetic Data Engine (Sprint 1)
+-------------------------------------------------
+
+**PROMPT 1 (Infrastructure):**
+
+> "Initialize the FastAPI project. Create the Domain-Driven folder structure: /app (with main.py, /api, /services, /data, /templates), /tests, a Dockerfile, and requirements.txt. The requirements must include fastapi, uvicorn, pandas, faker, google-genai, and pytest. Write the baseline main.py to simply serve a "Hello World" on port 8000. Do not write the database logic yet."
+
+**PROMPT 2 (The Faker ETL Pipeline):**
+
+> "In /app/data/generator.py, create a DataGenerator class using Faker. It must generate 15 target B2B accounts (e.g., Shell, Aramco) and 30-50 users per account. Generate 90 days of relative touchpoints across Mailchimp, GA4, LinkedIn, and CRM (Opportunities). Crucially, write a Pandas ETL function that uses pd.merge(how='outer') to stitch anonymous GA4 sessions to known users based on form fills. Output this final DataFrame to capstone.db in SQLite via to\_sql(). Wire this generator to run automatically on FastAPI's startup lifespan event."
+
+Phase 2: UI & Core Business Logic (Sprint 2)
+--------------------------------------------
+
+**PROMPT 3 (The HTMX Dashboard):**
+
+> "I have an HTML wireframe for the dashboard. Create /app/templates/dashboard.html and set up FastAPI to serve it via Jinja2Templates. Once served, update the template to use HTMX. Wire up the top header dropdown to toggle between 'Past 7 Days' and 'Past 90 Days' using hx-get='/api/dashboard/metrics' to fetch fresh data without a page reload."
+
+**PROMPT 4 (The Service Layer & Algorithms):**
+
+> "In /app/services/analytics.py, write the core Python business logic using raw SQLite queries. Write calculate\_blended\_cpa() (LinkedIn Spend / CRM Opps) and get\_account\_penetration() (grouping users by company and seniority). Also, write the evaluate\_trickle\_threshold() algorithm: it must query SQLite and return False (Completed) if a campaign's daily traffic dropped >95% from its peak for 7 consecutive days."
+
+Phase 3: AI Chat & MCP Tools (Sprint 3)
+---------------------------------------
+
+**PROMPT 5 (The MCP Tool Registry):**
+
+> "We need to expose our Python functions to the Gemini LLM. In /app/services/mcp\_tools.py, create a JSON Schema definition for simulate\_budget\_shift(channel, budget). This Python function must query historical conversion rates from SQLite and mathematically project new pipeline volume. Ensure it is strictly typed using Pydantic to prevent the LLM from passing invalid arguments."
+
+**PROMPT 6 (The AI Router & Custom UX):**
+
+> "In /app/api/chat.py, implement the native Gemini API chat endpoint. Implement a 'Zero-Math Policy' system prompt (the LLM cannot do its own math). When the LLM requests the simulate\_budget\_shift tool, intercept it. Send an intermediate HTMX string back to the frontend:
 > 
-> **Requirements:**
+> ⚙️ Simulating budget shift against historical GA4 data...
 > 
-> 1.  Generate 30-50 users per account with standardized seniority (C-Suite, VP/Director, Manager, IC).
->     
-> 2.  Generate 90 days of relative-timestamped touchpoints (datetime.now() - timedelta) across Mailchimp, LinkedIn, GA4, and CRM.
->     
-> 3.  Implement the 'Bucket' strategy: Golden Path (full match), Partial Match, and Ghosts (anonymous bounces).
->     
-> 4.  Write a Pandas ETL function that stitches these together. You MUST use pd.merge(how='outer') to ensure missing touchpoints don't delete accounts. Write the final DataFrame to a local SQLite file (capstone.db) using to\_sql(). Wire this generator to the FastAPI lifespan event."
->     
+> . Then, execute the Python function, append the result, and stream the final LLM response to replace the loading state."
 
-3\. Business Logic: Service Layer & MCP Tooling
------------------------------------------------
+Phase 4: Capstone Testing & QA (Crucial for Grading)
+----------------------------------------------------
 
-> **PROMPT:** "Implement the service layer in /app/services/analytics.py. Create the following Python functions using raw SQLite queries via sqlite3 (Do NOT use SQLAlchemy):
-> 
-> 1.  calculate\_blended\_cpa(): Query total LinkedIn spend divided by total CRM opportunities.
->     
-> 2.  get\_account\_penetration(): Group users by company\_name and seniority to return a summarized dictionary.
->     
-> 3.  evaluate\_trickle\_threshold(): Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days. Return a boolean is\_active.
->     
-> 4.  simulate\_budget\_shift(channel: str, budget: float): Use historical baseline conversion rates to mathematically project new pipeline volume based on the new budget.
->     
-> 
-> Format all four of these functions to output JSON Schema definitions so they can be injected into the Gemini API as callable tools."
+**PROMPT 7 (Unit & Integration Testing):**
 
-4\. Frontend: HTMX Integration & Custom Tool States
----------------------------------------------------
+> "We need to satisfy the Capstone testing rubric. In the /tests folder, write pytest suites. First, write a test for /app/services/analytics.py mocking the SQLite database to ensure the CPA math is exactly correct. Second, write a Pydantic validation test for the DataGenerator to ensure no primary keys are generated as Null. Third, use FastAPI TestClient to ensure the main endpoint returns a 200 status code."
 
-> **PROMPT:** "Integrate HTMX into our Jinja2 templates in /app/templates/dashboard.html.
-> 
-> **Requirements:**
-> 
-> 1.  Wire up the top header dropdown to toggle between 'Past 7 Days' and 'Past 90 Days' using hx-get="/api/dashboard" with a query parameter.
->     
-> 2.  Implement the AI chat interface at the bottom. When a user submits a query, use hx-post="/api/chat".
->     
-> 3.  **CRITICAL:** Use hx-indicator or intermediate HTML swapping to display a custom tool-loading state (e.g.,
->     
->     ⚙️ Simulating budget shift...
->     
->     ) while the Python backend processes the LLM request. Do not just use a generic spinner."
->     
+**PROMPT 8 (Graceful Error Handling):**
 
-5\. AI Integration: Gemini Native SDK & Guardrails
---------------------------------------------------
-
-> **PROMPT:** "Implement the AI router in /app/api/chat.py using the official google-genai SDK (No LangChain).
-> 
-> **Requirements:**
-> 
-> 1.  Apply a 'Zero-Math' policy: The LLM system prompt must forbid it from calculating metrics directly; it must rely entirely on the MCP tools defined in step 3.
->     
-> 2.  Implement a unified tool-calling loop: When the LLM requests simulate\_budget\_shift, execute the Python function, append the JSON result to the message history, and yield the final LLM response back to the HTMX frontend.
->     
-> 3.  Implement graceful degradation: If a Python tool fails (e.g., division by zero), return a hardcoded JSON system message {"error": "tool failed"} to the LLM so it can formulate a polite apology to the user without crashing the UI."
->
+> "Update the AI router to handle backend tool failures. If simulate\_budget\_shift throws a Python exception (e.g., division by zero due to lack of mock data), catch it. Inject a system message into the LLM context stating 'Tool Failed', so the LLM can generate a polite apology to the user without crashing the FastAPI application."

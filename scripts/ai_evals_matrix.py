@@ -25,9 +25,22 @@ from app.services.llm_rotator import get_genai_client, mark_key_exhausted
 MATRIX_CAMPAIGNS = ["CMP_LIVE_DECARBONIZATION_25_26"]
 MATRIX_TIMEFRAMES = [30, 90]
 MATRIX_TOOLS = [
-    {"name": "get_executive_pipeline_kpis", "func": get_executive_pipeline_kpis, "kwargs": {}},
+    {"name": "calculate_blended_cpa", "func": calculate_blended_cpa, "kwargs": {}},
+    {"name": "get_account_penetration", "func": get_account_penetration, "kwargs": {}},
+    {"name": "evaluate_trickle_threshold", "func": evaluate_trickle_threshold, "kwargs": {}},
     {"name": "simulate_budget_shift", "func": simulate_budget_shift, "kwargs": {"channel": "linkedin", "budget": 100000}},
+    {"name": "get_tam_penetration", "func": get_tam_penetration, "kwargs": {}},
+    {"name": "calculate_share_of_voice", "func": calculate_share_of_voice, "kwargs": {}},
+    {"name": "get_executive_pipeline_kpis", "func": get_executive_pipeline_kpis, "kwargs": {}},
+    {"name": "get_budget_pacing", "func": get_budget_pacing, "kwargs": {"channel": "all"}},
+    {"name": "run_attribution_model", "func": run_attribution_model, "kwargs": {"model_type": "linear"}},
     {"name": "compare_asset_baselines", "func": compare_asset_baselines, "kwargs": {"asset_a": "/solutions/decarbonization", "asset_b": "/insights/ccus-infrastructure-2030"}},
+    {"name": "map_buying_committee", "func": map_buying_committee, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
+    {"name": "get_intent_surge_signals", "func": get_intent_surge_signals, "kwargs": {"account_identifier": "DYNAMIC_ACCOUNT"}},
+    {"name": "get_asset_impact_matrix", "func": get_asset_impact_matrix, "kwargs": {}},
+    {"name": "get_user_journey", "func": get_user_journey, "kwargs": {"name": "DYNAMIC_USER", "company": "DYNAMIC_ACCOUNT"}},
+    {"name": "generate_ab_test_variants", "func": generate_ab_test_variants, "kwargs": {"asset_id": "/solutions/decarbonization", "variable": "headline"}},
+    {"name": "draft_outreach_sequence", "func": draft_outreach_sequence, "kwargs": {"persona": "C-Level Executive", "context_data": "High intent on decarbonization."}},
 ]
 
 

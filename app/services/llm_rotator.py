@@ -61,8 +61,8 @@ def mark_key_exhausted(key: str):
 import json
 import hashlib
 
-CACHE_FILE = "C:\\Users\\mpser\\Downloads\\Quantic\\Capstone\\llm_cache.json"
-TELEMETRY_FILE = "C:\\Users\\mpser\\Downloads\\Quantic\\Capstone\\ai_telemetry.json"
+CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "llm_cache.json")
+TELEMETRY_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "ai_telemetry.json")
 
 def get_telemetry():
     if os.path.exists(TELEMETRY_FILE):
