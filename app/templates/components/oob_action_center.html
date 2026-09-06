@@ -152,7 +152,7 @@
                                 </div>
                             </div>
                             <!-- Dismiss Button -->
-                            <button @click.stop.prevent="dismissTask(task)"
+                            <button x-show="task.type !== 'ai'" @click.stop.prevent="dismissTask(task)"
                                 class="text-slate-500 hover:text-rose-400 p-1 transition-colors z-10 shrink-0"
                                 title="Dismiss">
                                 <i class="fa-solid fa-times"></i>
