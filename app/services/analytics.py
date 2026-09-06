@@ -2222,13 +2222,33 @@ def run_attribution_model(model_type: str = 'linear', campaign_id: str = None, t
         camp_cond = f"g.utm_campaign = '{campaign_id}'" if campaign_id else "1=1"
         tf_cond = f"AND g.timestamp >= date('now', '-{timeframe} days')" if timeframe > 0 else ""
         
+        o_camp_cond = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+        o_tf_cond = f"AND timestamp >= date('now', '-{timeframe} days')" if timeframe > 0 else ""
+        
         query = f"""
+            WITH user_opps AS (
+                SELECT 
+                    user_id,
+                    SUM(pipeline_value) as total_pipeline
+                FROM crm_opps
+                WHERE event_type = 'Opportunity Created' {o_camp_cond} {o_tf_cond}
+                GROUP BY user_id
+            ),
+            user_touches AS (
+                SELECT 
+                    user_id, 
+                    COUNT(DISTINCT session_id) as total_touches
+                FROM ga4_events g
+                WHERE {camp_cond} {tf_cond}
+                GROUP BY user_id
+            )
             SELECT 
                 g.utm_source, 
                 COUNT(DISTINCT g.session_id) as touch_count,
-                SUM(COALESCE(o.pipeline_value, 0)) as attributed_revenue
+                SUM(COALESCE(o.total_pipeline, 0) / CAST(t.total_touches AS FLOAT)) as attributed_revenue
             FROM ga4_events g
-            LEFT JOIN crm_opps o ON g.user_id = o.user_id
+            JOIN user_touches t ON g.user_id = t.user_id
+            LEFT JOIN user_opps o ON g.user_id = o.user_id
             WHERE {camp_cond} {tf_cond}
             GROUP BY g.utm_source
             ORDER BY attributed_revenue DESC, touch_count DESC
