@@ -615,11 +615,8 @@ def execute_action(request: Request, type: str, campaign_id: str):
 
 @router.get("/dashboard/data-model")
 def get_data_model_view(request: Request, campaign_id: str):
-    from app.services.analytics import get_asset_fatigue
-    assets = get_asset_fatigue(campaign_id, 90)
     return templates.TemplateResponse(request=request, name="components/data_model.html", context={
-        "campaign_id": campaign_id,
-        "assets": assets
+        "campaign_id": campaign_id
     })
 
 @router.get("/dashboard/audience-data-scoped")
