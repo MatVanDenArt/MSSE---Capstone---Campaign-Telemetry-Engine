@@ -751,21 +751,49 @@ def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
     web_pipe = row[0] or 0.0
     web_opps = row[1] or 0
     
+    # Total Pipeline for Share calculation
+    cursor.execute(f"SELECT SUM(pipeline_value) FROM crm_opps WHERE utm_campaign = ? {tf_crm}", (campaign_id,))
+    total_pipe = cursor.fetchone()[0] or 1.0  # avoid division by zero
+    
+    # LinkedIn Engaged Accounts
+    cursor.execute(f"""
+        SELECT COUNT(DISTINCT account_id) FROM crm_users WHERE user_id IN (
+            SELECT user_id FROM linkedin_events WHERE campaign_id = ? {tf_li}
+        )
+    """, (campaign_id,))
+    li_accounts = cursor.fetchone()[0] or 0
+    
+    # Email Engaged Accounts
+    cursor.execute(f"""
+        SELECT COUNT(DISTINCT account_id) FROM crm_users WHERE user_id IN (
+            SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em}
+        )
+    """, (campaign_id,))
+    em_accounts = cursor.fetchone()[0] or 0
+    
+    # Web Engaged Accounts
+    cursor.execute(f"""
+        SELECT COUNT(DISTINCT account_id) FROM crm_users WHERE user_id IN (
+            SELECT user_id FROM ga4_events WHERE utm_campaign = ? {tf_ga}
+        )
+    """, (campaign_id,))
+    web_accounts = cursor.fetchone()[0] or 0
+    
     conn.close()
 
-    def calc_metrics(spend, pipe, opps):
+    def calc_metrics(spend, pipe, accounts, total_pipe):
         return {
             "spend": spend,
             "pipeline": pipe,
-            "opps": opps,
-            "roi_multiplier": round(pipe / spend, 1) if spend > 0 else 0,
-            "cpo": round(spend / opps, 2) if opps > 0 else 0
+            "accounts": accounts,
+            "influence_share": round((pipe / total_pipe) * 100, 1) if total_pipe > 0 else 0,
+            "cpea": round(spend / accounts, 2) if accounts > 0 else spend
         }
 
     return JSONResponse(content={
-        "linkedin": calc_metrics(li_spend, li_pipe, li_opps),
-        "email": calc_metrics(em_spend, em_pipe, em_opps),
-        "web": calc_metrics(web_spend, web_pipe, web_opps)
+        "linkedin": calc_metrics(li_spend, li_pipe, li_accounts, total_pipe),
+        "email": calc_metrics(em_spend, em_pipe, em_accounts, total_pipe),
+        "web": calc_metrics(web_spend, web_pipe, web_accounts, total_pipe)
     })
 
 def ui_lab_channel_roi_data(campaign_id: str):
