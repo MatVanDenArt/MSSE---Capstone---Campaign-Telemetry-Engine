@@ -1,6 +1,52 @@
-<!-- Copilot Action Chips Removed entirely in favor of Priority Actions -->
 <div id="copilot-action-chips" hx-swap-oob="true" class="px-4">
-    <!-- Empty to clear buttons when navigating back to Executive Overview -->
+    <style>
+        .custom-scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .custom-scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <div class="flex overflow-x-auto gap-2 py-3 custom-scrollbar-hide"
+        @wheel="if(Math.abs($event.deltaY) > Math.abs($event.deltaX)) { $event.preventDefault(); $el.scrollLeft += $event.deltaY; }">
+        {% for action in copilot_actions %}
+        <div class="relative group shrink-0" x-data="{ show: false, x: 0, y: 0 }">
+            <button @click="activeSidebarView = 'chat'; show = false" @mouseenter="
+                    let rect = $el.getBoundingClientRect();
+                    x = rect.left + (rect.width / 2);
+                    y = rect.top;
+                    show = true;
+                " @mouseleave="show = false" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend"
+                hx-indicator="#loading-indicator"
+                hx-vals='javascript:{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true", "campaign_id": document.getElementById("current_campaign").value, "timeframe": document.querySelector("[name=\"timeframe\"]") ? document.querySelector("[name=\"timeframe\"]").value : 0}'
+                class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
+
+                <i
+                    class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
+                <span
+                    class="text-xs font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{
+                    action.label }}</span>
+            </button>
+
+            <!-- Tooltip using Fixed positioning to escape overflow hidden -->
+            <div x-show="show" @scroll.window="show = false"
+                x-transition:enter="transition ease-out duration-200 delay-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="fixed z-[99999] -translate-x-1/2 -translate-y-full mb-2 w-48 p-2.5 bg-black border border-dark-600 rounded-lg text-[10px] leading-relaxed text-slate-300 shadow-xl pointer-events-none"
+                :style="`left: ${x}px; top: ${y - 4}px;`" style="display: none;">
+                {{ action.command }}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
+                </div>
+                <div
+                    class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black mt-[-1px]">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 <!-- OOB Swap for Copilot Context Update Message -->
@@ -46,16 +92,17 @@
                  return 'border-amber-900/60 bg-white/5 hover:border-amber-500/50 hover:bg-white/10 cursor-pointer';
              },
              getCategoryBadge(task) {
-                 const title = task.title || '';
-                 if (task.type === 'ai' || title.includes('AI Recommendation')) {
-                     return { label: 'AI RECOMMENDED', color: 'text-fuchsia-400 bg-fuchsia-950 border-fuchsia-900' };
-                 } else if (title.includes('Optimize') || title.includes('Fatigue') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
-                     return { label: 'ACTION REQUIRED', color: 'text-rose-400 bg-rose-950 border-rose-900' };
-                 } else if (title.includes('Scale') || title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
-                     return { label: 'GROWTH OPPTY', color: 'text-emerald-400 bg-emerald-950 border-emerald-900' };
-                 }
-                 return { label: 'INSIGHT', color: 'text-amber-400 bg-amber-950 border-amber-900' };
-             },
+                const title = task.title || '';
+                const color = task.icon_color || '';
+                if (task.type === 'ai' || color.includes('fuchsia') || title.includes('AI Recommendation')) {
+                    return { label: 'AI RECOMMENDED', color: 'text-fuchsia-400 bg-fuchsia-950 border-fuchsia-900' };
+                } else if (color.includes('rose') || title.includes('Optimize') || title.includes('Threat') || title.includes('Bounce') || task.type === 'alert') {
+                    return { label: 'ACTION REQUIRED', color: 'text-rose-400 bg-rose-950 border-rose-900' };
+                } else if (color.includes('emerald') || title.includes('Scale') || title.includes('Spike') || title.includes('Surge') || title.includes('Efficiency') || title.includes('Expansion') || task.type === 'opportunity') {
+                    return { label: 'GROWTH OPPTY', color: 'text-emerald-400 bg-emerald-950 border-emerald-900' };
+                }
+                return { label: 'INSIGHT', color: 'text-amber-400 bg-amber-950 border-amber-900' };
+            },
              removeTask(id, type) {
                 const el = document.getElementById('task-card-' + id);
                 if (el) {
