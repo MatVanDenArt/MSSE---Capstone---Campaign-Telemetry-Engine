@@ -944,56 +944,100 @@ def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
     except Exception as e:
         raise e
 
-def get_ai_recommended_actions(campaign_id: str, timeframe: int) -> list:
+def get_ai_recommended_actions(campaign_id: str, timeframe: int, tab: str = "overview") -> list:
     import json
     import uuid
     from datetime import datetime, timedelta
     from app.services.llm_rotator import get_genai_client, get_cached_response, set_cached_response
     from google.genai import types
-    from app.services.analytics import get_kpi_benchmarks
 
-    benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
-    overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
-    
-    payload = {
-        "time_window_analyzed": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
-        "window_pipeline_generated_dollars": benchmarks["live"]["pipeline"],
-        "window_total_spend_dollars": benchmarks["live"]["spend"],
-        "window_cpa_dollars": benchmarks["live"]["cpa"],
-        "window_cpa_trend_vs_previous_window": benchmarks["comparisons"]["cpa"]["value"],
-        "window_closed_won_contracts": benchmarks["live"]["conversions"],
-        "overall_campaign_pipeline_generated_dollars": overall_benchmarks["live"]["pipeline"],
-        "overall_campaign_total_spend_dollars": overall_benchmarks["live"]["spend"],
-        "overall_campaign_cpa_dollars": overall_benchmarks["live"]["cpa"]
-    }
-    
     from app.services.llm_rotator import mcp_tools
     tool_summaries = [f"- {t['name']}: {t['description']}" for t in mcp_tools]
     tool_list = "\n".join(tool_summaries)
 
-    prompt = f'''You are a B2B Marketing AI. Review this campaign telemetry: {payload}.
-Based on this data, generate exactly 3 strategic "Next Best Actions" a CMO should take.
-Focus on: Scenario Planning & Reallocation, Forecasting & Extrapolation, or Deep-Dive Analysis.
+    time_label = "All Time" if timeframe == 0 else f"Last {timeframe} Days"
+
+    # Build tab-specific context payload
+    if tab == "performance":
+        try:
+            from app.services.analytics import get_asset_impact_matrix
+            matrix = get_asset_impact_matrix(campaign_id, timeframe)
+            top_assets = sorted(matrix, key=lambda x: x.get('impact_score', 0), reverse=True)[:5]
+            fatigued = [a['asset_name'] for a in matrix if a.get('health') in ('Fatigued', 'Action Required')]
+            context_payload = {
+                "tab": "Asset Performance",
+                "time_window": time_label,
+                "top_assets_by_impact": [
+                    {"name": a.get('asset_name'), "type": a.get('type'), "engagement": a.get('engagement', 0), "health": a.get('health')}
+                    for a in top_assets
+                ],
+                "fatigued_asset_names": fatigued,
+                "total_assets_tracked": len(matrix)
+            }
+            focus = "asset-level optimisation: fatigue, A/B testing, channel reallocation, and engagement spike analysis"
+        except Exception:
+            context_payload = {"tab": "Asset Performance", "time_window": time_label}
+            focus = "asset performance optimisation"
+
+    elif tab == "audience":
+        try:
+            from app.services.analytics import get_prioritized_sales_targets
+            targets = get_prioritized_sales_targets(campaign_id, timeframe)[:3]
+            context_payload = {
+                "tab": "Audience & ABM",
+                "time_window": time_label,
+                "top_prioritised_targets": [
+                    {"name": t['name'], "company": t['company'], "status": t['status'],
+                     "interactions": t['interactions'], "personas_at_account": t['personas']}
+                    for t in targets
+                ],
+                "total_targets_scored": len(targets)
+            }
+            focus = "account-based marketing: buying committee mapping, intent surge detection, outreach sequencing, and account penetration"
+        except Exception:
+            context_payload = {"tab": "Audience & ABM", "time_window": time_label}
+            focus = "audience and account-based marketing"
+
+    else:  # overview — original behaviour
+        from app.services.analytics import get_kpi_benchmarks
+        benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
+        overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
+        context_payload = {
+            "tab": "Executive Overview",
+            "time_window": time_label,
+            "window_pipeline_generated_dollars": benchmarks["live"]["pipeline"],
+            "window_total_spend_dollars": benchmarks["live"]["spend"],
+            "window_cpa_dollars": benchmarks["live"]["cpa"],
+            "window_cpa_trend_vs_previous_window": benchmarks["comparisons"]["cpa"]["value"],
+            "window_closed_won_contracts": benchmarks["live"]["conversions"],
+            "overall_campaign_pipeline_generated_dollars": overall_benchmarks["live"]["pipeline"],
+            "overall_campaign_total_spend_dollars": overall_benchmarks["live"]["spend"],
+            "overall_campaign_cpa_dollars": overall_benchmarks["live"]["cpa"]
+        }
+        focus = "scenario planning & reallocation, forecasting & extrapolation, or deep-dive analysis"
+
+    prompt = f'''You are a B2B Marketing AI. Review this campaign telemetry for the {tab} view: {json.dumps(context_payload)}.
+Based on this data, generate exactly 3 strategic "Next Best Actions" focused on {focus}.
 
 CRITICAL INSTRUCTION:
 The AI Copilot that will execute your "action_command" ONLY has access to the following backend tools:
 {tool_list}
 
-Your recommended actions MUST be directly executable using one or more of these specific tools. Do not invent analytical tasks (like "audit pipeline outliers" or "review deal stages") that these tools cannot perform.
+Your recommended actions MUST be directly executable using one or more of these specific tools. Do not invent analytical tasks that these tools cannot perform.
 
 Output strictly as a JSON array of objects. Do not include markdown formatting or backticks.
 Each object must have exactly these keys:
-- "title": A very short 2-3 word title in sentence case (e.g. "Simulate budget shift", "Analyze channel ROI").
+- "title": A very short 2-3 word title in sentence case (e.g. "Simulate budget shift", "Map buying committee").
 - "message": A 1-sentence strategic question or command that clearly maps to an available tool.
 - "action_command": The exact same string as "message".
-- "icon": A font-awesome class (e.g. "fa-chart-pie", "fa-money-bill-trend-up", "fa-magnifying-glass").
+- "icon": A font-awesome class (e.g. "fa-chart-pie", "fa-users", "fa-magnifying-glass").
 '''
 
     cached = get_cached_response(prompt)
     if cached:
         try:
             items = json.loads(cached)
-        except:
+        except Exception:
             items = []
     else:
         items = []
@@ -1009,7 +1053,7 @@ Each object must have exactly these keys:
                 items = json.loads(text)
                 set_cached_response(prompt, json.dumps(items))
                 break
-            except Exception as e:
+            except Exception:
                 pass
 
     actions = []
@@ -1785,19 +1829,21 @@ def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
         return {'heatmap': days_data}
     except Exception as e:
         raise e
-def get_prioritized_sales_targets(campaign_id: str) -> list:
+def get_prioritized_sales_targets(campaign_id: str, timeframe: int = 0) -> list:
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
+        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+
         # 1. Get all users who interacted with this campaign across Web, Email, and LinkedIn
-        query = '''
+        query = f'''
         WITH AllEvents AS (
-            SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
+            SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL {tf_cond}
             UNION ALL
-            SELECT m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
+            SELECT m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ? {tf_cond}
             UNION ALL
-            SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
+            SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ? {tf_cond}
         )
         SELECT 
             c.user_id,
@@ -1815,13 +1861,13 @@ def get_prioritized_sales_targets(campaign_id: str) -> list:
         all_users = cursor.fetchall()
         
         # 2. Get Account Momentum (Total unique users per company engaged in this campaign)
-        acct_query = '''
+        acct_query = f'''
         WITH AllEvents AS (
-            SELECT user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
+            SELECT user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL {tf_cond}
             UNION ALL
-            SELECT u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
+            SELECT u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ? {tf_cond}
             UNION ALL
-            SELECT g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
+            SELECT g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ? {tf_cond}
         )
         SELECT c.company_name, COUNT(DISTINCT a.user_id) as active_personas
         FROM AllEvents a
@@ -2857,157 +2903,6 @@ def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
         return {'heatmap': days_data}
     except Exception as e:
         return {'error': str(e)}
-
-def get_prioritized_sales_targets(campaign_id: str) -> list:
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # 1. Get all users who interacted with this campaign across Web, Email, and LinkedIn
-        query = '''
-        WITH AllEvents AS (
-            SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
-            UNION ALL
-            SELECT m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
-            UNION ALL
-            SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
-        )
-        SELECT 
-            c.user_id,
-            c.first_name, 
-            c.last_name, 
-            c.company_name, 
-            c.seniority, 
-            COUNT(a.timestamp) as campaign_interactions,
-            MAX(a.timestamp) as last_active
-        FROM AllEvents a
-        JOIN crm_users c ON a.user_id = c.user_id
-        GROUP BY c.user_id, c.first_name, c.last_name, c.company_name, c.seniority
-        '''
-        cursor.execute(query, (campaign_id, f'%{campaign_id}%', campaign_id))
-        all_users = cursor.fetchall()
-        
-        # 2. Get Account Momentum (Total unique users per company engaged in this campaign)
-        acct_query = '''
-        WITH AllEvents AS (
-            SELECT user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
-            UNION ALL
-            SELECT u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
-            UNION ALL
-            SELECT g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
-        )
-        SELECT c.company_name, COUNT(DISTINCT a.user_id) as active_personas
-        FROM AllEvents a
-        JOIN crm_users c ON a.user_id = c.user_id
-        GROUP BY c.company_name
-        '''
-        cursor.execute(acct_query, (campaign_id, f'%{campaign_id}%', campaign_id))
-        acct_rows = cursor.fetchall()
-        account_momentum = {row['company_name']: row['active_personas'] for row in acct_rows}
-
-        # 3. Composite Lead Scoring
-        scored_users = []
-        from datetime import datetime, timedelta
-        now = datetime.now()
-        
-        for u in all_users:
-            interactions = u['campaign_interactions']
-            company = u['company_name']
-            personas = account_momentum.get(company, 1)
-            seniority = u['seniority']
-            last_active = u['last_active']
-            
-            # Base interaction score
-            score = interactions * 10
-            
-            # Momentum score
-            score += (personas - 1) * 15  # Additional personas give momentum points
-            
-            # Seniority score
-            if seniority == 'C-Suite':
-                score += 25
-            elif seniority == 'VP/Director':
-                score += 15
-            else:
-                score += 5
-                
-            # Recency score
-            if last_active:
-                try:
-                    last_active_dt = datetime.strptime(last_active, "%Y-%m-%d %H:%M:%S.%f")
-                except ValueError:
-                    try:
-                        last_active_dt = datetime.strptime(last_active, "%Y-%m-%d %H:%M:%S")
-                    except ValueError:
-                        last_active_dt = now - timedelta(days=100)
-                
-                days_ago = (now - last_active_dt).days
-                if days_ago <= 7:
-                    score += 20
-                elif days_ago <= 30:
-                    score += 10
-
-            # Convert Row to dict so we can add score
-            user_dict = dict(u)
-            user_dict['lead_score'] = score
-            scored_users.append(user_dict)
-            
-        # Sort by lead score descending and take top 5
-        scored_users = sorted(scored_users, key=lambda x: x['lead_score'], reverse=True)
-        users = scored_users[:5]
-        
-        targets = []
-        for user in users:
-            interactions = user['campaign_interactions']
-            company = user['company_name']
-            personas = account_momentum.get(company, 1)
-            
-            if interactions >= 5:
-                status = "SQL"
-                color = "text-emerald-400"
-                bg = "bg-emerald-400/10"
-                border = "border-emerald-500/20"
-                if 'VP' in user['seniority'] or 'Director' in user['seniority'] or 'C-Suite' in user['seniority']:
-                    action = f"Executive outreach. Reference the {personas} active personas from their account."
-                else:
-                    action = "Send 'Technical Deep Dive' sequence. High individual engagement."
-            elif interactions >= 2:
-                status = "MQL"
-                color = "text-brand-400"
-                bg = "bg-brand-400/10"
-                border = "border-brand-500/20"
-                if personas >= 3:
-                    action = "Account is heating up. Multi-thread outreach to this contact."
-                else:
-                    action = "Nurture with relevant case studies to push to SQL."
-            else:
-                status = "Cold Prospect"
-                color = "text-slate-400"
-                bg = "bg-dark-700"
-                border = "border-dark-600"
-                action = "Enroll in standard top-of-funnel nurture."
-                
-            targets.append({
-                'name': f"{user['first_name']} {user['last_name']}",
-                'company': company,
-                'seniority': user['seniority'],
-                'interactions': interactions,
-                'last_active': user['last_active'].split(' ')[0] if user['last_active'] else None,
-                'status': status,
-                'personas': personas,
-                'color': color,
-                'bg': bg,
-                'border': border,
-                'action': action,
-                'score': user['lead_score']
-            })
-            
-        return targets
-    except Exception as e:
-        import traceback
-        print(f"Error fetching prioritized targets: {e}")
-        traceback.print_exc()
-        return []
 
 def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timeframe: int = 0) -> list:
     conn = get_db_connection()

@@ -74,33 +74,36 @@ def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
 def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
-    
+
     import uuid
+    import sqlite3 as _sqlite3
+    from app.services.analytics import get_ai_recommended_actions
+
     dynamic_tasks = []
+
+    # --- Rule 1: Highest impact_score asset (data-driven) ---
     if matrix:
         top_asset = max(matrix, key=lambda x: x.get('impact_score', 0))
-        if top_asset:
-            encoded_asset = urllib.parse.quote(top_asset.get('asset_name', 'Asset'))
-            tid = f"TRG_{uuid.uuid4().hex[:8]}"
-            dynamic_tasks.append({
-                "id": tid,
-                "icon": "fa-arrow-trend-up",
-                "icon_color": "text-emerald-500",
-                "title": f"Top Asset: {top_asset.get('asset_name', 'Asset')}",
-                "subtitle": f"Driving high impact with {top_asset.get('engagement', 0)} interactions",
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
-                "is_programmatic": True
-            })
-            
-        fatigued_assets = [m for m in matrix if m.get('health') == 'Fatigued' or m.get('ai_recommendation')]
+        encoded_asset = urllib.parse.quote(top_asset.get('asset_name', 'Asset'))
+        tid = f"TRG_{uuid.uuid4().hex[:8]}"
+        dynamic_tasks.append({
+            "id": tid,
+            "icon": "fa-arrow-trend-up",
+            "icon_color": "text-emerald-500",
+            "title": f"Top asset: {top_asset.get('title', top_asset.get('asset_name', 'Asset'))}",
+            "subtitle": f"{top_asset.get('engagement', 0)} interactions in window",
+            "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={encoded_asset}&trigger_id={tid}",
+            "is_programmatic": True
+        })
+
+    # --- Rule 2: Fatigued assets (existing logic — genuinely data-driven) ---
+    if matrix:
+        fatigued_assets = [m for m in matrix if m.get('health') in ('Fatigued', 'Action Required') or m.get('ai_recommendation')]
         for asset in fatigued_assets:
             encoded_asset = urllib.parse.quote(asset.get('asset_name', 'Asset'))
-            # Simplify subtitle for the list view
-            health_status = asset.get('health', 'Fatigued')
             short_subtitle = "Traffic dropping rapidly" if "Traffic dropping" in asset.get('ai_recommendation', '') else "Engagement trickling off"
             if "Ad fatigue" in asset.get('ai_recommendation', ''):
                 short_subtitle = "Ad fatigue detected"
-                
             tid = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
                 "id": tid,
@@ -112,37 +115,76 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "is_programmatic": True
             })
 
-        # Simulated Triggers based on Optimal Comparator Outline
-        if len(matrix) > 2:
-            bounce_item = matrix[1]
-            bounce_asset = bounce_item.get('asset_name', 'Landing Page')
-            bounce_title = bounce_item.get('title', bounce_asset)
-            enc_bounce = urllib.parse.quote(bounce_asset)
-            tid2 = f"TRG_{uuid.uuid4().hex[:8]}"
+    # --- Rule 3: High bounce asset — real SQL (bounce_flag rate > 60%, min 10 sessions) ---
+    try:
+        _db_path = __import__('os').getenv("DATABASE_URL", "capstone.db")
+        _conn = _sqlite3.connect(_db_path)
+        _conn.row_factory = _sqlite3.Row
+        _cur = _conn.cursor()
+        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        _cur.execute(f"""
+            SELECT page_viewed,
+                   COUNT(*) as total,
+                   SUM(bounce_flag) as bounces,
+                   ROUND(100.0 * SUM(bounce_flag) / COUNT(*), 1) as bounce_rate
+            FROM ga4_events
+            WHERE utm_campaign = ? {tf_cond}
+            GROUP BY page_viewed
+            HAVING total >= 10 AND bounce_rate > 60
+            ORDER BY bounce_rate DESC
+            LIMIT 1
+        """, (campaign_id,))
+        high_bounce = _cur.fetchone()
+        if high_bounce:
+            enc_bounce = urllib.parse.quote(high_bounce['page_viewed'])
+            tid_bounce = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
-                "id": tid2,
+                "id": tid_bounce,
                 "icon": "fa-arrow-right-from-bracket",
                 "icon_color": "text-rose-500",
-                "title": bounce_title,
-                "subtitle": "Traffic is high but conversion is < 1%",
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid2}",
+                "title": high_bounce['page_viewed'],
+                "subtitle": f"Bounce rate {high_bounce['bounce_rate']}% on {high_bounce['total']} sessions",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid_bounce}",
                 "is_programmatic": True
             })
-            
-            spike_item = matrix[2]
-            spike_asset = spike_item.get('asset_name', 'Webinar')
-            spike_title = spike_item.get('title', spike_asset)
-            enc_spike = urllib.parse.quote(spike_asset)
-            tid3 = f"TRG_{uuid.uuid4().hex[:8]}"
+
+        # --- Rule 4: Spiking asset — last 7 days > 1.5× prior 7 days ---
+        _cur.execute(f"""
+            SELECT page_viewed,
+                   SUM(CASE WHEN timestamp >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as recent_views,
+                   SUM(CASE WHEN timestamp >= datetime('now', '-14 days')
+                            AND timestamp  < datetime('now', '-7 days') THEN 1 ELSE 0 END) as prior_views
+            FROM ga4_events
+            WHERE utm_campaign = ? {tf_cond}
+            GROUP BY page_viewed
+            HAVING prior_views > 0 AND (CAST(recent_views AS REAL) / prior_views) > 1.5
+            ORDER BY (CAST(recent_views AS REAL) / prior_views) DESC
+            LIMIT 1
+        """, (campaign_id,))
+        spiking = _cur.fetchone()
+        if spiking:
+            enc_spike = urllib.parse.quote(spiking['page_viewed'])
+            ratio = round(spiking['recent_views'] / spiking['prior_views'], 1)
+            tid_spike = f"TRG_{uuid.uuid4().hex[:8]}"
             dynamic_tasks.append({
-                "id": tid3,
+                "id": tid_spike,
                 "icon": "fa-bolt",
                 "icon_color": "text-emerald-500",
-                "title": spike_title,
-                "subtitle": "Converting at 3x the historical baseline",
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid3}",
+                "title": spiking['page_viewed'],
+                "subtitle": f"Engagement up {ratio}× vs prior 7 days",
+                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid_spike}",
                 "is_programmatic": True
             })
+        _conn.close()
+    except Exception:
+        pass  # Degrade gracefully — deterministic cards still show
+
+    # --- AI recommended actions (tab-scoped, cached 24h) ---
+    try:
+        ai_tasks = get_ai_recommended_actions(campaign_id, timeframe, tab="performance")
+        dynamic_tasks.extend(ai_tasks)
+    except Exception:
+        pass
 
     return templates.TemplateResponse(request=request, name="components/performance.html", context={
         "campaign_id": campaign_id,
@@ -160,20 +202,19 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
 def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
-    from app.services.analytics import get_prioritized_sales_targets
+    from app.services.analytics import get_prioritized_sales_targets, get_ai_recommended_actions
+    import sqlite3 as _sqlite3
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
-    
+
     from datetime import datetime
-    
-    # Map prioritized sales targets to Copilot Priority Actions
     import uuid
-    raw_targets = get_prioritized_sales_targets(campaign_id)[:4] # Top 4 targets
+
+    # --- Rule 1: Prioritised SQL follow-up targets (timeframe-scoped) ---
+    raw_targets = get_prioritized_sales_targets(campaign_id, timeframe)[:4]
     copilot_tasks = []
     for t in raw_targets:
         icon_col = "text-sky-400" if t['status'] == 'SQL' else "text-fuchsia-500"
-        
-        # Calculate relative date
         try:
             last_active_date = datetime.strptime(t['last_active'], "%Y-%m-%d")
             delta = datetime.now() - last_active_date
@@ -183,15 +224,12 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
                 relative_date = "Yesterday"
             else:
                 relative_date = f"{delta.days} days ago"
-        except:
+        except Exception:
             relative_date = t['last_active']
-            
+
         subtitle = f"{t['interactions']} interactions | Last active {relative_date}"
-        
-        import urllib.parse
         encoded_name = urllib.parse.quote(t['name'])
         encoded_company = urllib.parse.quote(t['company'])
-        
         tid = f"TRG_{uuid.uuid4().hex[:8]}"
         copilot_tasks.append({
             "id": tid,
@@ -202,29 +240,88 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
             "is_programmatic": True,
             "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
         })
-        
-    # Simulated ABM Triggers based on Optimal Comparator Outline
-    tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
-    copilot_tasks.append({
-        "id": tid_stalled,
-        "icon": "fa-hourglass-end",
-        "icon_color": "text-rose-500",
-        "title": "Stalled Account: BP plc",
-        "subtitle": "High early engagement, zero activity in 14 days",
-        "is_programmatic": True,
-        "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=BP&trigger_id={tid_stalled}"
-    })
-    
-    tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
-    copilot_tasks.append({
-        "id": tid_cross,
-        "icon": "fa-network-wired",
-        "icon_color": "text-emerald-500",
-        "title": "Cross-Department Expansion: Shell",
-        "subtitle": "Engineering and Marketing consuming content simultaneously",
-        "is_programmatic": True,
-        "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company=Shell&trigger_id={tid_cross}"
-    })
+
+    # --- Rule 2: Stalled account — real SQL (≥2 users engaged, no activity in 14 days) ---
+    try:
+        _db_path = __import__('os').getenv("DATABASE_URL", "capstone.db")
+        _conn = _sqlite3.connect(_db_path)
+        _conn.row_factory = _sqlite3.Row
+        _cur = _conn.cursor()
+        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+
+        _cur.execute(f"""
+            WITH CampaignUsers AS (
+                SELECT user_id, MAX(timestamp) as last_touch
+                FROM ga4_events
+                WHERE utm_campaign = ? {tf_cond}
+                AND user_id IS NOT NULL
+                GROUP BY user_id
+            )
+            SELECT c.company_name,
+                   COUNT(DISTINCT cu.user_id) as engaged_users,
+                   MAX(cu.last_touch) as last_active
+            FROM CampaignUsers cu
+            JOIN crm_users c ON cu.user_id = c.user_id
+            GROUP BY c.company_name
+            HAVING engaged_users >= 2
+               AND last_active < date('now', '-14 days')
+            ORDER BY engaged_users DESC
+            LIMIT 1
+        """, (campaign_id,))
+        stalled = _cur.fetchone()
+        if stalled:
+            enc_company = urllib.parse.quote(stalled['company_name'])
+            tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
+            copilot_tasks.append({
+                "id": tid_stalled,
+                "icon": "fa-hourglass-end",
+                "icon_color": "text-rose-500",
+                "title": f"Stalled account: {stalled['company_name']}",
+                "subtitle": f"{stalled['engaged_users']} users engaged — last active {stalled['last_active'][:10]}",
+                "is_programmatic": True,
+                "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company={enc_company}&trigger_id={tid_stalled}"
+            })
+
+        # --- Rule 3: Cross-dept expansion — real SQL (2+ distinct persona_types at same company) ---
+        _cur.execute(f"""
+            WITH CampaignUsers AS (
+                SELECT DISTINCT user_id FROM ga4_events
+                WHERE utm_campaign = ? {tf_cond}
+                AND user_id IS NOT NULL
+            )
+            SELECT c.company_name,
+                   COUNT(DISTINCT c.persona_type) as persona_types,
+                   COUNT(DISTINCT c.user_id) as total_engaged
+            FROM CampaignUsers cu
+            JOIN crm_users c ON cu.user_id = c.user_id
+            GROUP BY c.company_name
+            HAVING persona_types >= 2
+            ORDER BY persona_types DESC, total_engaged DESC
+            LIMIT 1
+        """, (campaign_id,))
+        multi_persona = _cur.fetchone()
+        if multi_persona:
+            enc_mp = urllib.parse.quote(multi_persona['company_name'])
+            tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
+            copilot_tasks.append({
+                "id": tid_cross,
+                "icon": "fa-network-wired",
+                "icon_color": "text-emerald-500",
+                "title": f"Cross-dept expansion: {multi_persona['company_name']}",
+                "subtitle": f"{multi_persona['persona_types']} persona types engaged — {multi_persona['total_engaged']} users",
+                "is_programmatic": True,
+                "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company={enc_mp}&trigger_id={tid_cross}"
+            })
+        _conn.close()
+    except Exception:
+        pass  # Degrade gracefully — follow-up target cards still show
+
+    # --- AI recommended actions (tab-scoped, cached 24h) ---
+    try:
+        ai_tasks = get_ai_recommended_actions(campaign_id, timeframe, tab="audience")
+        copilot_tasks.extend(ai_tasks)
+    except Exception:
+        pass
 
     return templates.TemplateResponse(request=request, name="components/audience.html", context={
         "campaign_id": campaign_id,
