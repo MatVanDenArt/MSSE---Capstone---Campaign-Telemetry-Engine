@@ -402,10 +402,7 @@ def get_audience_actions(request: Request, campaign_id: str, company: str = None
         "copilot_tasks": copilot_tasks
     })
 
-from functools import lru_cache
-
-@lru_cache(maxsize=32)
-def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
+def get_strategic_tldr_summary(campaign_id: str, timeframe: int):
     from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
@@ -427,7 +424,7 @@ def cached_generate_strategic_tldr(campaign_id: str, timeframe: int):
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
 def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
     try:
-        tldr = cached_generate_strategic_tldr(campaign_id, timeframe)
+        tldr = get_strategic_tldr_summary(campaign_id, timeframe)
         return HTMLResponse(content=tldr)
     except Exception as e:
         return HTMLResponse(content="Across the analyzed window, campaign pipeline generation and target account engagement remain aligned with core baseline milestones.")

@@ -771,7 +771,6 @@ Format in plain text without markdown."""
             trend_str = "improving" if trend < 0 else "elevated" if trend > 0 else "stable"
             
             fallback = f"Over the {time_window.lower()} analysis window, the campaign influenced ${pipe/1e6:.2f}M in pipeline against ${spend/1e3:.1f}k in media investment. Blended Cost Per Acquisition (CPA) is currently ${cpa:,.0f}, maintaining an {trend_str} efficiency curve relative to baseline targets. Engagement velocity across key accounts confirms strong omnichannel alignment."
-            set_cached_response(prompt, fallback)
             return fallback
             
         set_cached_response(prompt, response.text)
