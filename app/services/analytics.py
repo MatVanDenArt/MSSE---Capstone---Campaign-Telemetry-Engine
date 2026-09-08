@@ -3,7 +3,10 @@ import json
 from functools import lru_cache
 
 import os
-DB_PATH = os.getenv("DATABASE_URL", "capstone.db")
+_DEFAULT_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "capstone.db"))
+DB_PATH = os.getenv("DATABASE_URL", _DEFAULT_DB)
+if not os.path.isabs(DB_PATH):
+    DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", DB_PATH))
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -12,39 +15,78 @@ def get_db_connection():
 
 def calculate_blended_cpa(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
-    Query total LinkedIn spend divided by total CRM opportunities.
+    Query total blended spend (LinkedIn + Email + Web) divided by total CRM Closed Won opportunities.
+    Returns channel breakdown, benchmark CPA, and executive verdict.
     """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
-        # Get total spend
-        cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT SUM(spend_consumed) as total_spend FROM linkedin_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT SUM(spend_consumed) as total_spend FROM linkedin_events")
-        li_spend = cursor.fetchone()["total_spend"] or 0.0
-        
-        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE campaign_id = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(event_id) as c FROM mailchimp_events")
+
+        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        camp_li = f"AND campaign_id = '{campaign_id}'" if campaign_id else ""
+        camp_mc = f"AND campaign_id LIKE '%{campaign_id}%'" if campaign_id else ""
+        camp_ga = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+        camp_crm = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+
+        # Channel spend
+        cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE 1=1 {camp_li} {tf_cond}")
+        li_spend = cursor.fetchone()["s"] or 0.0
+
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {camp_mc} {tf_cond}")
         em_spend = (cursor.fetchone()["c"] or 0) * 1.50
-        
-        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(session_id) as c FROM ga4_events")
+
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {camp_ga} {tf_cond}")
         web_spend = (cursor.fetchone()["c"] or 0) * 0.80
-        
+
         total_spend = li_spend + em_spend + web_spend
-        
-        # Get total closed won opps
-        cursor.execute(f"SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won' AND utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute(f"SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won' AND utm_campaign = '{campaign_id}'") if campaign_id else cursor.execute("SELECT COUNT(*) as total_opps FROM crm_opps WHERE event_type = 'Closed Won'")
-        opps_row = cursor.fetchone()
-        total_opps = opps_row["total_opps"] if opps_row and opps_row["total_opps"] else 0
-        
+
+        # Campaign Closed Won opps
+        cursor.execute(f"SELECT COUNT(*) as c FROM crm_opps WHERE event_type = 'Closed Won' {camp_crm} {tf_cond}")
+        total_opps = cursor.fetchone()["c"] or 0
+
         cpa = total_spend / total_opps if total_opps > 0 else 0.0
-        
+
+        # Cross-campaign benchmark CPA (all campaigns, same timeframe)
+        cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE 1=1 {tf_cond}")
+        bench_li = cursor.fetchone()["s"] or 0.0
+        cursor.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {tf_cond}")
+        bench_em = (cursor.fetchone()["c"] or 0) * 1.50
+        cursor.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {tf_cond}")
+        bench_web = (cursor.fetchone()["c"] or 0) * 0.80
+        bench_total_spend = bench_li + bench_em + bench_web
+
+        cursor.execute(f"SELECT COUNT(*) as c FROM crm_opps WHERE event_type = 'Closed Won' {tf_cond}")
+        bench_opps = cursor.fetchone()["c"] or 0
+        benchmark_cpa = bench_total_spend / bench_opps if bench_opps > 0 else 0.0
+
         conn.close()
+
+        cpa_vs_benchmark_pct = round(((cpa - benchmark_cpa) / benchmark_cpa) * 100, 1) if benchmark_cpa > 0 else None
+        if cpa_vs_benchmark_pct is None:
+            verdict = "No benchmark data available"
+        elif cpa_vs_benchmark_pct <= 0:
+            verdict = f"Efficient — CPA is {abs(cpa_vs_benchmark_pct)}% below cross-campaign benchmark"
+        else:
+            verdict = f"Above Benchmark — CPA is {cpa_vs_benchmark_pct}% higher than cross-campaign average"
+
         return {
+            "timeframe_days": timeframe,
+            "timeframe_label": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
+            "channel_spend_breakdown": {
+                "linkedin": round(li_spend, 2),
+                "email": round(em_spend, 2),
+                "web": round(web_spend, 2)
+            },
             "total_spend": round(total_spend, 2),
-            "total_opportunities": total_opps,
-            "blended_cpa": round(cpa, 2)
+            "total_closed_won_opportunities": total_opps,
+            "blended_cpa": round(cpa, 2),
+            "benchmark_avg_cpa": round(benchmark_cpa, 2),
+            "cpa_vs_benchmark_pct": cpa_vs_benchmark_pct,
+            "verdict": verdict
         }
     except Exception as e:
         raise e
+
 def get_account_penetration(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Group users by company_name and seniority to return a summarized dictionary.
@@ -111,15 +153,30 @@ def evaluate_trickle_threshold(campaign_id: str = None, timeframe: int = 0, **kw
         all_below_threshold = all(count <= threshold for count in last_7_days)
         
         is_active = not all_below_threshold
+        trickle_threshold = round(threshold)
+        avg_recent = round(sum(last_7_days) / len(last_7_days), 1)
+
+        if is_active:
+            verdict = "ACTIVE: Campaign traffic is within normal operating range."
+            recommendation = "No action required — campaign is generating meaningful traffic."
+        else:
+            verdict = "INACTIVE: Trickle threshold breached — campaign traffic has effectively ended."
+            recommendation = "Consider archiving this campaign and reallocating its remaining budget to active campaigns."
         
         return {
             "is_active": is_active,
-            "peak_traffic": peak,
-            "recent_traffic": last_7_days,
+            "verdict": verdict,
+            "threshold_rule": "Trickle = daily traffic drops >95% from peak AND sustains that for 7+ consecutive days",
+            "threshold_breached": not is_active,
+            "peak_daily_traffic": peak,
+            "trickle_threshold_daily_visits": trickle_threshold,
+            "avg_last_7_days_traffic": avg_recent,
+            "recommendation": recommendation,
             "status": "Active" if is_active else "Past (Trickle Traffic Detected)"
         }
     except Exception as e:
         raise e
+
 def simulate_budget_shift(channel: str, budget: float | str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
     Use historical baseline conversion rates to mathematically project new pipeline volume based on the new budget.
@@ -194,17 +251,32 @@ def simulate_budget_shift(channel: str, budget: float | str, campaign_id: str = 
         dampened_multiplier = roi_multiplier * (0.95 ** dampener_steps)
         
         projected_pipeline = budget * dampened_multiplier
-        
+
+        # Build a precise, accurate insight string
+        if roi_multiplier == 0:
+            insight = f"No historical pipeline won on {channel} in this timeframe. Cannot project returns — consider extending the timeframe or switching channel to build a baseline."
+        elif dampened_multiplier < roi_multiplier:
+            pct_dampened = round((1 - (dampened_multiplier / roi_multiplier)) * 100, 1)
+            insight = f"Applied a {pct_dampened}% dampener to ROI multiplier to account for Audience Saturation and CAC decay at scale."
+        else:
+            insight = f"Proposed budget (${budget:,.0f}) is within historical spend range (${historical_spend:,.0f}). No scale dampener applied — historical ROI multiplier used directly."
+
+        verdict = "Strong ROI expected" if projected_pipeline > budget else ("Break-even risk" if projected_pipeline > 0 else "No pipeline projected — do not proceed without further analysis")
+
         return {
             "channel": channel,
+            "timeframe_days": timeframe,
             "proposed_budget": round(budget, 2),
             "historical_spend": round(historical_spend, 2),
             "historical_pipeline_won": round(historical_pipeline, 2),
             "historical_roi_multiplier": round(roi_multiplier, 2),
             "dampened_roi_multiplier": round(dampened_multiplier, 2),
             "projected_pipeline_value": round(projected_pipeline, 2),
-            "insight": f"Applied a {round((1 - (dampened_multiplier/roi_multiplier))*100, 1)}% dampener to account for Audience Saturation and CAC decay at scale." if dampened_multiplier < roi_multiplier else "Budget shift is within historical bounds; no scale dampener applied."
+            "projected_roas": round(projected_pipeline / budget, 2) if budget > 0 else 0,
+            "insight": insight,
+            "verdict": verdict
         }
+
     except Exception as e:
         raise e
 def get_all_campaigns() -> list:
@@ -2021,46 +2093,103 @@ def get_tam_penetration(campaign_id: str = None, timeframe: int = 0, **kwargs) -
         """
         cursor.execute(query)
         engaged_accounts = cursor.fetchone()["c"] or 0
-        
+
         penetration = round((engaged_accounts / total_accounts) * 100, 1) if total_accounts > 0 else 0.0
+
+        # Count accounts with 2+ distinct user interactions as "deeply engaged"
+        deep_query = f"""
+        SELECT COUNT(DISTINCT u.company_name) as c
+        FROM crm_users u
+        WHERE u.user_id IN (
+            SELECT user_id FROM linkedin_events WHERE 1=1 {camp_filter}
+            GROUP BY user_id HAVING COUNT(*) >= 2
+            UNION
+            SELECT user_id FROM ga4_events WHERE 1=1 {utm_filter}
+            GROUP BY user_id HAVING COUNT(*) >= 2
+        )
+        """
+        cursor.execute(deep_query)
+        deeply_engaged = cursor.fetchone()["c"] or 0
+        engagement_depth_pct = round((deeply_engaged / total_accounts) * 100, 1) if total_accounts > 0 else 0.0
+
         conn.close()
-        
+
+        if penetration >= 100:
+            recommendation = "TAM fully reached — shift focus to engagement depth (retargeting, personalised nurture) rather than new reach."
+        elif penetration >= 70:
+            recommendation = "Strong reach — investigate unengaged accounts with intent surge signals and targeted ABM outreach."
+        elif penetration >= 40:
+            recommendation = "Moderate reach — expand via paid amplification (LinkedIn ABM targeting) to uncovered accounts."
+        else:
+            recommendation = "Low penetration — review ICP targeting and increase reach before optimising engagement."
+
         return {
             "metric_name": "Campaign Account Penetration",
             "value": f"{penetration}%",
             "raw_value": penetration,
-            "delta": 0.0,
             "total_target_accounts": total_accounts,
-            "engaged_accounts": engaged_accounts
+            "engaged_accounts": engaged_accounts,
+            "deeply_engaged_accounts": deeply_engaged,
+            "engagement_depth_pct": engagement_depth_pct,
+            "recommendation": recommendation
         }
     except Exception as e:
         raise e
 
+
 def calculate_share_of_voice(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
     """
-    Mock calculation for Topic Share of Voice (SOV) against competitors.
+    Deterministic estimate for Topic Share of Voice (SOV) anchored to relative LinkedIn spend.
+    In production this would use a third-party intent data API (e.g. Bombora, G2).
+    Uses a deterministic seed from campaign_id so results are consistent across calls.
     """
-    import random
-    
-    wood_group = round(random.uniform(25.0, 45.0), 1)
-    aker = round(random.uniform(15.0, 35.0), 1)
-    baker = round(random.uniform(10.0, 25.0), 1)
-    others = round(100.0 - (wood_group + aker + baker), 1)
-    
+    import hashlib
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        camp_cond = f"AND campaign_id = '{campaign_id}'" if campaign_id else ""
+        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        cursor.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE 1=1 {camp_cond} {tf_cond}")
+        actual_spend = cursor.fetchone()["s"] or 0.0
+        conn.close()
+    except Exception:
+        actual_spend = 0.0
+
+    # Deterministic seed from campaign_id avoids results changing on every call
+    seed_val = int(hashlib.md5((campaign_id or "global").encode()).hexdigest()[:8], 16) % 1000
+    # Simulate competitor market (campaign spend is a fraction of total addressable market)
+    market_multiplier = 3.5 + (seed_val % 5) * 0.15
+    simulated_market = actual_spend * market_multiplier if actual_spend > 0 else 50000
+    wood_pct = round(min(60.0, (actual_spend / simulated_market) * 100), 1) if simulated_market > 0 else 30.0
+    aker_pct = round(wood_pct * 0.72, 1)
+    baker_pct = round(wood_pct * 0.53, 1)
+    others_pct = max(0.0, round(100.0 - wood_pct - aker_pct - baker_pct, 1))
+
+    competitor_avg = round((aker_pct + baker_pct + others_pct) / 3, 1)
+    is_leader = wood_pct > aker_pct
+    topic = campaign_id.replace("CMP_LIVE_", "").replace("CMP_PAST_", "").replace("_", " ").title() if campaign_id else "All Topics"
+    timeframe_label = "All Time" if timeframe == 0 else f"Last {timeframe} Days"
+
     return {
         "metric_name": "Topic Share of Voice",
-        "leader": "Wood Group" if wood_group > aker else "Aker Solutions",
-        "delta": round(random.uniform(-5.0, 15.0), 1),
-        "value": f"{wood_group}%",
-        "raw_value": wood_group,
-        "competitor_avg": round((aker + baker + others) / 3, 1),
-        "distribution": {
-            "Wood Group": f"{wood_group}%",
-            "Aker Solutions": f"{aker}%",
-            "Baker Hughes": f"{baker}%",
-            "Others": f"{others}%"
-        }
+        "topic": topic,
+        "timeframe": timeframe_label,
+        "our_sov_pct": wood_pct,
+        "value": f"{wood_pct}%",
+        "raw_value": wood_pct,
+        "leader": "Wood Group" if is_leader else "Aker Solutions",
+        "competitor_avg": competitor_avg,
+        "competitor_distribution": {
+            "Wood Group": f"{wood_pct}%",
+            "Aker Solutions": f"{aker_pct}%",
+            "Baker Hughes": f"{baker_pct}%",
+            "Others": f"{others_pct}%"
+        },
+        "verdict": "Market Leader" if is_leader else "Challenger — close the gap",
+        "recommendation": "Maintain spend to defend leadership position." if is_leader else "Increase LinkedIn spend or content cadence to close the SOV gap.",
+        "data_source": "Simulated from relative LinkedIn spend (production: Bombora or G2 API)"
     }
+
 
 
 def get_executive_pipeline_kpis(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
@@ -2102,20 +2231,37 @@ def get_executive_pipeline_kpis(campaign_id: str = None, timeframe: int = 0, **k
         open_pipeline = open_row['total_pipeline'] if open_row and open_row['total_pipeline'] else 0
         won_pipeline = won_row['won_pipeline'] if won_row and won_row['won_pipeline'] else 0
         total_spend = spend_row['total_spend'] if spend_row and spend_row['total_spend'] else 0
-        
+
         opp_count = open_row['opp_count'] if open_row else 0
         won_count = won_row['won_count'] if won_row else 0
         win_rate = (won_count / opp_count * 100) if opp_count > 0 else 0
-        
+        avg_deal_size = round(open_pipeline / opp_count, 2) if opp_count > 0 else 0
+        roi_pct = round(((won_pipeline - total_spend) / total_spend * 100), 2) if total_spend > 0 else 0
+        roas = round((won_pipeline / total_spend), 2) if total_spend > 0 else 0
+
+        if won_pipeline > total_spend * 2:
+            verdict = "Highly Profitable — ROAS exceeds 2× spend. Recommend maintaining or increasing investment."
+        elif won_pipeline > total_spend:
+            verdict = "Profitable — Revenue exceeds spend. Investment is justified."
+        elif opp_count > 0:
+            verdict = "Investment Phase — Pipeline exists but revenue not yet realised. Monitor closely."
+        else:
+            verdict = "No pipeline generated in this timeframe. Review targeting or timeframe."
+
         return {
+            "timeframe_days": timeframe,
+            "timeframe_label": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
             "total_open_opportunities": opp_count,
             "total_open_pipeline": round(open_pipeline, 2),
+            "average_deal_size": avg_deal_size,
             "total_closed_won_revenue": round(won_pipeline, 2),
             "total_spend": round(total_spend, 2),
             "win_rate_percentage": round(win_rate, 2),
-            "roi_percentage": round(((won_pipeline - total_spend) / total_spend * 100), 2) if total_spend > 0 else 0,
-            "roas": round((won_pipeline / total_spend), 2) if total_spend > 0 else 0
+            "roi_percentage": roi_pct,
+            "roas": roas,
+            "verdict": verdict
         }
+
     except Exception as e:
         raise e
 def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
@@ -2149,31 +2295,51 @@ def get_budget_pacing(channel: str = 'all', campaign_id: str = None, timeframe: 
             
         # Determine allocated budget dynamically or return 0 if no timeframe
         allocated_budget = 500000 if not timeframe else (500000 * (timeframe / 365.0))
-        
+
         spend_ratio = spent_budget / allocated_budget if allocated_budget > 0 else 0
+        daily_run_rate = spent_budget / timeframe if timeframe > 0 else 0
+        projected_yearly_spend = daily_run_rate * 365
+        projected_variance = projected_yearly_spend - 500000
+
+        # Pacing status uses BOTH the period ratio AND the projected yearly variance to avoid contradiction
         if spend_ratio > 1.1:
             status = "Over Budget"
+        elif projected_variance < -150000:
+            status = "Severely Underspending — Annual Target at Risk"
         elif spend_ratio < 0.5:
             status = "Underspending (Requires Reallocation)"
         else:
             status = "On Track"
-            
-        daily_run_rate = spent_budget / timeframe if timeframe > 0 else 0
-        projected_yearly_spend = daily_run_rate * 365
-        projected_variance = projected_yearly_spend - 500000
+
+        # Recommended daily spend to hit annual target
+        annual_budget = 500000
+        days_remaining_in_year = max(1, 365 - timeframe) if timeframe > 0 else 365
+        budget_remaining_annual = max(0, annual_budget - spent_budget)
+        recommended_daily_spend = round(budget_remaining_annual / days_remaining_in_year, 2)
+
+        if projected_variance < -100000:
+            recommendation = f"Increase daily spend to ${recommended_daily_spend:,.2f} to meet the ${annual_budget:,.0f} annual budget target."
+        elif spend_ratio > 1.1:
+            recommendation = "Pause or reduce spend immediately — budget overrun in progress."
+        else:
+            recommendation = f"Maintain current run rate of ${daily_run_rate:,.2f}/day to stay on track."
 
         conn.close()
         return {
             "channel": channel,
             "campaign_id": campaign_id,
             "timeframe_days": timeframe,
+            "timeframe_label": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
             "allocated_budget": round(allocated_budget, 2),
             "spent_budget": round(spent_budget, 2),
             "remaining_budget": max(0, round(allocated_budget - spent_budget, 2)),
             "pacing_status": status,
             "daily_run_rate": round(daily_run_rate, 2),
-            "projected_yearly_variance": round(projected_variance, 2)
+            "recommended_daily_spend": recommended_daily_spend,
+            "projected_yearly_variance": round(projected_variance, 2),
+            "recommendation": recommendation
         }
+
     except Exception as e:
         raise e
 def run_attribution_model(model_type: str = 'linear', campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
@@ -2230,13 +2396,51 @@ def run_attribution_model(model_type: str = 'linear', campaign_id: str = None, t
                 "attributed_revenue": revenue
             }
             total_revenue += revenue
-            
+
+        # Attach spend estimates per utm_source for ROAS calculation
+        # linkedin is the only channel with real spend data; others are proxied
+        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        camp_cond_li = f"AND campaign_id = '{campaign_id}'" if campaign_id else ""
+        camp_cond_mc = f"AND campaign_id LIKE '%{campaign_id}%'" if campaign_id else ""
+        camp_cond_ga = f"AND utm_campaign = '{campaign_id}'" if campaign_id else ""
+
+        conn2 = get_db_connection()
+        c2 = conn2.cursor()
+        c2.execute(f"SELECT SUM(spend_consumed) as s FROM linkedin_events WHERE 1=1 {camp_cond_li} {tf_cond}")
+        li_spend = c2.fetchone()["s"] or 0.0
+        c2.execute(f"SELECT COUNT(event_id) as c FROM mailchimp_events WHERE 1=1 {camp_cond_mc} {tf_cond}")
+        em_spend = (c2.fetchone()["c"] or 0) * 1.50
+        c2.execute(f"SELECT COUNT(session_id) as c FROM ga4_events WHERE 1=1 {camp_cond_ga} {tf_cond}")
+        web_spend = (c2.fetchone()["c"] or 0) * 0.80
+        conn2.close()
+
+        spend_map = {
+            "linkedin": li_spend,
+            "email": em_spend,
+            "direct": web_spend / 2,
+            "organic": web_spend / 2
+        }
+
+        top_channel = None
+        top_roas = -1
+        for src, data in attribution.items():
+            ch_spend = spend_map.get(src.lower(), 0)
+            data["channel_spend"] = round(ch_spend, 2)
+            data["channel_roas"] = round(data["attributed_revenue"] / ch_spend, 2) if ch_spend > 0 else None
+            if data["channel_roas"] is not None and data["channel_roas"] > top_roas:
+                top_roas = data["channel_roas"]
+                top_channel = src
+
         return {
             "model_type": model_type,
             "timeframe_days": timeframe,
+            "timeframe_label": "All Time" if timeframe == 0 else f"Last {timeframe} Days",
             "total_attributed_revenue": round(total_revenue, 2),
-            "channel_distribution": attribution
+            "channel_distribution": attribution,
+            "top_performing_channel": top_channel,
+            "recommendation": f"Prioritise {top_channel} — it delivers the highest ROAS ({top_roas:.1f}×) in this timeframe." if top_channel else "Insufficient data to identify top-performing channel."
         }
+
     except Exception as e:
         raise e
 def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
@@ -2271,32 +2475,50 @@ def compare_asset_baselines(asset_a: str, asset_b: str, campaign_id: str = None,
         
         pipe_a = metrics_a['pipeline_influenced']
         pipe_b = metrics_b['pipeline_influenced']
-        
+        engagement_a = metrics_a['views_or_clicks']
+        engagement_b = metrics_b['views_or_clicks']
+        fractional_a = data_a.get('fractional_pipeline', 0.0) if data_a else 0.0
+        fractional_b = data_b.get('fractional_pipeline', 0.0) if data_b else 0.0
+
+        # Primary signal: pipeline influence (revenue quality)
+        # Secondary: engagement volume (audience reach)
+        # Never use impact_score as tiebreaker — it measures seniority-weighted engagement volume,
+        # not pipeline quality, and can mislead executives.
         if pipe_a > pipe_b:
             winner = asset_a
+            winner_rationale = f"{asset_a} generated ${pipe_a:,.0f} in influenced pipeline vs ${pipe_b:,.0f} — clear revenue winner."
         elif pipe_b > pipe_a:
             winner = asset_b
+            winner_rationale = f"{asset_b} generated ${pipe_b:,.0f} in influenced pipeline vs ${pipe_a:,.0f} — clear revenue winner."
+        elif fractional_a > fractional_b:
+            winner = asset_a
+            winner_rationale = f"Pipeline tied. {asset_a} holds higher fractional pipeline attribution (${fractional_a:,.0f} vs ${fractional_b:,.0f})."
+        elif fractional_b > fractional_a:
+            winner = asset_b
+            winner_rationale = f"Pipeline tied. {asset_b} holds higher fractional pipeline attribution (${fractional_b:,.0f} vs ${fractional_a:,.0f})."
+        elif engagement_a > engagement_b:
+            winner = asset_a
+            winner_rationale = f"No pipeline difference. {asset_a} wins on engagement volume ({engagement_a} vs {engagement_b}). Extend timeframe for stronger signal."
+        elif engagement_b > engagement_a:
+            winner = asset_b
+            winner_rationale = f"No pipeline difference. {asset_b} wins on engagement volume ({engagement_b} vs {engagement_a}). Extend timeframe for stronger signal."
         else:
-            # Fallback to impact score if tied in pipeline
-            score_a = metrics_a['impact_score']
-            score_b = metrics_b['impact_score']
-            if score_a > score_b:
-                winner = asset_a
-            elif score_b > score_a:
-                winner = asset_b
-            else:
-                winner = "tie"
-                
-        warning = ""
-        if (metrics_a['views_or_clicks'] < 50 and metrics_b['views_or_clicks'] < 50):
-            warning = "Statistical significance is very low (both assets under 50 engagements). Recommend extending timeframe."
-            
+            winner = "tie"
+            winner_rationale = "No meaningful difference on pipeline or engagement. A/B test is inconclusive — extend timeframe or increase sample size."
+
+        low_data_warning = ""
+        if engagement_a < 50 and engagement_b < 50:
+            low_data_warning = "⚠️ Low statistical confidence: both assets have under 50 engagements. Results may not be reliable — consider extending the timeframe."
+
         return {
+            "timeframe_days": timeframe,
             "asset_a": metrics_a,
             "asset_b": metrics_b,
             "winner": winner,
-            "strategic_warning": warning if warning else "Sufficient data volume for comparison."
+            "winner_rationale": winner_rationale,
+            "statistical_warning": low_data_warning if low_data_warning else "Sufficient data volume for comparison."
         }
+
     except Exception as e:
         raise e
 def map_buying_committee(account_identifier: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
@@ -2352,11 +2574,66 @@ def map_buying_committee(account_identifier: str, campaign_id: str = None, timef
         for sen in segments:
             for per in segments[sen]:
                 segments[sen][per] = sorted(segments[sen][per], key=lambda x: x['interactions'], reverse=True)[:5]
-            
+
+        # Generate dynamic strategic insight from coverage gaps
+        c_suite_engaged = sum(
+            1 for p in ["Technical", "Commercial"]
+            for u in segments["C-Suite"][p] if u["interactions"] > 0
+        )
+        vp_engaged = sum(
+            1 for p in ["Technical", "Commercial"]
+            for u in segments["VP/Director"][p] if u["interactions"] > 0
+        )
+        manager_engaged = sum(
+            1 for p in ["Technical", "Commercial"]
+            for u in segments["Manager"][p] if u["interactions"] > 0
+        )
+        total_c_suite = sum(len(segments["C-Suite"][p]) for p in ["Technical", "Commercial"])
+        company_name = users[0]['company_name']
+
+        if total_c_suite > 0 and c_suite_engaged == 0 and vp_engaged > 0:
+            strategic_insight = (
+                f"⚠️ C-Suite Blind Spot: {company_name} shows strong VP/Director engagement "
+                f"({vp_engaged} active) but zero C-Suite visibility. Multi-thread urgently to secure "
+                f"an executive champion before the deal stalls at VP level."
+            )
+        elif total_c_suite > 0 and c_suite_engaged == 0:
+            strategic_insight = (
+                f"⚠️ Executive Gap: No C-Suite engagement detected at {company_name}. "
+                f"Recommend executive-to-executive outreach or a sponsored executive briefing "
+                f"to establish top-level visibility before progressing commercially."
+            )
+        elif c_suite_engaged > 0 and vp_engaged > 0:
+            strategic_insight = (
+                f"✅ Strong Multi-Level Coverage: {company_name} has both C-Suite ({c_suite_engaged}) "
+                f"and VP/Director ({vp_engaged}) engagement. Prioritise deal acceleration — "
+                f"schedule commercial discovery within 5 business days."
+            )
+        elif c_suite_engaged > 0:
+            strategic_insight = (
+                f"C-Suite engaged at {company_name} but limited mid-level coverage. "
+                f"Drive VP/Director engagement to build broader internal consensus before proposal."
+            )
+        elif manager_engaged > 0:
+            strategic_insight = (
+                f"Bottom-up engagement only at {company_name} (Managers/Contributors). "
+                f"Nurture further and initiate executive-level outreach to elevate the deal."
+            )
+        else:
+            strategic_insight = (
+                f"Minimal engagement across all levels at {company_name}. "
+                f"Consider account-specific retargeting or direct SDR outreach to reactivate."
+            )
+
         return {
-            "company_name": users[0]['company_name'],
+            "company_name": company_name,
             "buying_committee_segments": segments,
-            "insights": "Segmented by seniority (C-Suite, VP/Director, Manager, Contributor) and persona type (Technical vs Commercial)."
+            "coverage_summary": {
+                "c_suite_engaged": c_suite_engaged,
+                "vp_director_engaged": vp_engaged,
+                "manager_engaged": manager_engaged
+            },
+            "strategic_insight": strategic_insight
         }
     except Exception as e:
         raise e
@@ -2481,16 +2758,33 @@ def get_user_journey(name: str, company: str, campaign_id: str = None, timeframe
         </li>
         """
     history_items += '</ul>'
-    
+
+    # Derive lead stage and recommended action from journey data
+    if total_value > 0:
+        lead_stage = "Pipeline"
+        recommended_next_action = "Accelerate: Active pipeline detected. Involve AE for commercial conversation immediately."
+    elif total_touchpoints >= 5:
+        lead_stage = "SQL"
+        recommended_next_action = "Convert: High engagement volume warrants direct sales outreach within 48 hours."
+    elif total_touchpoints >= 2:
+        lead_stage = "MQL"
+        recommended_next_action = "Nurture: Send a relevant case study or ROI report. Aim for SQL conversion within 14 days."
+    else:
+        lead_stage = "Awareness"
+        recommended_next_action = "Enrol in a top-of-funnel nurture sequence. Re-evaluate lead stage in 30 days."
+
     return {
         "metrics": {
             "total_touchpoints": total_touchpoints,
             "days_elapsed": days_elapsed,
-            "total_influenced_value": total_value,
+            "total_influenced_pipeline_value": total_value,
+            "lead_stage": lead_stage,
+            "recommended_next_action": recommended_next_action,
             "milestones_achieved": milestones
         },
         "html_timeline": history_items
     }
+
 
 
 def generate_ab_test_variants(asset_id: str, variable: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
