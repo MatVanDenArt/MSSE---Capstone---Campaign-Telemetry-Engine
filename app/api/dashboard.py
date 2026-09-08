@@ -9,7 +9,10 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 import os
-DB_PATH = os.getenv("DATABASE_URL", "capstone.db")
+_DEFAULT_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "capstone.db"))
+DB_PATH = os.getenv("DATABASE_URL", _DEFAULT_DB)
+if not os.path.isabs(DB_PATH):
+    DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", DB_PATH))
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -118,8 +121,7 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
 
     # --- Rule 3: High bounce asset — real SQL (bounce_flag rate > 60%, min 10 sessions) ---
     try:
-        _db_path = __import__('os').getenv("DATABASE_URL", "capstone.db")
-        _conn = _sqlite3.connect(_db_path)
+        _conn = _sqlite3.connect(DB_PATH)
         _conn.row_factory = _sqlite3.Row
         _cur = _conn.cursor()
         tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
@@ -240,8 +242,7 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
 
     # --- Rule 2: Stalled account — real SQL (≥2 users engaged, no activity in 14 days) ---
     try:
-        _db_path = __import__('os').getenv("DATABASE_URL", "capstone.db")
-        _conn = _sqlite3.connect(_db_path)
+        _conn = _sqlite3.connect(DB_PATH)
         _conn.row_factory = _sqlite3.Row
         _cur = _conn.cursor()
         tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""

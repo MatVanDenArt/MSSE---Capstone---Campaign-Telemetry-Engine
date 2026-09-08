@@ -43,5 +43,12 @@ def setup_test_db():
     yield
     
     # Cleanup after tests
-    os.close(db_fd)
-    os.unlink(db_path)
+    try:
+        os.close(db_fd)
+    except Exception:
+        pass
+    try:
+        os.unlink(db_path)
+    except Exception:
+        pass
+

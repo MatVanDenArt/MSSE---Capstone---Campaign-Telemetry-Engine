@@ -2127,6 +2127,7 @@ def get_tam_penetration(campaign_id: str = None, timeframe: int = 0, **kwargs) -
             "metric_name": "Campaign Account Penetration",
             "value": f"{penetration}%",
             "raw_value": penetration,
+            "delta": 0.0,
             "total_target_accounts": total_accounts,
             "engaged_accounts": engaged_accounts,
             "deeply_engaged_accounts": deeply_engaged,
@@ -2167,6 +2168,7 @@ def calculate_share_of_voice(campaign_id: str = None, timeframe: int = 0, **kwar
 
     competitor_avg = round((aker_pct + baker_pct + others_pct) / 3, 1)
     is_leader = wood_pct > aker_pct
+    delta = round(wood_pct - aker_pct, 1)
     topic = campaign_id.replace("CMP_LIVE_", "").replace("CMP_PAST_", "").replace("_", " ").title() if campaign_id else "All Topics"
     timeframe_label = "All Time" if timeframe == 0 else f"Last {timeframe} Days"
 
@@ -2177,6 +2179,7 @@ def calculate_share_of_voice(campaign_id: str = None, timeframe: int = 0, **kwar
         "our_sov_pct": wood_pct,
         "value": f"{wood_pct}%",
         "raw_value": wood_pct,
+        "delta": delta,
         "leader": "Wood Group" if is_leader else "Aker Solutions",
         "competitor_avg": competitor_avg,
         "competitor_distribution": {
@@ -2189,6 +2192,7 @@ def calculate_share_of_voice(campaign_id: str = None, timeframe: int = 0, **kwar
         "recommendation": "Maintain spend to defend leadership position." if is_leader else "Increase LinkedIn spend or content cadence to close the SOV gap.",
         "data_source": "Simulated from relative LinkedIn spend (production: Bombora or G2 API)"
     }
+
 
 
 
