@@ -1,4 +1,774 @@
 {
+  "CMP_PAST_ASSET_OPTIMIZATION": [
+    {
+      "url": "/case-studies/conocophillips-yield",
+      "title": "ConocoPhillips: Max Yield Optimization",
+      "asset_type": "Case Study",
+      "intent_topic": "Yield Maximization"
+    },
+    {
+      "url": "/insights/predictive-maintenance-ai",
+      "title": "AI in Predictive Maintenance",
+      "asset_type": "Report",
+      "intent_topic": "Predictive Maintenance"
+    },
+    {
+      "url": "/webinars/reducing-downtime",
+      "title": "Strategies for Reducing Downtime",
+      "asset_type": "Webinar",
+      "intent_topic": "Downtime Reduction"
+    },
+    {
+      "url": "email-asset_optimization-1",
+      "title": "Email: Predictive Maintenance Framework",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-1",
+      "title": "LinkedIn: Asset Uptime Best Practices",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/rio-tinto-fleet",
+      "title": "Rio Tinto: Fleet Optimization",
+      "asset_type": "Case Study",
+      "intent_topic": "Resource Allocation"
+    },
+    {
+      "url": "/insights/lifecycle-extension-strategies",
+      "title": "Lifecycle Extension Strategies",
+      "asset_type": "Report",
+      "intent_topic": "Asset Lifecycle"
+    },
+    {
+      "url": "email-asset_optimization-2",
+      "title": "Email: Lifecycle Extension Briefing",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-2",
+      "title": "LinkedIn: Heavy Fleet Reliability",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/bhp-downtime-reduction",
+      "title": "BHP: 30% Downtime Reduction",
+      "asset_type": "Case Study",
+      "intent_topic": "Downtime Reduction"
+    },
+    {
+      "url": "/insights/optimizing-resource-allocation",
+      "title": "Optimizing Resource Allocation",
+      "asset_type": "Report",
+      "intent_topic": "Resource Allocation"
+    },
+    {
+      "url": "/webinars/maximizing-asset-lifecycle",
+      "title": "Maximizing Asset Lifecycle",
+      "asset_type": "Webinar",
+      "intent_topic": "Asset Lifecycle"
+    },
+    {
+      "url": "email-asset_optimization-3",
+      "title": "Email: Downtime Reduction Playbook",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-3",
+      "title": "LinkedIn: Reducing Unplanned Downtime",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/valero-refinery-efficiency",
+      "title": "Valero: Refinery Yield Optimization",
+      "asset_type": "Case Study",
+      "intent_topic": "Yield Maximization"
+    },
+    {
+      "url": "/insights/yield-optimization-frameworks",
+      "title": "Yield Optimization Frameworks",
+      "asset_type": "Report",
+      "intent_topic": "Yield Maximization"
+    },
+    {
+      "url": "email-asset_optimization-4",
+      "title": "Email: Refinery Operations Digest",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-4",
+      "title": "LinkedIn: Refinery Margin Improvement",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/anglo-american-plant-reliability",
+      "title": "Anglo American: Plant Reliability",
+      "asset_type": "Case Study",
+      "intent_topic": "Asset Lifecycle"
+    },
+    {
+      "url": "/insights/turbomachinery-condition-monitoring",
+      "title": "Turbomachinery Condition Monitoring",
+      "asset_type": "Report",
+      "intent_topic": "Predictive Maintenance"
+    },
+    {
+      "url": "/webinars/ai-vibration-analysis",
+      "title": "AI in Vibration Analysis",
+      "asset_type": "Webinar",
+      "intent_topic": "Predictive Maintenance"
+    },
+    {
+      "url": "email-asset_optimization-5",
+      "title": "Email: Rotating Equipment Health",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-5",
+      "title": "LinkedIn: Turbomachinery Uptime",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/totalenergies-subsea-integrity",
+      "title": "TotalEnergies: Subsea Asset Integrity",
+      "asset_type": "Case Study",
+      "intent_topic": "Asset Lifecycle"
+    },
+    {
+      "url": "/insights/pipeline-corrosion-management",
+      "title": "Pipeline Corrosion Management",
+      "asset_type": "Report",
+      "intent_topic": "Asset Lifecycle"
+    },
+    {
+      "url": "email-asset_optimization-6",
+      "title": "Email: Corrosion Risk Management",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-6",
+      "title": "LinkedIn: Subsea Integrity Monitoring",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/glencore-smelter-uptime",
+      "title": "Glencore: Smelter Operational Efficiency",
+      "asset_type": "Case Study",
+      "intent_topic": "Yield Maximization"
+    },
+    {
+      "url": "/insights/industrial-energy-recovery-systems",
+      "title": "Industrial Energy Recovery Systems",
+      "asset_type": "Report",
+      "intent_topic": "Yield Maximization"
+    },
+    {
+      "url": "/webinars/asset-longevity-masterclass",
+      "title": "Asset Longevity Masterclass",
+      "asset_type": "Webinar",
+      "intent_topic": "Asset Lifecycle"
+    },
+    {
+      "url": "email-asset_optimization-7",
+      "title": "Email: Industrial Energy Recovery",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-asset_optimization-7",
+      "title": "LinkedIn: Extending Heavy Plant Longevity",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    }
+  ],
+  "CMP_PAST_SUSTAINABLE_ENGINEERING": [
+    {
+      "url": "/case-studies/bechtel-megaproject",
+      "title": "Bechtel: Megaproject Delivery",
+      "asset_type": "Case Study",
+      "intent_topic": "Project Management"
+    },
+    {
+      "url": "/insights/agile-engineering-design",
+      "title": "Agile Engineering Design",
+      "asset_type": "Report",
+      "intent_topic": "Design Methodologies"
+    },
+    {
+      "url": "/webinars/engineering-talent-gap",
+      "title": "Bridging the Talent Gap",
+      "asset_type": "Webinar",
+      "intent_topic": "Talent & Training"
+    },
+    {
+      "url": "email-sustainable_engineering-1",
+      "title": "Email: Agile Megaproject Frameworks",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-1",
+      "title": "LinkedIn: Modern Megaproject Governance",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/fluor-cost-control",
+      "title": "Fluor: Master Cost Control",
+      "asset_type": "Case Study",
+      "intent_topic": "Cost Management"
+    },
+    {
+      "url": "/insights/sustainable-engineering",
+      "title": "Sustainable Engineering Frameworks",
+      "asset_type": "Report",
+      "intent_topic": "Sustainability"
+    },
+    {
+      "url": "email-sustainable_engineering-2",
+      "title": "Email: CAPEX Cost Containment",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-2",
+      "title": "LinkedIn: Sustainable Engineering ROI",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/jacobs-sustainable-design",
+      "title": "Jacobs: Sustainable Plant Design",
+      "asset_type": "Case Study",
+      "intent_topic": "Sustainability"
+    },
+    {
+      "url": "/insights/cost-management-strategies",
+      "title": "EPC Cost Management Strategies",
+      "asset_type": "Report",
+      "intent_topic": "Cost Management"
+    },
+    {
+      "url": "/webinars/advanced-design-methodologies",
+      "title": "Advanced Design Methodologies",
+      "asset_type": "Webinar",
+      "intent_topic": "Design Methodologies"
+    },
+    {
+      "url": "email-sustainable_engineering-3",
+      "title": "Email: Sustainable Infrastructure Insights",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-3",
+      "title": "LinkedIn: Green Engineering Solutions",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/kbr-project-management",
+      "title": "KBR: Agile Project Management",
+      "asset_type": "Case Study",
+      "intent_topic": "Project Management"
+    },
+    {
+      "url": "/insights/training-next-gen-engineers",
+      "title": "Training Next-Gen Engineers",
+      "asset_type": "Report",
+      "intent_topic": "Talent & Training"
+    },
+    {
+      "url": "email-sustainable_engineering-4",
+      "title": "Email: Engineering Workforce Evolution",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-4",
+      "title": "LinkedIn: Closing Engineering Skill Gaps",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/worley-decarbonized-front-end",
+      "title": "Worley: Decarbonized Front-End FEED",
+      "asset_type": "Case Study",
+      "intent_topic": "Sustainability"
+    },
+    {
+      "url": "/insights/modular-construction-efficiencies",
+      "title": "Modular Construction Efficiencies",
+      "asset_type": "Report",
+      "intent_topic": "Cost Management"
+    },
+    {
+      "url": "/webinars/sustainable-procurement-supply-chains",
+      "title": "Sustainable Procurement & Supply Chains",
+      "asset_type": "Webinar",
+      "intent_topic": "Project Management"
+    },
+    {
+      "url": "email-sustainable_engineering-5",
+      "title": "Email: Modular EPC Execution",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-5",
+      "title": "LinkedIn: Modular Engineering Benefits",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/saipem-offshore-electrification",
+      "title": "Saipem: Offshore Electrification",
+      "asset_type": "Case Study",
+      "intent_topic": "Sustainability"
+    },
+    {
+      "url": "/insights/circular-materials-in-heavy-industry",
+      "title": "Circular Materials in Heavy Industry",
+      "asset_type": "Report",
+      "intent_topic": "Sustainability"
+    },
+    {
+      "url": "email-sustainable_engineering-6",
+      "title": "Email: Offshore Electrification Roadmap",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-6",
+      "title": "LinkedIn: Powering Offshore Platforms Cleanly",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/technip-clean-hydrogen-feed",
+      "title": "Technip: Clean Hydrogen FEED Design",
+      "asset_type": "Case Study",
+      "intent_topic": "Design Methodologies"
+    },
+    {
+      "url": "/insights/life-cycle-carbon-in-capital-projects",
+      "title": "Life Cycle Carbon in Capital Projects",
+      "asset_type": "Report",
+      "intent_topic": "Sustainability"
+    },
+    {
+      "url": "/webinars/future-proofing-energy-infrastructure",
+      "title": "Future-Proofing Energy Infrastructure",
+      "asset_type": "Webinar",
+      "intent_topic": "Project Management"
+    },
+    {
+      "url": "email-sustainable_engineering-7",
+      "title": "Email: Life Cycle Carbon Modeling",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-sustainable_engineering-7",
+      "title": "LinkedIn: Engineering for 2050 Standards",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    }
+  ],
+  "CMP_LIVE_HYDROGEN_INFRASTRUCTURE": [
+    {
+      "url": "/case-studies/national-grid-modernization",
+      "title": "National Grid Modernization",
+      "asset_type": "Case Study",
+      "intent_topic": "Grid Modernization"
+    },
+    {
+      "url": "/insights/legacy-systems-retrofit",
+      "title": "Retrofitting Legacy Systems",
+      "asset_type": "Report",
+      "intent_topic": "Retrofitting"
+    },
+    {
+      "url": "/webinars/smart-infrastructure-planning",
+      "title": "Smart Infrastructure Planning",
+      "asset_type": "Webinar",
+      "intent_topic": "Smart Infrastructure"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-1",
+      "title": "Email: Grid Modernization Roadmap",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-1",
+      "title": "LinkedIn: Retrofitting for Hydrogen",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/thames-water-iot",
+      "title": "Thames Water: IoT Deployment",
+      "asset_type": "Case Study",
+      "intent_topic": "IoT Integration"
+    },
+    {
+      "url": "/insights/infrastructure-security-2026",
+      "title": "Infrastructure Security 2026",
+      "asset_type": "Report",
+      "intent_topic": "Physical Security"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-2",
+      "title": "Email: Protecting Critical Utilities",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-2",
+      "title": "LinkedIn: Infrastructure Security Standards",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/pg-and-e-grid-resilience",
+      "title": "PG&E: Enhancing Grid Resilience",
+      "asset_type": "Case Study",
+      "intent_topic": "Grid Modernization"
+    },
+    {
+      "url": "/insights/cost-benefit-retrofitting",
+      "title": "Cost/Benefit of Retrofitting",
+      "asset_type": "Report",
+      "intent_topic": "Retrofitting"
+    },
+    {
+      "url": "/webinars/iot-predictive-maintenance",
+      "title": "IoT & Predictive Maintenance",
+      "asset_type": "Webinar",
+      "intent_topic": "IoT Integration"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-3",
+      "title": "Email: Grid Resilience Blueprint",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-3",
+      "title": "LinkedIn: Smart Utility Monitoring",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/edff-nuclear-security",
+      "title": "EDF: Nuclear Physical Security",
+      "asset_type": "Case Study",
+      "intent_topic": "Physical Security"
+    },
+    {
+      "url": "/insights/smart-cities-infrastructure",
+      "title": "Infrastructure for Smart Cities",
+      "asset_type": "Report",
+      "intent_topic": "Smart Infrastructure"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-4",
+      "title": "Email: Smart Cities Transition",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-4",
+      "title": "LinkedIn: Municipal Energy Infrastructure",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/linde-hydrogen-pipeline",
+      "title": "Linde: High-Pressure Hydrogen Pipeline",
+      "asset_type": "Case Study",
+      "intent_topic": "Retrofitting"
+    },
+    {
+      "url": "/insights/hydrogen-embrittlement-metallurgy",
+      "title": "Preventing Hydrogen Embrittlement",
+      "asset_type": "Report",
+      "intent_topic": "Retrofitting"
+    },
+    {
+      "url": "/webinars/hydrogen-storage-safety-protocols",
+      "title": "Hydrogen Storage Safety Protocols",
+      "asset_type": "Webinar",
+      "intent_topic": "Physical Security"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-5",
+      "title": "Email: Hydrogen Pipeline Metallurgy",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-5",
+      "title": "LinkedIn: Safe Hydrogen Transportation",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/air-liquide-electrolyzer-facility",
+      "title": "Air Liquide: 200MW Electrolyzer Hub",
+      "asset_type": "Case Study",
+      "intent_topic": "Smart Infrastructure"
+    },
+    {
+      "url": "/insights/green-hydrogen-levelized-cost",
+      "title": "Levelized Cost of Green Hydrogen",
+      "asset_type": "Report",
+      "intent_topic": "Grid Modernization"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-6",
+      "title": "Email: Electrolyzer Pacing Analysis",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-6",
+      "title": "LinkedIn: Economics of Green Hydrogen",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/iberdrola-clean-ammonia-terminal",
+      "title": "Iberdrola: Clean Ammonia Terminal",
+      "asset_type": "Case Study",
+      "intent_topic": "Grid Modernization"
+    },
+    {
+      "url": "/insights/ammonia-as-hydrogen-carrier",
+      "title": "Ammonia as a Hydrogen Carrier",
+      "asset_type": "Report",
+      "intent_topic": "Smart Infrastructure"
+    },
+    {
+      "url": "/webinars/hydrogen-bunkering-infrastructure",
+      "title": "Port Hydrogen Bunkering Facilities",
+      "asset_type": "Webinar",
+      "intent_topic": "Smart Infrastructure"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-7",
+      "title": "Email: Ammonia Bunkering Outlook",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-7",
+      "title": "LinkedIn: Maritime Hydrogen Hubs",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/uniper-salt-cavern-storage",
+      "title": "Uniper: Salt Cavern Underground Storage",
+      "asset_type": "Case Study",
+      "intent_topic": "Retrofitting"
+    },
+    {
+      "url": "/insights/seasonal-hydrogen-storage-economics",
+      "title": "Seasonal Hydrogen Storage Economics",
+      "asset_type": "Report",
+      "intent_topic": "Grid Modernization"
+    },
+    {
+      "url": "email-hydrogen_infrastructure-8",
+      "title": "Email: Underground Storage Feasibility",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-hydrogen_infrastructure-8",
+      "title": "LinkedIn: Bulk Hydrogen Balancing",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    }
+  ],
+  "CMP_LIVE_DIGITAL_TWIN": [
+    {
+      "url": "/case-studies/ge-aviation-twins",
+      "title": "GE Aviation: Engine Digital Twins",
+      "asset_type": "Case Study",
+      "intent_topic": "Simulation Accuracy"
+    },
+    {
+      "url": "/insights/digital-twin-roi",
+      "title": "Calculating Digital Twin ROI",
+      "asset_type": "Report",
+      "intent_topic": "ROI & Investment"
+    },
+    {
+      "url": "/webinars/real-time-data-integration",
+      "title": "Real-time Sensor Integration",
+      "asset_type": "Webinar",
+      "intent_topic": "Data Integration"
+    },
+    {
+      "url": "email-digital_twin-1",
+      "title": "Email: Digital Twin ROI Calculator",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-digital_twin-1",
+      "title": "LinkedIn: Industrial Twin Implementation",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/siemens-factory-twin",
+      "title": "Siemens: Smart Factory Twin",
+      "asset_type": "Case Study",
+      "intent_topic": "Smart Manufacturing"
+    },
+    {
+      "url": "/insights/twin-security-protocols",
+      "title": "Cybersecurity for Connected Twins",
+      "asset_type": "Report",
+      "intent_topic": "Cybersecurity"
+    },
+    {
+      "url": "email-digital_twin-2",
+      "title": "Email: OT/IT Security Whitepaper",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-digital_twin-2",
+      "title": "LinkedIn: Safeguarding Industrial Twins",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/ford-manufacturing-twin",
+      "title": "Ford: EV Assembly Simulation",
+      "asset_type": "Case Study",
+      "intent_topic": "Smart Manufacturing"
+    },
+    {
+      "url": "/insights/data-integration-challenges",
+      "title": "Overcoming Data Silos in Simulation",
+      "asset_type": "Report",
+      "intent_topic": "Data Integration"
+    },
+    {
+      "url": "/webinars/securing-digital-twins",
+      "title": "Securing Large-Scale Twin Deployments",
+      "asset_type": "Webinar",
+      "intent_topic": "Cybersecurity"
+    },
+    {
+      "url": "email-digital_twin-3",
+      "title": "Email: Breaking OT Data Silos",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-digital_twin-3",
+      "title": "LinkedIn: Real-Time Plant Floor Twins",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/airbus-simulation-accuracy",
+      "title": "Airbus: Aerodynamic Simulation Accuracy",
+      "asset_type": "Case Study",
+      "intent_topic": "Simulation Accuracy"
+    },
+    {
+      "url": "/insights/roi-of-digital-twins",
+      "title": "Executive Guide to Twin Payback",
+      "asset_type": "Report",
+      "intent_topic": "ROI & Investment"
+    },
+    {
+      "url": "email-digital_twin-4",
+      "title": "Email: Twin Payback Benchmarks",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-digital_twin-4",
+      "title": "LinkedIn: High-Fidelity Physics Modeling",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/schneider-electric-datacenter-twin",
+      "title": "Schneider: Microgrid Datacenter Twin",
+      "asset_type": "Case Study",
+      "intent_topic": "Data Integration"
+    },
+    {
+      "url": "/insights/edge-ai-for-digital-twins",
+      "title": "Edge AI & Real-Time Twin Ingestion",
+      "asset_type": "Report",
+      "intent_topic": "Data Integration"
+    },
+    {
+      "url": "/webinars/ai-predictive-simulation",
+      "title": "Generative AI in Industrial Physics",
+      "asset_type": "Webinar",
+      "intent_topic": "Simulation Accuracy"
+    },
+    {
+      "url": "email-digital_twin-5",
+      "title": "Email: Edge Computing for Heavy Industry",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-digital_twin-5",
+      "title": "LinkedIn: Edge-Enabled Twin Operations",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "/case-studies/basf-chemical-reactor-twin",
+      "title": "BASF: Kinetic Chemical Reactor Twin",
+      "asset_type": "Case Study",
+      "intent_topic": "Simulation Accuracy"
+    },
+    {
+      "url": "/insights/digital-thread-interoperability",
+      "title": "Digital Thread Standards & CAD Integration",
+      "asset_type": "Report",
+      "intent_topic": "Data Integration"
+    },
+    {
+      "url": "email-digital_twin-6",
+      "title": "Email: ISO Digital Thread Guidelines",
+      "asset_type": "Email",
+      "intent_topic": "General Engineering"
+    },
+    {
+      "url": "li-ad-digital_twin-6",
+      "title": "LinkedIn: Next-Gen Process Digital Twins",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "General Engineering"
+    }
+  ],
   "CMP_LIVE_DECARBONIZATION_25_26": [
     {
       "url": "/case-studies/shell-flaring-reduction",
@@ -19,6 +789,18 @@
       "intent_topic": "Carbon Capture (CCUS)"
     },
     {
+      "url": "email-live_decarbonization_25_26-1",
+      "title": "Email: Q1 Emissions Digest",
+      "asset_type": "Email",
+      "intent_topic": "Emissions Reduction"
+    },
+    {
+      "url": "li-ad-live_decarbonization_25_26-1",
+      "title": "LinkedIn: CCUS Market Economics",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "Asset Optimization"
+    },
+    {
       "url": "/case-studies/bp-hydrogen-transition",
       "title": "BP: Accelerating Hydrogen Transition",
       "asset_type": "Case Study",
@@ -26,7 +808,7 @@
     },
     {
       "url": "/insights/ai-energy-optimization",
-      "title": "AI in Energy Optimization",
+      "title": "AI in Industrial Energy Optimization",
       "asset_type": "Report",
       "intent_topic": "Asset Optimization"
     },
@@ -35,6 +817,18 @@
       "title": "Chevron: Automating Regulatory Compliance",
       "asset_type": "Case Study",
       "intent_topic": "Regulatory Compliance"
+    },
+    {
+      "url": "email-live_decarbonization_25_26-2",
+      "title": "Email: Decarbonization Technology Outlook",
+      "asset_type": "Email",
+      "intent_topic": "Carbon Capture (CCUS)"
+    },
+    {
+      "url": "li-ad-live_decarbonization_25_26-2",
+      "title": "LinkedIn: Automated Emissions Audits",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "Carbon Capture (CCUS)"
     },
     {
       "url": "/insights/emissions-tracking-frameworks",
@@ -61,8 +855,20 @@
       "intent_topic": "Carbon Capture (CCUS)"
     },
     {
+      "url": "email-live_decarbonization_25_26-3",
+      "title": "Email: Heavy Industry Decarbonization",
+      "asset_type": "Email",
+      "intent_topic": "Emissions Reduction"
+    },
+    {
+      "url": "li-ad-live_decarbonization_25_26-3",
+      "title": "LinkedIn: Industrial Net-Zero Strategies",
+      "asset_type": "LinkedIn Ad",
+      "intent_topic": "Regulatory Compliance"
+    },
+    {
       "url": "/case-studies/aramco-yield-optimization",
-      "title": "Aramco: 15% Yield Optimization",
+      "title": "Aramco: Low-Carbon Refining",
       "asset_type": "Case Study",
       "intent_topic": "Asset Optimization"
     },
@@ -91,432 +897,16 @@
       "intent_topic": "Carbon Capture (CCUS)"
     },
     {
-      "url": "email-live_decarbonization_25_26-1",
-      "title": "Email: Q1 Emissions Digest",
+      "url": "email-live_decarbonization_25_26-4",
+      "title": "Email: Carbon Accounting with Twins",
       "asset_type": "Email",
       "intent_topic": "Emissions Reduction"
     },
     {
-      "url": "email-live_decarbonization_25_26-2",
-      "title": "Email: Webinar Invitation - Carbon Capture",
-      "asset_type": "Email",
-      "intent_topic": "Carbon Capture (CCUS)"
-    },
-    {
-      "url": "email-live_decarbonization_25_26-3",
-      "title": "Email: Feature - Shell Flaring Case Study",
-      "asset_type": "Email",
-      "intent_topic": "Emissions Reduction"
-    },
-    {
-      "url": "li-ad-live_decarbonization_25_26-1",
-      "title": "LinkedIn Promo: Energy Optimization Report",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "Asset Optimization"
-    },
-    {
-      "url": "li-ad-live_decarbonization_25_26-2",
-      "title": "LinkedIn Promo: CCUS ROI Calculator",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "Carbon Capture (CCUS)"
-    },
-    {
-      "url": "li-ad-live_decarbonization_25_26-3",
-      "title": "LinkedIn Promo: Automating EPA Compliance",
+      "url": "li-ad-live_decarbonization_25_26-4",
+      "title": "LinkedIn: Deep Water CCUS Case Study",
       "asset_type": "LinkedIn Ad",
       "intent_topic": "Regulatory Compliance"
-    }
-  ],
-  "CMP_INFRASTRUCTURE_UPGRADE": [
-    {
-      "url": "/case-studies/national-grid-modernization",
-      "title": "National Grid Modernization",
-      "asset_type": "Case Study",
-      "intent_topic": "Grid Modernization"
-    },
-    {
-      "url": "/insights/legacy-systems-retrofit",
-      "title": "Retrofitting Legacy Systems",
-      "asset_type": "Report",
-      "intent_topic": "Retrofitting"
-    },
-    {
-      "url": "/webinars/smart-infrastructure-planning",
-      "title": "Smart Infrastructure Planning",
-      "asset_type": "Webinar",
-      "intent_topic": "Smart Infrastructure"
-    },
-    {
-      "url": "/case-studies/thames-water-iot",
-      "title": "Thames Water: IoT Deployment",
-      "asset_type": "Case Study",
-      "intent_topic": "IoT Integration"
-    },
-    {
-      "url": "/insights/infrastructure-security-2026",
-      "title": "Infrastructure Security 2026",
-      "asset_type": "Report",
-      "intent_topic": "Physical Security"
-    },
-    {
-      "url": "/case-studies/pg-and-e-grid-resilience",
-      "title": "PG&E: Enhancing Grid Resilience",
-      "asset_type": "Case Study",
-      "intent_topic": "Grid Modernization"
-    },
-    {
-      "url": "/insights/cost-benefit-retrofitting",
-      "title": "Cost/Benefit of Retrofitting",
-      "asset_type": "Report",
-      "intent_topic": "Retrofitting"
-    },
-    {
-      "url": "/webinars/iot-predictive-maintenance",
-      "title": "IoT & Predictive Maintenance",
-      "asset_type": "Webinar",
-      "intent_topic": "IoT Integration"
-    },
-    {
-      "url": "/case-studies/edff-nuclear-security",
-      "title": "EDF: Nuclear Physical Security",
-      "asset_type": "Case Study",
-      "intent_topic": "Physical Security"
-    },
-    {
-      "url": "/insights/smart-cities-infrastructure",
-      "title": "Infrastructure for Smart Cities",
-      "asset_type": "Report",
-      "intent_topic": "Smart Infrastructure"
-    },
-    {
-      "url": "email-infrastructure_upgrade-1",
-      "title": "Email: Infrastructure Upgrade Newsletter",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-infrastructure_upgrade-2",
-      "title": "Email: Upcoming Webinar Invitation",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-infrastructure_upgrade-3",
-      "title": "Email: Case Study Feature",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-infrastructure_upgrade-1",
-      "title": "LinkedIn Promo: Download Our Latest Report",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-infrastructure_upgrade-2",
-      "title": "LinkedIn Promo: ROI Calculator",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-infrastructure_upgrade-3",
-      "title": "LinkedIn Promo: Connect with our Experts",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    }
-  ],
-  "CMP_ASSET_OPTIMIZATION": [
-    {
-      "url": "/case-studies/conocophillips-yield",
-      "title": "ConocoPhillips: Max Yield",
-      "asset_type": "Case Study",
-      "intent_topic": "Yield Maximization"
-    },
-    {
-      "url": "/insights/predictive-maintenance-ai",
-      "title": "AI in Predictive Maintenance",
-      "asset_type": "Report",
-      "intent_topic": "Predictive Maintenance"
-    },
-    {
-      "url": "/webinars/reducing-downtime",
-      "title": "Strategies for Reducing Downtime",
-      "asset_type": "Webinar",
-      "intent_topic": "Downtime Reduction"
-    },
-    {
-      "url": "/case-studies/rio-tinto-fleet",
-      "title": "Rio Tinto: Fleet Optimization",
-      "asset_type": "Case Study",
-      "intent_topic": "Resource Allocation"
-    },
-    {
-      "url": "/insights/lifecycle-extension-strategies",
-      "title": "Lifecycle Extension Strategies",
-      "asset_type": "Report",
-      "intent_topic": "Asset Lifecycle"
-    },
-    {
-      "url": "/case-studies/bhp-downtime-reduction",
-      "title": "BHP: 30% Downtime Reduction",
-      "asset_type": "Case Study",
-      "intent_topic": "Downtime Reduction"
-    },
-    {
-      "url": "/insights/optimizing-resource-allocation",
-      "title": "Optimizing Resource Allocation",
-      "asset_type": "Report",
-      "intent_topic": "Resource Allocation"
-    },
-    {
-      "url": "/webinars/maximizing-asset-lifecycle",
-      "title": "Maximizing Asset Lifecycle",
-      "asset_type": "Webinar",
-      "intent_topic": "Asset Lifecycle"
-    },
-    {
-      "url": "/case-studies/valero-predictive-maintenance",
-      "title": "Valero: Predictive Maintenance",
-      "asset_type": "Case Study",
-      "intent_topic": "Predictive Maintenance"
-    },
-    {
-      "url": "/insights/yield-optimization-frameworks",
-      "title": "Yield Optimization Frameworks",
-      "asset_type": "Report",
-      "intent_topic": "Yield Maximization"
-    },
-    {
-      "url": "email-asset_optimization-1",
-      "title": "Email: Asset Optimization Newsletter",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-asset_optimization-2",
-      "title": "Email: Upcoming Webinar Invitation",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-asset_optimization-3",
-      "title": "Email: Case Study Feature",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-asset_optimization-1",
-      "title": "LinkedIn Promo: Download Our Latest Report",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-asset_optimization-2",
-      "title": "LinkedIn Promo: ROI Calculator",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-asset_optimization-3",
-      "title": "LinkedIn Promo: Connect with our Experts",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    }
-  ],
-  "CMP_DIGITAL_TWIN": [
-    {
-      "url": "/case-studies/ge-aviation-twins",
-      "title": "GE Aviation: Engine Twins",
-      "asset_type": "Case Study",
-      "intent_topic": "Simulation Accuracy"
-    },
-    {
-      "url": "/insights/digital-twin-roi",
-      "title": "Calculating Digital Twin ROI",
-      "asset_type": "Report",
-      "intent_topic": "ROI & Investment"
-    },
-    {
-      "url": "/webinars/real-time-data-integration",
-      "title": "Real-time Data Integration",
-      "asset_type": "Webinar",
-      "intent_topic": "Data Integration"
-    },
-    {
-      "url": "/case-studies/siemens-factory-twin",
-      "title": "Siemens: Smart Factory Twin",
-      "asset_type": "Case Study",
-      "intent_topic": "Smart Manufacturing"
-    },
-    {
-      "url": "/insights/twin-security-protocols",
-      "title": "Twin Security Protocols",
-      "asset_type": "Report",
-      "intent_topic": "Cybersecurity"
-    },
-    {
-      "url": "/case-studies/ford-manufacturing-twin",
-      "title": "Ford: Manufacturing Twin",
-      "asset_type": "Case Study",
-      "intent_topic": "Smart Manufacturing"
-    },
-    {
-      "url": "/insights/data-integration-challenges",
-      "title": "Data Integration Challenges",
-      "asset_type": "Report",
-      "intent_topic": "Data Integration"
-    },
-    {
-      "url": "/webinars/securing-digital-twins",
-      "title": "Securing Your Digital Twins",
-      "asset_type": "Webinar",
-      "intent_topic": "Cybersecurity"
-    },
-    {
-      "url": "/case-studies/airbus-simulation-accuracy",
-      "title": "Airbus: Simulation Accuracy",
-      "asset_type": "Case Study",
-      "intent_topic": "Simulation Accuracy"
-    },
-    {
-      "url": "/insights/roi-of-digital-twins",
-      "title": "The ROI of Digital Twins",
-      "asset_type": "Report",
-      "intent_topic": "ROI & Investment"
-    },
-    {
-      "url": "email-digital_twin-1",
-      "title": "Email: Digital Twin Newsletter",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-digital_twin-2",
-      "title": "Email: Upcoming Webinar Invitation",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-digital_twin-3",
-      "title": "Email: Case Study Feature",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-digital_twin-1",
-      "title": "LinkedIn Promo: Download Our Latest Report",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-digital_twin-2",
-      "title": "LinkedIn Promo: ROI Calculator",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-digital_twin-3",
-      "title": "LinkedIn Promo: Connect with our Experts",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    }
-  ],
-  "CMP_ENGINEERING_SERVICES": [
-    {
-      "url": "/case-studies/bechtel-megaproject",
-      "title": "Bechtel: Megaproject Delivery",
-      "asset_type": "Case Study",
-      "intent_topic": "Project Management"
-    },
-    {
-      "url": "/insights/agile-engineering-design",
-      "title": "Agile Engineering Design",
-      "asset_type": "Report",
-      "intent_topic": "Design Methodologies"
-    },
-    {
-      "url": "/webinars/engineering-talent-gap",
-      "title": "Bridging the Talent Gap",
-      "asset_type": "Webinar",
-      "intent_topic": "Talent & Training"
-    },
-    {
-      "url": "/case-studies/fluor-cost-control",
-      "title": "Fluor: Master Cost Control",
-      "asset_type": "Case Study",
-      "intent_topic": "Cost Management"
-    },
-    {
-      "url": "/insights/sustainable-engineering",
-      "title": "Sustainable Engineering",
-      "asset_type": "Report",
-      "intent_topic": "Sustainability"
-    },
-    {
-      "url": "/case-studies/jacobs-sustainable-design",
-      "title": "Jacobs: Sustainable Design",
-      "asset_type": "Case Study",
-      "intent_topic": "Sustainability"
-    },
-    {
-      "url": "/insights/cost-management-strategies",
-      "title": "Cost Management Strategies",
-      "asset_type": "Report",
-      "intent_topic": "Cost Management"
-    },
-    {
-      "url": "/webinars/advanced-design-methodologies",
-      "title": "Advanced Design Methodologies",
-      "asset_type": "Webinar",
-      "intent_topic": "Design Methodologies"
-    },
-    {
-      "url": "/case-studies/kbr-project-management",
-      "title": "KBR: Agile Project Management",
-      "asset_type": "Case Study",
-      "intent_topic": "Project Management"
-    },
-    {
-      "url": "/insights/training-next-gen-engineers",
-      "title": "Training Next-Gen Engineers",
-      "asset_type": "Report",
-      "intent_topic": "Talent & Training"
-    },
-    {
-      "url": "email-engineering_services-1",
-      "title": "Email: Engineering Services Newsletter",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-engineering_services-2",
-      "title": "Email: Upcoming Webinar Invitation",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "email-engineering_services-3",
-      "title": "Email: Case Study Feature",
-      "asset_type": "Email",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-engineering_services-1",
-      "title": "LinkedIn Promo: Download Our Latest Report",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-engineering_services-2",
-      "title": "LinkedIn Promo: ROI Calculator",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
-    },
-    {
-      "url": "li-ad-engineering_services-3",
-      "title": "LinkedIn Promo: Connect with our Experts",
-      "asset_type": "LinkedIn Ad",
-      "intent_topic": "General Engineering"
     }
   ]
 }

@@ -1,0 +1,57 @@
+<!-- OOB Swap for Copilot Action Chips -->
+<div id="copilot-action-chips" hx-swap-oob="true" class="px-4">
+    <style>
+        .custom-scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .custom-scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <div class="flex overflow-x-auto gap-2 py-3 custom-scrollbar-hide"
+        @wheel="if(Math.abs($event.deltaY) > Math.abs($event.deltaX)) { $event.preventDefault(); $el.scrollLeft += $event.deltaY; }">
+        {% if not copilot_actions %}
+        <!-- Loading Skeleton -->
+        <div class="px-3 py-1.5 rounded bg-dark-800 animate-pulse w-24 h-6 border border-dark-700"></div>
+        <div class="px-3 py-1.5 rounded bg-dark-800 animate-pulse w-32 h-6 border border-dark-700"></div>
+        {% endif %}
+        {% for action in copilot_actions %}
+        <div class="relative group shrink-0">
+            <button @click="activeSidebarView = 'chat'" onmouseenter="
+                    let tooltip = this.nextElementSibling;
+                    let rect = this.getBoundingClientRect();
+                    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                    tooltip.style.top = (rect.top - 4) + 'px';
+                    tooltip.showPopover();
+                " onmouseleave="
+                    this.nextElementSibling.hidePopover();
+                " onwheel="
+                    this.nextElementSibling.hidePopover();
+                "  hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend"
+                hx-indicator="#loading-indicator"
+                hx-vals='javascript:{"message": "{{ action.command }}", "intent": "{{ action.intent }}", "reset_context": "true", "campaign_id": document.getElementById("current_campaign") ? document.getElementById("current_campaign").value : null, "timeframe": document.querySelector("[name=\"timeframe\"]") ? document.querySelector("[name=\"timeframe\"]").value : 0}'
+                class="flex items-center gap-2 px-3 py-1.5 bg-dark-900/30 hover:bg-fuchsia-900/20 border border-dark-700 hover:border-fuchsia-500/50 transition-colors rounded backdrop-blur-sm">
+
+                <i
+                    class="fa-solid {{ action.icon }} text-[10px] text-slate-400 group-hover:text-fuchsia-400 transition-colors"></i>
+                <span
+                    class="text-xs font-mono font-bold text-slate-300 group-hover:text-fuchsia-300 transition-colors whitespace-nowrap">{{
+                    action.label }}</span>
+            </button>
+
+            <!-- Tooltip using HTML Popover API -->
+            <div popover="manual" class="fixed -translate-x-1/2 -translate-y-full mb-2 w-48 bg-black border border-dark-600 rounded-lg text-[10px] leading-relaxed text-slate-300 shadow-xl pointer-events-none overflow-visible"
+                style="margin: 0; padding: 10px; border-width: 1px;">
+                {{ action.command }}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
+                </div>
+                <div
+                    class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black mt-[-1px]">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

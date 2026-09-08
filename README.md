@@ -30,7 +30,7 @@ Built with a lightweight stack focused on hyper-performance and rapid iteration.
   - **`discovery_and_user_stories.md`**: Core project requirements, B2B telemetry pain points, and persona-driven user stories.
 
 ## Project management
-  - **`Trello board`**: https://trello.com/b/rDaAjrNu/my-trello-board
+  - **`Trello board`**: https://trello.com/b/rDaAjrNu/capstone-marketing-telemetry-engine
 
 ## Setup instructions
 

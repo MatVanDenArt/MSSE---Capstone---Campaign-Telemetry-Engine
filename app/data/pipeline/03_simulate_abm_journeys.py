@@ -20,36 +20,39 @@ CORE_WEB = [
     "/careers", "/contact-sales", "/pricing-calculator"
 ]
 
-WOOD_CAMPAIGNS = [
-    "CMP_LIVE_DECARBONIZATION_25_26", "CMP_LIVE_HYDROGEN_INFRASTRUCTURE",
-    "CMP_LIVE_DIGITAL_TWIN", "CMP_PAST_SUSTAINABLE_ENGINEERING", "CMP_PAST_ASSET_OPTIMIZATION"
+# Stagger campaigns 3 months apart over the 18-month duration:
+# Month 0:  CMP_PAST_ASSET_OPTIMIZATION (past, ~10 mo)
+# Month 3:  CMP_PAST_SUSTAINABLE_ENGINEERING (past, ~10 mo)
+# Month 6:  CMP_LIVE_HYDROGEN_INFRASTRUCTURE (live, to present)
+# Month 9:  CMP_LIVE_DIGITAL_TWIN (live, to present)
+# Month 12: CMP_LIVE_DECARBONIZATION_25_26 (live, 6 mo to present)
+
+CAMPAIGN_SCHEDULE = [
+    ("CMP_PAST_ASSET_OPTIMIZATION", 0, 10, False),
+    ("CMP_PAST_SUSTAINABLE_ENGINEERING", 3, 10, False),
+    ("CMP_LIVE_HYDROGEN_INFRASTRUCTURE", 6, 12, True),
+    ("CMP_LIVE_DIGITAL_TWIN", 9, 9, True),
+    ("CMP_LIVE_DECARBONIZATION_25_26", 12, 6, True)
 ]
 
+WOOD_CAMPAIGNS = [c[0] for c in CAMPAIGN_SCHEDULE]
+
 BURST_DATES = {}
-for campaign in WOOD_CAMPAIGNS:
-    BURST_DATES[campaign] = []
-    if "PAST" in campaign:
-        camp_start = START_DATE + timedelta(days=random.randint(0, 90))
-        num_bursts = random.randint(4, 9)
-    elif "DECARBONIZATION" in campaign:
-        camp_start = END_DATE - timedelta(days=180) # Exactly 6 months
-        num_bursts = 3
-    else:
-        camp_start = END_DATE - timedelta(days=random.randint(90, 270))
-        num_bursts = random.randint(4, 9)
-        
-    current_burst = camp_start
-    for _ in range(num_bursts):
-        BURST_DATES[campaign].append(current_burst)
-        if "DECARBONIZATION" in campaign:
-            current_burst += timedelta(days=60)
-        else:
-            current_burst += timedelta(days=random.randint(30, 60))
-        if current_burst > END_DATE: break
+for campaign, start_month, dur_month, is_live in CAMPAIGN_SCHEDULE:
+    c_start = START_DATE + timedelta(days=int(start_month * 30.4))
+    c_end = END_DATE if is_live else min(END_DATE, c_start + timedelta(days=int(dur_month * 30.4)))
+    
+    bursts = []
+    curr = c_start
+    cadence = 60 if "DECARBONIZATION" in campaign else 50
+    while curr <= c_end:
+        bursts.append(curr)
+        curr += timedelta(days=cadence)
+    BURST_DATES[campaign] = bursts
 
 # Load Content Catalogue
 catalogue_path = os.path.join(os.path.dirname(__file__), "content_catalogue.json")
-with open(catalogue_path, "r") as f:
+with open(catalogue_path, "r", encoding="utf-8") as f:
     CONTENT_CATALOGUE = json.load(f)
 
 TRANSIENT_BURST_MAP = {}
@@ -59,7 +62,6 @@ AD_PAGE_MAP = {}
 for campaign in WOOD_CAMPAIGNS:
     TRANSIENT_BURST_MAP[campaign] = {}
     
-    # Pre-split catalogue assets by type for this campaign
     campaign_assets = CONTENT_CATALOGUE.get(campaign, [])
     case_studies = [a['url'] for a in campaign_assets if a['asset_type'] == 'Case Study']
     reports = [a['url'] for a in campaign_assets if a['asset_type'] == 'Report']
@@ -67,7 +69,6 @@ for campaign in WOOD_CAMPAIGNS:
     emails = [a['url'] for a in campaign_assets if a['asset_type'] == 'Email']
     ads = [a['url'] for a in campaign_assets if a['asset_type'] == 'LinkedIn Ad']
     
-    # We will just cycle through them
     cs_idx = 0
     rep_idx = 0
     web_idx = 0
@@ -76,63 +77,68 @@ for campaign in WOOD_CAMPAIGNS:
     
     for burst_idx, burst_date in enumerate(BURST_DATES[campaign]):
         
-        # Case Studies
-        for i in range(random.randint(1, 2)):
-            if cs_idx < len(case_studies):
-                asset = case_studies[cs_idx]
-                cs_idx += 1
-            else:
-                asset = f"/case-studies/{campaign.lower()}-b{burst_idx}-cs-{i+1}"
-            drop = burst_date + timedelta(days=random.randint(0, 14))
-            TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
+        # Case Studies (1 unique case study per burst from curated catalogue)
+        if cs_idx < len(case_studies):
+            asset = case_studies[cs_idx]
+            cs_idx += 1
+        elif case_studies:
+            asset = case_studies[burst_idx % len(case_studies)]
+        else:
+            asset = f"/case-studies/{campaign.lower()}-b{burst_idx+1}"
+        drop = burst_date + timedelta(days=random.randint(0, 14))
+        TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
             
-        # Insights (Reports & Webinars combined for this block)
-        for i in range(2):
-            if rep_idx < len(reports):
-                asset = reports[rep_idx]
-                rep_idx += 1
-            elif web_idx < len(webinars):
-                asset = webinars[web_idx]
-                web_idx += 1
-            else:
-                asset = f"/insights/{campaign.lower()}-b{burst_idx}-report-{i+1}"
-            drop = burst_date + timedelta(days=random.randint(0, 14))
-            TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
+        # Insights (Reports & Webinars combined, 1 unique insight per burst from curated catalogue)
+        insights_pool = reports + webinars
+        if rep_idx < len(insights_pool):
+            asset = insights_pool[rep_idx]
+            rep_idx += 1
+        elif insights_pool:
+            asset = insights_pool[burst_idx % len(insights_pool)]
+        else:
+            asset = f"/insights/{campaign.lower()}-b{burst_idx+1}"
+        drop = burst_date + timedelta(days=random.randint(0, 14))
+        TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
             
-        # Emails
-        for i in range(1):
-            if email_idx < len(emails):
-                asset = emails[email_idx]
-                email_idx += 1
-            else:
-                asset = f"email_{campaign.lower()}_b{burst_idx}_{i+1}"
+        # Emails (1 unique email per burst from curated catalogue)
+        if email_idx < len(emails):
+            asset = emails[email_idx]
+            email_idx += 1
+        elif emails:
+            asset = emails[burst_idx % len(emails)]
+        else:
+            asset = f"email-{campaign.lower()}-{burst_idx+1}"
             
-            # The click tracker needs a fully qualified URL for Mailchimp
-            mailchimp_url = f"https://example.com?utm_source=mailchimp&utm_campaign={asset}"
-            drop = burst_date + timedelta(days=random.randint(0, 14))
-            TRANSIENT_BURST_MAP[campaign][mailchimp_url] = min(drop, END_DATE)
-            # Pick a random report/webinar for the email click
-            insights_list = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if ('/insights/' in k or '/webinars/' in k) and 'http' not in k]
-            EMAIL_PAGE_MAP[mailchimp_url] = random.choice(insights_list) if insights_list else "/contact-sales"
+        mailchimp_url = f"https://example.com?utm_source=mailchimp&utm_campaign={asset}"
+        drop = burst_date + timedelta(days=random.randint(0, 14))
+        TRANSIENT_BURST_MAP[campaign][mailchimp_url] = min(drop, END_DATE)
+        
+        # Pick an active report/webinar for the email click
+        insights_list = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if ('/insights/' in k or '/webinars/' in k) and 'http' not in k]
+        EMAIL_PAGE_MAP[mailchimp_url] = random.choice(insights_list) if insights_list else "/contact-sales"
             
-        # LinkedIn Ads
-        for i in range(random.randint(1, 2)):
-            if ad_idx < len(ads):
-                asset = ads[ad_idx]
-                ad_idx += 1
-            else:
-                asset = f"li_ad_{campaign.lower()}_b{burst_idx}_{i+1}"
-                
-            drop = burst_date + timedelta(days=random.randint(0, 14))
-            TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
-            # Pick a random case study for the ad click
-            cs_list = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if '/case-studies/' in k and 'http' not in k and 'li-ad' not in k]
-            AD_PAGE_MAP[asset] = random.choice(cs_list) if cs_list else "/contact-sales"
+        # LinkedIn Ads (1 unique ad per burst from curated catalogue)
+        if ad_idx < len(ads):
+            asset = ads[ad_idx]
+            ad_idx += 1
+        elif ads:
+            asset = ads[burst_idx % len(ads)]
+        else:
+            asset = f"li-ad-{campaign.lower()}-{burst_idx+1}"
+            
+        drop = burst_date + timedelta(days=random.randint(0, 14))
+        TRANSIENT_BURST_MAP[campaign][asset] = min(drop, END_DATE)
+        
+        # Pick an active case study for the ad click
+        cs_list = [k for k in TRANSIENT_BURST_MAP[campaign].keys() if '/case-studies/' in k and 'http' not in k and 'li-ad' not in k]
+        AD_PAGE_MAP[asset] = random.choice(cs_list) if cs_list else "/contact-sales"
 
 def get_asset_timestamp(campaign, asset, is_core):
     if is_core:
         camp_start = BURST_DATES[campaign][0] if campaign in BURST_DATES and BURST_DATES[campaign] else START_DATE
-        return random_date(camp_start, END_DATE).strftime('%Y-%m-%d %H:%M:%S.%f')
+        camp_end = BURST_DATES[campaign][-1] + timedelta(days=60) if "PAST" in campaign else END_DATE
+        camp_end = min(camp_end, END_DATE)
+        return random_date(camp_start, camp_end).strftime('%Y-%m-%d %H:%M:%S.%f')
     else:
         drop_date = TRANSIENT_BURST_MAP[campaign].get(asset, START_DATE)
         end_val = min(drop_date + timedelta(days=45), END_DATE)
@@ -207,19 +213,32 @@ def simulate_abm_journeys():
                 seen_campaign_assets.add(asset)
                 
                 t_stamp = get_asset_timestamp(user_campaign, asset, False)
-                action = random.choices(["Open", "Click"], weights=[70, 30])[0]
+                base_dt = datetime.strptime(t_stamp, '%Y-%m-%d %H:%M:%S.%f')
                 
-                mailchimp_events.append({
-                    "event_id": str(uuid.uuid4()), "email": email, "campaign_id": user_campaign, 
-                    "action": action, "url_clicked": asset, "timestamp": t_stamp
-                })
+                # An email touchpoint always registers an Open event (with 35% re-opening 2-3 times)
+                num_opens = random.choices([1, 2, 3], weights=[65, 25, 10])[0]
+                for o_idx in range(num_opens):
+                    open_dt = base_dt if o_idx == 0 else min(base_dt + timedelta(hours=random.randint(2, 48)), END_DATE)
+                    open_stamp = open_dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+                    mailchimp_events.append({
+                        "event_id": str(uuid.uuid4()), "email": email, "campaign_id": user_campaign, 
+                        "action": "Open", "url_clicked": asset, "timestamp": open_stamp
+                    })
                 
-                if action == 'Click':
+                # ~30% of users who open also click through to the landing asset
+                if random.random() < 0.30:
+                    click_dt = min(base_dt + timedelta(seconds=random.randint(15, 180)), END_DATE)
+                    click_stamp = click_dt.strftime('%Y-%m-%d %H:%M:%S.%f')
+                    mailchimp_events.append({
+                        "event_id": str(uuid.uuid4()), "email": email, "campaign_id": user_campaign, 
+                        "action": "Click", "url_clicked": asset, "timestamp": click_stamp
+                    })
+                    
                     page = EMAIL_PAGE_MAP.get(asset, "/contact-sales")
                     ga4_events.append({
                         "session_id": str(uuid.uuid4()), "cookie_id": cookie_id, "utm_source": "email", 
                         "utm_campaign": user_campaign, "page_viewed": page, "bounce_flag": 0, 
-                        "timestamp": t_stamp, "user_id_captured": uid
+                        "timestamp": click_stamp, "user_id_captured": uid
                     })
 
             elif channel == 'LinkedIn':

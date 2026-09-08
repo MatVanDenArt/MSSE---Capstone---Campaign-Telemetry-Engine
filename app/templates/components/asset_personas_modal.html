@@ -92,8 +92,9 @@
                         <h3 class="text-sm font-bold text-white tracking-widest uppercase mb-1">
                             <i class="fa-solid fa-users mr-2 text-cyan-400"></i> Target Personas
                         </h3>
-                        <p class="text-[10px] text-blue-400 uppercase tracking-widest"
-                            x-text="selectedAsset?.asset_name"></p>
+                        <p class="text-[10px] text-blue-400 uppercase tracking-widest truncate max-w-[280px]"
+                            :title="selectedAsset?.title || selectedAsset?.asset_name"
+                            x-text="selectedAsset?.title || selectedAsset?.asset_name"></p>
                     </div>
                     <button @click="showAccountsModal = false"
                         class="text-slate-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 w-8 h-8 rounded flex items-center justify-center shrink-0 ml-4">

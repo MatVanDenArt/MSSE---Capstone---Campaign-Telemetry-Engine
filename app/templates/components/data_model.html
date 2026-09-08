@@ -202,22 +202,22 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
             <div class="px-4 py-3 bg-dark-800">
                 <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Executive overview</span>
-                <p class="text-[10px] text-slate-500 mt-0.5">generate_next_best_actions()</p>
+                <p class="text-[10px] text-slate-500 mt-0.5">generate_next_best_actions() · get_ai_recommended_actions(tab="overview")</p>
             </div>
             <div class="px-4 py-3 bg-dark-800">
                 <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Asset performance</span>
-                <p class="text-[10px] text-slate-500 mt-0.5">get_asset_impact_matrix()</p>
+                <p class="text-[10px] text-slate-500 mt-0.5">get_asset_impact_matrix() · get_ai_recommended_actions(tab="performance")</p>
             </div>
             <div class="px-4 py-3 bg-dark-800">
                 <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Audience & ABM</span>
-                <p class="text-[10px] text-slate-500 mt-0.5">get_prioritized_sales_targets()</p>
+                <p class="text-[10px] text-slate-500 mt-0.5">get_prioritized_sales_targets(timeframe) · get_ai_recommended_actions(tab="audience")</p>
             </div>
         </div>
 
         <!-- Swim lanes -->
         <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
 
-            <!-- Executive Overview cards -->
+            <!-- Executive Overview -->
             <div class="p-4 space-y-3">
                 <div class="border-l-2 border-rose-500 pl-3 py-0.5">
                     <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert</div>
@@ -240,60 +240,72 @@
                 <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
                     <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
                     <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Gemini generates 3 strategic tasks from live KPIs. Cached in <code>action_triggers</code>. No dismiss button.</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Gemini generates 3 strategic tasks from live KPI benchmarks. Cached in <code>llm_cache.json</code> (24 h TTL). No dismiss button.</div>
                     <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
                 </div>
                 <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>DELETE /api/dashboard/trigger/:id</code></div>
             </div>
 
-            <!-- Asset Performance cards -->
+            <!-- Asset Performance -->
             <div class="p-4 space-y-3">
                 <div class="border-l-2 border-slate-600 pl-3 py-0.5">
                     <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven · dismissable</div>
                     <div class="text-xs font-semibold text-slate-200 mb-0.5">Top performing asset</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Highest <code>impact_score</code> in the asset matrix.</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Asset with highest <code>impact_score</code> in the matrix for the selected timeframe.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
                 </div>
                 <div class="border-l-2 border-rose-500 pl-3 py-0.5">
                     <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable</div>
                     <div class="text-xs font-semibold text-slate-200 mb-0.5">Fatigued asset warning</div>
-                    <div class="text-[10px] text-slate-400 mb-1"><code>asset.health == Fatigued</code> or <code>ai_recommendation</code> is set.</div>
+                    <div class="text-[10px] text-slate-400 mb-1"><code>asset.health == Fatigued</code> or <code>ai_recommendation</code> is set by the matrix query.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code>, <code>generate_ab_test_variants</code></div>
                 </div>
                 <div class="border-l-2 border-rose-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable</div>
+                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable · SQL</div>
                     <div class="text-xs font-semibold text-slate-200 mb-0.5">High bounce rate asset</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Matrix index 1 — traffic high but conversion &lt; 1%.</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: <code>bounce_flag</code> rate &gt; 60% with ≥ 10 sessions in <code>ga4_events</code>. No card if no asset qualifies.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
                 </div>
                 <div class="border-l-2 border-slate-600 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Signal · dismissable</div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Signal · dismissable · SQL</div>
                     <div class="text-xs font-semibold text-slate-200 mb-0.5">Spiking asset detected</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Matrix index 2 — converting at 3× historical baseline.</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: last-7-day views &gt; 1.5× prior 7 days in <code>ga4_events</code>. No card if no asset qualifies.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code></div>
+                </div>
+                <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Gemini receives top-5 assets by impact score + fatigued asset names. Generates 3 asset-focused actions. Cached 24 h. No dismiss button.</div>
+                    <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
                 </div>
                 <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>GET /api/dashboard/investigate-asset</code></div>
             </div>
 
-            <!-- Audience & ABM cards -->
+            <!-- Audience & ABM -->
             <div class="p-4 space-y-3">
                 <div class="border-l-2 border-slate-600 pl-3 py-0.5">
                     <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven ×4 · dismissable</div>
                     <div class="text-xs font-semibold text-slate-200 mb-0.5">SQL follow-up targets</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Top 4 from <code>get_prioritized_sales_targets()</code>, ranked by engagement.</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Top 4 from <code>get_prioritized_sales_targets(campaign_id, timeframe)</code> — composite lead score: interactions × seniority × recency × account momentum. Timeframe-scoped.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>map_buying_committee</code>, <code>get_intent_surge_signals</code></div>
                 </div>
                 <div class="border-l-2 border-rose-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Stalled account: BP plc</div>
-                    <div class="text-[10px] text-slate-400 mb-1">High early engagement, zero activity in 14 days.</div>
+                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable · SQL</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Stalled account</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with ≥ 2 engaged users whose <code>last_touch &lt; date('now', '-14 days')</code>. Company name comes from live data.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>draft_outreach_sequence</code></div>
                 </div>
                 <div class="border-l-2 border-slate-600 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Cross-dept expansion: Shell</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Engineering and Marketing consuming content simultaneously.</div>
+                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable · SQL</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Cross-dept expansion</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with <code>COUNT(DISTINCT persona_type) ≥ 2</code> in campaign window. Company name comes from live data.</div>
                     <div class="text-[10px] text-slate-500">MCP: <code>get_account_penetration</code>, <code>map_buying_committee</code></div>
+                </div>
+                <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
+                    <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
+                    <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
+                    <div class="text-[10px] text-slate-400 mb-1">Gemini receives top-3 prioritised targets with status, interactions, and persona counts. Generates 3 ABM-focused actions. Cached 24 h. No dismiss button.</div>
+                    <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
                 </div>
                 <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>GET /api/dashboard/investigate-target</code></div>
             </div>

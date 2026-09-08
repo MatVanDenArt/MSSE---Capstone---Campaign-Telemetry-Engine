@@ -847,6 +847,7 @@
 
     <!-- OOB Copilot Integration -->
     {% include 'components/oob_copilot.html' %}
+    <div hx-get="/api/dashboard/ai-chips?campaign_id={{ campaign_id }}&timeframe={{ timeframe }}&tab=audience" hx-trigger="load" class="hidden"></div>
 
     <!-- Modals -->
     {% include 'components/user_pipeline_modal.html' %}

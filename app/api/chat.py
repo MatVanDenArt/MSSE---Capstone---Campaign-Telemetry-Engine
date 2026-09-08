@@ -57,8 +57,24 @@ def handle_chat(message: str = Form(...), timeframe: int = Form(0), time_context
         chat_history = []
     
     # Prevent chat history from growing unbounded and hanging the API
-    if len(chat_history) > 12:
-        chat_history = chat_history[-12:]
+    while len(chat_history) > 12:
+        chat_history.pop(0)
+        while chat_history:
+            first = chat_history[0]
+            role = first.get("role") if isinstance(first, dict) else getattr(first, "role", None)
+            parts = first.get("parts") if isinstance(first, dict) else getattr(first, "parts", [])
+            
+            is_func_resp = False
+            if parts:
+                for p in parts:
+                    if isinstance(p, dict) and "function_response" in p:
+                        is_func_resp = True
+                    elif hasattr(p, "function_response") and p.function_response:
+                        is_func_resp = True
+            
+            if role == "user" and not is_func_resp:
+                break
+            chat_history.pop(0)
         
     display_message = message
     if ". Suggested Action: " in display_message:
@@ -290,7 +306,7 @@ def chat_stream(task_id: str):
                             )
                         )
                     
-                    chat_history.append(current_response.candidates[0].content)
+                    chat_history.append({"role": "model", "parts": current_response.candidates[0].content.parts})
                     chat_history.append({"role": "user", "parts": tool_responses})
                     
                     from app.services.llm_rotator import get_genai_client
