@@ -7,96 +7,98 @@
             <i class="fa-solid fa-network-wired text-fuchsia-400"></i> Omnichannel data model & identity resolution
         </h2>
         <p class="text-xs text-slate-400 mb-6">
-            This graph illustrates the underlying SQLite schema used in this application, mapping how anonymous top-of-funnel events (LinkedIn Ads) are eventually resolved to known identities (Mailchimp/CRM) via cookies and UTM tracking.
+            This graph illustrates the underlying SQLite schema used in this application, mapping how anonymous
+            top-of-funnel events (LinkedIn Ads) are eventually resolved to known identities (Mailchimp/CRM) via cookies
+            and UTM tracking.
         </p>
         <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
             <div class="mermaid text-center">
                 erDiagram
-                    LINKEDIN_EVENTS {
-                        string event_id PK
-                        string campaign_id
-                        string ad_id
-                        string cookie_id "Cookie identifier"
-                        string utm_source
-                        float spend_consumed
-                        datetime timestamp
-                        float user_id "Resolved CRM ID"
-                    }
-                    GA4_EVENTS {
-                        string session_id PK
-                        string cookie_id "Matches LI cookie_id"
-                        string utm_source
-                        string utm_campaign
-                        string page_viewed
-                        boolean bounce_flag
-                        datetime timestamp
-                        float user_id "Resolved CRM ID"
-                    }
-                    MAILCHIMP_EVENTS {
-                        string event_id PK
-                        string email "Matches CRM email"
-                        string campaign_id
-                        string action "Open / Click"
-                        string url_clicked
-                        datetime timestamp
-                        int user_id "Resolved CRM ID"
-                    }
-                    CRM_USERS {
-                        int user_id PK
-                        int account_id FK
-                        string email "Matches Mailchimp"
-                        string company_name
-                        string first_name
-                        string last_name
-                        string job_title
-                        string seniority
-                        string persona_type
-                    }
-                    CRM_OPPS {
-                        string event_id PK
-                        int user_id FK
-                        int account_id FK
-                        string event_type "Created / Won"
-                        float pipeline_value
-                        datetime timestamp
-                        string utm_campaign
-                    }
-                    CONTENT_METADATA {
-                        string url PK
-                        string title
-                        string asset_type
-                        string intent_topic
-                    }
-                    ACTION_TRIGGERS {
-                        string id PK
-                        string campaign_id
-                        string type
-                        string message
-                        string action_payload
-                        boolean resolved_status
-                        datetime created_at
-                        datetime expires_at
-                    }
-                    MASTER_SUMMARY {
-                        int user_id PK
-                        int account_id
-                        string company_name
-                        string email
-                        string persona_type
-                        int ga4_events
-                        int mc_events
-                        int li_events
-                        float spend_consumed
-                        int opp_count
-                    }
-                    LINKEDIN_EVENTS ||--o{ GA4_EVENTS : "Drives traffic (cookie_id)"
-                    MAILCHIMP_EVENTS }o--|| CRM_USERS : "Nurtures identity (email)"
-                    GA4_EVENTS }o--o| CRM_USERS : "Resolves identity (user_id)"
-                    LINKEDIN_EVENTS }o--o| CRM_USERS : "Resolves identity (user_id)"
-                    CRM_USERS ||--o{ CRM_OPPS : "Generates pipeline (user_id)"
-                    GA4_EVENTS }o--o| CONTENT_METADATA : "Tracks asset (page_viewed)"
-                    ACTION_TRIGGERS }o--o| CRM_OPPS : "Scoped to campaign"
-                    CRM_USERS ||--|| MASTER_SUMMARY : "Pre-aggregated view (user_id)"
+                LINKEDIN_EVENTS {
+                string event_id PK
+                string campaign_id
+                string ad_id
+                string cookie_id "Cookie identifier"
+                string utm_source
+                float spend_consumed
+                datetime timestamp
+                float user_id "Resolved CRM ID"
+                }
+                GA4_EVENTS {
+                string session_id PK
+                string cookie_id "Matches LI cookie_id"
+                string utm_source
+                string utm_campaign
+                string page_viewed
+                boolean bounce_flag
+                datetime timestamp
+                float user_id "Resolved CRM ID"
+                }
+                MAILCHIMP_EVENTS {
+                string event_id PK
+                string email "Matches CRM email"
+                string campaign_id
+                string action "Open / Click"
+                string url_clicked
+                datetime timestamp
+                int user_id "Resolved CRM ID"
+                }
+                CRM_USERS {
+                int user_id PK
+                int account_id FK
+                string email "Matches Mailchimp"
+                string company_name
+                string first_name
+                string last_name
+                string job_title
+                string seniority
+                string persona_type
+                }
+                CRM_OPPS {
+                string event_id PK
+                int user_id FK
+                int account_id FK
+                string event_type "Created / Won"
+                float pipeline_value
+                datetime timestamp
+                string utm_campaign
+                }
+                CONTENT_METADATA {
+                string url PK
+                string title
+                string asset_type
+                string intent_topic
+                }
+                ACTION_TRIGGERS {
+                string id PK
+                string campaign_id
+                string type
+                string message
+                string action_payload
+                boolean resolved_status
+                datetime created_at
+                datetime expires_at
+                }
+                MASTER_SUMMARY {
+                int user_id PK
+                int account_id
+                string company_name
+                string email
+                string persona_type
+                int ga4_events
+                int mc_events
+                int li_events
+                float spend_consumed
+                int opp_count
+                }
+                LINKEDIN_EVENTS ||--o{ GA4_EVENTS : "Drives traffic (cookie_id)"
+                MAILCHIMP_EVENTS }o--|| CRM_USERS : "Nurtures identity (email)"
+                GA4_EVENTS }o--o| CRM_USERS : "Resolves identity (user_id)"
+                LINKEDIN_EVENTS }o--o| CRM_USERS : "Resolves identity (user_id)"
+                CRM_USERS ||--o{ CRM_OPPS : "Generates pipeline (user_id)"
+                GA4_EVENTS }o--o| CONTENT_METADATA : "Tracks asset (page_viewed)"
+                ACTION_TRIGGERS }o--o| CRM_OPPS : "Scoped to campaign"
+                CRM_USERS ||--|| MASTER_SUMMARY : "Pre-aggregated view (user_id)"
             </div>
         </div>
     </div>
@@ -107,40 +109,41 @@
             <i class="fa-solid fa-project-diagram text-blue-400"></i> Identity resolution data flow
         </h2>
         <p class="text-xs text-slate-400 mb-6">
-            This graph maps exactly how an anonymous Ad Click is stitched via cookie and UTM tracking to a known user session across GA4, Mailchimp, and the CRM.
+            This graph maps exactly how an anonymous Ad Click is stitched via cookie and UTM tracking to a known user
+            session across GA4, Mailchimp, and the CRM.
         </p>
         <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
             <div class="mermaid text-center">
                 graph TD
-                    subgraph Channel Sources
-                        LI[LinkedIn Ads Anonymous Click]
-                        MC[Mailchimp Known Email: j.doe@shell.com]
-                    end
-                    subgraph Website Telemetry GA4
-                        GA4_Anon[GA4 Session cookie_id: 12345 user_id_captured: NULL]
-                        GA4_Known[GA4 Session cookie_id: 67890 user_id_captured: 101]
-                        Form[Form Fill / Content Download Captures user_id: 101]
-                    end
-                    subgraph CRM System
-                        CRM_C[Company: Shell Plc.]
-                        CRM_U[User_ID: 101 Email: j.doe@shell.com]
-                        CRM_C --- CRM_U
-                    end
-                    subgraph Python ETL
-                        Match1[Match on user_id_captured]
-                        Merge[Outer Join on user_id]
-                        Ghost[Outer Join on cookie_id]
-                    end
-                    LI -->|UTM Source| GA4_Anon
-                    GA4_Anon -->|Reads Content| Form
-                    Form -->|Generates ID| Match1
-                    MC -->|URL Parameter| GA4_Known
-                    GA4_Known -->|Passes ID| Match1
-                    Match1 -->|Lookup ID| CRM_U
-                    CRM_U --> Merge
-                    GA4_Anon -.->|Retroactive cookie stitch| Merge
-                    LI -->|Bounces immediately| Ghost
-                    Ghost -->|Remains Anonymous| Ghost
+                subgraph Channel Sources
+                LI[LinkedIn Ads Anonymous Click]
+                MC[Mailchimp Known Email: j.doe@shell.com]
+                end
+                subgraph Website Telemetry GA4
+                GA4_Anon[GA4 Session cookie_id: 12345 user_id_captured: NULL]
+                GA4_Known[GA4 Session cookie_id: 67890 user_id_captured: 101]
+                Form[Form Fill / Content Download Captures user_id: 101]
+                end
+                subgraph CRM System
+                CRM_C[Company: Shell Plc.]
+                CRM_U[User_ID: 101 Email: j.doe@shell.com]
+                CRM_C --- CRM_U
+                end
+                subgraph Python ETL
+                Match1[Match on user_id_captured]
+                Merge[Outer Join on user_id]
+                Ghost[Outer Join on cookie_id]
+                end
+                LI -->|UTM Source| GA4_Anon
+                GA4_Anon -->|Reads Content| Form
+                Form -->|Generates ID| Match1
+                MC -->|URL Parameter| GA4_Known
+                GA4_Known -->|Passes ID| Match1
+                Match1 -->|Lookup ID| CRM_U
+                CRM_U --> Merge
+                GA4_Anon -.->|Retroactive cookie stitch| Merge
+                LI -->|Bounces immediately| Ghost
+                Ghost -->|Remains Anonymous| Ghost
             </div>
         </div>
     </div>
@@ -151,13 +154,21 @@
             <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
                 <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i> The simulation funnel
             </h2>
-            <p class="text-xs text-slate-400 mb-4">The backend simulation (<code>generator.py</code>) builds synthetic B2B buying journeys using a weighted Markov-style funnel approach.</p>
+            <p class="text-xs text-slate-400 mb-4">The backend simulation (<code>generator.py</code>) builds synthetic
+                B2B buying journeys using a weighted Markov-style funnel approach.</p>
             <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
                 <ol class="list-decimal pl-5 space-y-2">
-                    <li><strong class="text-blue-500/30">Top of funnel (Ad Spend)</strong>: A simulated user clicks a LinkedIn Ad. Generates a row in <code>linkedin_events</code> with a unique <code>click_id</code> (cookie) and burns ad spend.</li>
-                    <li><strong class="text-blue-500/50">Mid funnel (Website)</strong>: A <code>ga4_events</code> row is created using the same <code>cookie_id</code>. If they bounce, the journey ends. If they convert, they provide their email.</li>
-                    <li><strong class="text-blue-500/80">Nurture (Email)</strong>: Over the next 15 days, they receive automated emails, generating <code>mailchimp_events</code> tied to their email address.</li>
-                    <li><strong class="text-blue-400">Bottom funnel (Revenue)</strong>: If engagement is high, they are resolved into <code>crm_users</code>. 30-90 days later, a pipeline event is pushed to <code>crm_opps</code>.</li>
+                    <li><strong class="text-white">Top of funnel (Ad Spend)</strong>: A simulated user clicks a LinkedIn
+                        Ad. Generates a row in <code>linkedin_events</code> with a unique <code>click_id</code> (cookie)
+                        and burns ad spend.</li>
+                    <li><strong class="text-white">Mid funnel (Website)</strong>: A <code>ga4_events</code> row is
+                        created using the same <code>cookie_id</code>. If they bounce, the journey ends. If they
+                        convert, they provide their email.</li>
+                    <li><strong class="text-white">Nurture (Email)</strong>: Over the next 15 days, they receive
+                        automated emails, generating <code>mailchimp_events</code> tied to their email address.</li>
+                    <li><strong class="text-white">Bottom funnel (Revenue)</strong>: If engagement is high, they are
+                        resolved into <code>crm_users</code>. 30-90 days later, a pipeline event is pushed to
+                        <code>crm_opps</code>.</li>
                 </ol>
             </div>
         </div>
@@ -166,12 +177,17 @@
             <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
                 <i class="fa-solid fa-fingerprint text-fuchsia-400"></i> Identity resolution
             </h2>
-            <p class="text-xs text-slate-400 mb-4">This application mimics a modern Customer Data Platform (CDP). The hardest problem in marketing telemetry is tying an anonymous click to a closed deal.</p>
+            <p class="text-xs text-slate-400 mb-4">This application mimics a modern Customer Data Platform (CDP). The
+                hardest problem in marketing telemetry is tying an anonymous click to a closed deal.</p>
             <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg text-sm text-slate-300">
                 <p class="font-mono text-xs text-fuchsia-300 mb-2">// The identity chain</p>
-                <p class="mb-2"><span class="text-blue-500/40 font-bold">1. Anonymous</span>: User has only a <code>cookie_id</code> (LinkedIn -> GA4).</p>
-                <p class="mb-2"><span class="text-blue-500/70 font-bold">2. Known</span>: User submits a form. GA4 updates with <code>user_id_captured</code>.</p>
-                <p><span class="text-blue-400 font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on the <code>user_id</code>, matching it to their Mailchimp <code>email</code>, allowing full attribution of the original ad spend.</p>
+                <p class="mb-2"><span class="text-white font-bold">1. Anonymous</span>: User has only a
+                    <code>cookie_id</code> (LinkedIn -> GA4).</p>
+                <p class="mb-2"><span class="text-white font-bold">2. Known</span>: User submits a form. GA4 updates
+                    with <code>user_id_captured</code>.</p>
+                <p><span class="text-white font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on
+                    the <code>user_id</code>, matching it to their Mailchimp <code>email</code>, allowing full
+                    attribution of the original ad spend.</p>
             </div>
         </div>
 
@@ -179,154 +195,267 @@
             <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
                 <i class="fa-solid fa-brain text-fuchsia-400"></i> Copilot context heuristics
             </h2>
-            <p class="text-xs text-slate-400 mb-4">The AI Copilot maintains chat memory during a session, but relies on a backend rule engine to automatically wipe its slate clean when the user shifts to a new investigation, preventing cross-contamination between different targets or campaigns.</p>
+            <p class="text-xs text-slate-400 mb-4">The AI Copilot maintains chat memory during a session, but relies on
+                a backend rule engine to automatically wipe its slate clean when the user shifts to a new investigation,
+                preventing cross-contamination between different targets or campaigns.</p>
             <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg text-sm text-slate-300">
                 <p class="font-mono text-xs text-fuchsia-300 mb-2">// Context breakers (app/api/chat.py)</p>
-                <p class="mb-2"><span class="text-fuchsia-500/80 font-bold">WIPE CONTEXT:</span> If the prompt starts with major dashboard action triggers (e.g., <code>"review priority action:"</code>, <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).</p>
-                <p><span class="text-emerald-500/80 font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up or a direct LLM execution command (e.g., <code>"Execute: /api/draft..."</code>).</p>
+                <p class="mb-2"><span class="text-white font-bold">WIPE CONTEXT:</span> If the prompt starts with major
+                    dashboard action triggers (e.g., <code>"review priority action:"</code>,
+                    <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).</p>
+                <p><span class="text-white font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up
+                    or a direct LLM execution command (e.g., <code>"Execute: /api/draft..."</code>).</p>
             </div>
         </div>
-</div>
+    </div>
 
-<!-- Section 4: Action Center Architecture -->
-<div class="glass-panel p-6 rounded-xl border-t-4 border-t-emerald-500 mt-6">
-    <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
-        <i class="fa-solid fa-list-check text-emerald-400"></i> Action center architecture & trigger logic
-    </h2>
-    <p class="text-xs text-slate-400 mb-6">
-        The Action Center populates differently across the three main dashboard interfaces. Each interface has its own trigger source, card type, dismissal rules, and MCP functions it invokes when a card is executed.
-    </p>
-    <div class="bg-dark-900 rounded-lg border border-dark-700 mb-6 overflow-hidden">
+    <!-- Section 4: Action Center Architecture -->
+    <div class="glass-panel p-6 rounded-xl border-t-4 border-t-emerald-500 mt-6">
+        <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+            <i class="fa-solid fa-list-check text-emerald-400"></i> Action center architecture & trigger logic
+        </h2>
+        <p class="text-xs text-slate-400 mb-6">
+            The Action Center populates differently across the three main dashboard interfaces. Each interface has its
+            own trigger source, card type, dismissal rules, and MCP functions it invokes when a card is executed.
+        </p>
+        <div class="bg-dark-900 rounded-lg border border-dark-700 mb-6 overflow-hidden">
 
-        <!-- Column headers -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
-            <div class="px-4 py-3 bg-dark-800">
-                <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Executive overview</span>
-                <p class="text-[10px] text-slate-500 mt-0.5">generate_next_best_actions() · get_ai_recommended_actions(tab="overview")</p>
+            <!-- Column headers -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
+                <div class="px-4 py-3 bg-dark-800">
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Executive overview</span>
+                    <p class="text-[10px] text-slate-500 mt-0.5">generate_next_best_actions() ·
+                        get_ai_recommended_actions(tab="overview")</p>
+                </div>
+                <div class="px-4 py-3 bg-dark-800">
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Asset performance</span>
+                    <p class="text-[10px] text-slate-500 mt-0.5">get_asset_impact_matrix() ·
+                        get_ai_recommended_actions(tab="performance")</p>
+                </div>
+                <div class="px-4 py-3 bg-dark-800">
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Audience & ABM</span>
+                    <p class="text-[10px] text-slate-500 mt-0.5">get_prioritized_sales_targets(timeframe) ·
+                        get_ai_recommended_actions(tab="audience")</p>
+                </div>
             </div>
-            <div class="px-4 py-3 bg-dark-800">
-                <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Asset performance</span>
-                <p class="text-[10px] text-slate-500 mt-0.5">get_asset_impact_matrix() · get_ai_recommended_actions(tab="performance")</p>
+
+            <!-- Swim lanes -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
+
+                <!-- Executive Overview -->
+                <div class="p-4 space-y-3">
+                    <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">CPA anomaly detected</div>
+                        <div class="text-[10px] text-slate-400 mb-1"><code>live_spend &gt; 1000</code> AND
+                            <code>cpa_diff &gt; 30%</code></div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>get_budget_pacing</code>,
+                            <code>calculate_blended_cpa</code></div>
+                    </div>
+                    <div class="border-l-2 border-amber-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">Conversion bottleneck</div>
+                        <div class="text-[10px] text-slate-400 mb-1"><code>conversion_rate &lt; 2.5%</code> with
+                            sufficient traffic</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>get_executive_pipeline_kpis</code></div>
+                    </div>
+                    <div class="border-l-2 border-amber-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">TAM penetration stalled</div>
+                        <div class="text-[10px] text-slate-400 mb-1"><code>days_active &gt; 30</code> AND
+                            <code>penetration &lt; 15%</code></div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>get_tam_penetration</code></div>
+                    </div>
+                    <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated
+                            · persistent</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Gemini generates 3 strategic tasks from live KPI
+                            benchmarks. Cached in <code>llm_cache.json</code> (24 h TTL). No dismiss button.</div>
+                        <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
+                    </div>
+                    <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution:
+                        <code>DELETE /api/dashboard/trigger/:id</code></div>
+                </div>
+
+                <!-- Asset Performance -->
+                <div class="p-4 space-y-3">
+                    <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven ·
+                            dismissable</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">Top performing asset</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Asset with highest <code>impact_score</code> in the
+                            matrix for the selected timeframe.</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
+                    </div>
+                    <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert ·
+                            dismissable</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">Fatigued asset warning</div>
+                        <div class="text-[10px] text-slate-400 mb-1"><code>asset.health == Fatigued</code> or
+                            <code>ai_recommendation</code> is set by the matrix query.</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code>,
+                            <code>generate_ab_test_variants</code></div>
+                    </div>
+                    <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert ·
+                            dismissable · SQL</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">High bounce rate asset</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Real SQL: <code>bounce_flag</code> rate &gt; 60%
+                            with ≥ 10 sessions in <code>ga4_events</code>. No card if no asset qualifies.</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
+                    </div>
+                    <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Signal ·
+                            dismissable · SQL</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">Spiking asset detected</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Real SQL: last-7-day views &gt; 1.5× prior 7 days
+                            in <code>ga4_events</code>. No card if no asset qualifies.</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code></div>
+                    </div>
+                    <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated
+                            · persistent</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Gemini receives top-5 assets by impact score +
+                            fatigued asset names. Generates 3 asset-focused actions. Cached 24 h. No dismiss button.
+                        </div>
+                        <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
+                    </div>
+                    <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution:
+                        <code>GET /api/dashboard/investigate-asset</code></div>
+                </div>
+
+                <!-- Audience & ABM -->
+                <div class="p-4 space-y-3">
+                    <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven ×4
+                            · dismissable</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">SQL follow-up targets</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Top 4 from
+                            <code>get_prioritized_sales_targets(campaign_id, timeframe)</code> — composite lead score:
+                            interactions × seniority × recency × account momentum. Timeframe-scoped.</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>map_buying_committee</code>,
+                            <code>get_intent_surge_signals</code></div>
+                    </div>
+                    <div class="border-l-2 border-rose-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">ABM signal ·
+                            dismissable · SQL</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">Stalled account</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with ≥ 2 engaged users whose
+                            <code>last_touch &lt; date('now', '-14 days')</code>. Company name comes from live data.
+                        </div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>draft_outreach_sequence</code></div>
+                    </div>
+                    <div class="border-l-2 border-slate-600 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ABM signal ·
+                            dismissable · SQL</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">Cross-dept expansion</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with
+                            <code>COUNT(DISTINCT persona_type) ≥ 2</code> in campaign window. Company name comes from
+                            live data.</div>
+                        <div class="text-[10px] text-slate-500">MCP: <code>get_account_penetration</code>,
+                            <code>map_buying_committee</code></div>
+                    </div>
+                    <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
+                        <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated
+                            · persistent</div>
+                        <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
+                        <div class="text-[10px] text-slate-400 mb-1">Gemini receives top-3 prioritised targets with
+                            status, interactions, and persona counts. Generates 3 ABM-focused actions. Cached 24 h. No
+                            dismiss button.</div>
+                        <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
+                    </div>
+                    <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution:
+                        <code>GET /api/dashboard/investigate-target</code></div>
+                </div>
             </div>
-            <div class="px-4 py-3 bg-dark-800">
-                <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Audience & ABM</span>
-                <p class="text-[10px] text-slate-500 mt-0.5">get_prioritized_sales_targets(timeframe) · get_ai_recommended_actions(tab="audience")</p>
+
+            <!-- Shared execution flow -->
+            <div class="border-t border-dark-700 px-4 py-3 bg-dark-800/40">
+                <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Shared execution flow
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                    <span>User clicks card</span>
+                    <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                    <code>executeTask(task)</code>
+                    <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                    <code>POST /api/chat</code>
+                    <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                    <span class="text-fuchsia-400">Gemini invokes MCP tool</span>
+                    <i class="fa-solid fa-arrow-right text-slate-600"></i>
+                    <span>Result rendered in Copilot</span>
+                </div>
+                <div class="mt-1 text-[10px] text-slate-600">
+                    Rules-based & programmatic: <code>reset_context = true</code> &nbsp;·&nbsp; AI cards: context
+                    retained, card never dismissed
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Swim lanes -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-dark-700">
+    <!-- Section 5: MCP Copilot Orchestration Sequence -->
+    <div class="glass-panel p-6 rounded-xl border-t-4 border-t-purple-500 mt-6">
+        <h2 class="text-sm font-bold text-slate-100 mb-2 flex items-center gap-3 uppercase tracking-widest">
+            <i class="fa-solid fa-bolt text-purple-400"></i> MCP copilot orchestration & execution sequence
+        </h2>
+        <p class="text-xs text-slate-400 mb-6">
+            To prevent arithmetic hallucinations and guarantee data integrity, the AI Copilot never calculates financial metrics directly or queries raw SQL unconstrained. This sequence diagram illustrates the real multi-turn Model Context Protocol (MCP) function calling loop implemented in <code>app/api/chat.py</code>:
+        </p>
+        <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
+            <div class="mermaid text-center">
+sequenceDiagram
+    autonumber
+    participant User
+    participant UI as Dashboard / Action Center
+    participant Router as FastAPI (POST /api/chat)
+    participant Cache as Cache (Redis / llm_cache.json)
+    participant LLM as Gemini 3.6 Flash (Rotator)
+    participant Analytics as Analytics Service (Python/SQLite)
 
-            <!-- Executive Overview -->
-            <div class="p-4 space-y-3">
-                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">CPA anomaly detected</div>
-                    <div class="text-[10px] text-slate-400 mb-1"><code>live_spend &gt; 1000</code> AND <code>cpa_diff &gt; 30%</code></div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>get_budget_pacing</code>, <code>calculate_blended_cpa</code></div>
-                </div>
-                <div class="border-l-2 border-amber-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Conversion bottleneck</div>
-                    <div class="text-[10px] text-slate-400 mb-1"><code>conversion_rate &lt; 2.5%</code> with sufficient traffic</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>get_executive_pipeline_kpis</code></div>
-                </div>
-                <div class="border-l-2 border-amber-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">TAM penetration stalled</div>
-                    <div class="text-[10px] text-slate-400 mb-1"><code>days_active &gt; 30</code> AND <code>penetration &lt; 15%</code></div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>get_tam_penetration</code></div>
-                </div>
-                <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Gemini generates 3 strategic tasks from live KPI benchmarks. Cached in <code>llm_cache.json</code> (24 h TTL). No dismiss button.</div>
-                    <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
-                </div>
-                <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>DELETE /api/dashboard/trigger/:id</code></div>
-            </div>
-
-            <!-- Asset Performance -->
-            <div class="p-4 space-y-3">
-                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven · dismissable</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Top performing asset</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Asset with highest <code>impact_score</code> in the matrix for the selected timeframe.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
-                </div>
-                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Fatigued asset warning</div>
-                    <div class="text-[10px] text-slate-400 mb-1"><code>asset.health == Fatigued</code> or <code>ai_recommendation</code> is set by the matrix query.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code>, <code>generate_ab_test_variants</code></div>
-                </div>
-                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert · dismissable · SQL</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">High bounce rate asset</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: <code>bounce_flag</code> rate &gt; 60% with ≥ 10 sessions in <code>ga4_events</code>. No card if no asset qualifies.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>get_asset_impact_matrix</code></div>
-                </div>
-                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Signal · dismissable · SQL</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Spiking asset detected</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: last-7-day views &gt; 1.5× prior 7 days in <code>ga4_events</code>. No card if no asset qualifies.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code></div>
-                </div>
-                <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Gemini receives top-5 assets by impact score + fatigued asset names. Generates 3 asset-focused actions. Cached 24 h. No dismiss button.</div>
-                    <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
-                </div>
-                <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>GET /api/dashboard/investigate-asset</code></div>
-            </div>
-
-            <!-- Audience & ABM -->
-            <div class="p-4 space-y-3">
-                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Data-driven ×4 · dismissable</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">SQL follow-up targets</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Top 4 from <code>get_prioritized_sales_targets(campaign_id, timeframe)</code> — composite lead score: interactions × seniority × recency × account momentum. Timeframe-scoped.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>map_buying_committee</code>, <code>get_intent_surge_signals</code></div>
-                </div>
-                <div class="border-l-2 border-rose-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable · SQL</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Stalled account</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with ≥ 2 engaged users whose <code>last_touch &lt; date('now', '-14 days')</code>. Company name comes from live data.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>draft_outreach_sequence</code></div>
-                </div>
-                <div class="border-l-2 border-slate-600 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ABM signal · dismissable · SQL</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">Cross-dept expansion</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with <code>COUNT(DISTINCT persona_type) ≥ 2</code> in campaign window. Company name comes from live data.</div>
-                    <div class="text-[10px] text-slate-500">MCP: <code>get_account_penetration</code>, <code>map_buying_committee</code></div>
-                </div>
-                <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
-                    <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated · persistent</div>
-                    <div class="text-xs font-semibold text-slate-200 mb-0.5">AI recommended actions</div>
-                    <div class="text-[10px] text-slate-400 mb-1">Gemini receives top-3 prioritised targets with status, interactions, and persona counts. Generates 3 ABM-focused actions. Cached 24 h. No dismiss button.</div>
-                    <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
-                </div>
-                <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution: <code>GET /api/dashboard/investigate-target</code></div>
+    User->>UI: Clicks Action Card / Submits Prompt
+    UI->>Router: POST /api/chat (message, campaign_id, timeframe)
+    Router->>Cache: Check SHA-256 hash(prompt + context)
+    alt Cache Hit (Within 24h TTL)
+        Cache-->>Router: Return cached response (0ms latency, 0 tokens)
+    else Cache Miss
+        Router->>LLM: generate_content(prompt, tools=mcp_tools)
+        Note over LLM,Router: Autonomous Tool Resolution
+        LLM-->>Router: Returns function_call (e.g. simulate_budget_shift)
+        Router->>Analytics: Executes tool(campaign_id, timeframe)
+        Analytics-->>Router: Returns deterministic JSON metrics
+        Router->>LLM: Returns function_response (tool output)
+        Note over LLM,Router: Strategic Synthesis
+        LLM-->>Router: Returns final Markdown/HTML analysis
+        Router->>Cache: Persist response (Redis with 24h TTL or llm_cache.json fallback)
+    end
+    Router-->>UI: HTMX swaps response into #chat-history
             </div>
         </div>
-
-        <!-- Shared execution flow -->
-        <div class="border-t border-dark-700 px-4 py-3 bg-dark-800/40">
-            <div class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Shared execution flow</div>
-            <div class="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
-                <span>User clicks card</span>
-                <i class="fa-solid fa-arrow-right text-slate-600"></i>
-                <code>executeTask(task)</code>
-                <i class="fa-solid fa-arrow-right text-slate-600"></i>
-                <code>POST /api/chat</code>
-                <i class="fa-solid fa-arrow-right text-slate-600"></i>
-                <span class="text-fuchsia-400">Gemini invokes MCP tool</span>
-                <i class="fa-solid fa-arrow-right text-slate-600"></i>
-                <span>Result rendered in Copilot</span>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-slate-300">
+            <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
+                <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-database"></i> 1. Dual-tier cache check
+                </span>
+                <p class="text-[11px] text-slate-400">Fast SHA-256 hash check against Redis with automatic local <code>llm_cache.json</code> fallback provides sub-millisecond response on repeats.</p>
             </div>
-            <div class="mt-1 text-[10px] text-slate-600">
-                Rules-based & programmatic: <code>reset_context = true</code> &nbsp;·&nbsp; AI cards: context retained, card never dismissed
+            <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
+                <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-code-branch"></i> 2. Autonomous dispatch
+                </span>
+                <p class="text-[11px] text-slate-400">On cache miss, Gemini selects and returns a structured <code>function_call</code> targeting one of 16 registered MCP schemas.</p>
+            </div>
+            <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
+                <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-calculator"></i> 3. Deterministic execution
+                </span>
+                <p class="text-[11px] text-slate-400">FastAPI intercepts the call and runs the verified analytical function in <code>analytics.py</code> directly against SQLite.</p>
+            </div>
+            <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
+                <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
+                    <i class="fa-solid fa-comments"></i> 4. Synthesis & swap
+                </span>
+                <p class="text-[11px] text-slate-400">Verified data is fed back to Gemini for strategic synthesis, persisted to cache, and streamed to <code>#chat-history</code>.</p>
             </div>
         </div>
     </div>
