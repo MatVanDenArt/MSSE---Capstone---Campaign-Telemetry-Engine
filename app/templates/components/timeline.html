@@ -1,10 +1,10 @@
 <div class="w-full">
     <input type="hidden" hidden id="current_campaign" name="campaign_id" value="{{ campaign_id }}">
-    
+
     <div class="w-full">
-        
+
         <!-- TEMP OPTION 2: SMALL MULTIPLES REMOVED -->
-        
+
         <div class="w-full relative flex flex-col" x-data="{
                 chartData: {{ chart_data | tojson | forceescape }},
                 matrixData: {{ matrix | tojson | forceescape }},
@@ -249,28 +249,38 @@
                     });
                 }
             }" x-init="initChart()">
-            
+
             <!-- Crosshair Line -->
             <div x-show="activePixelX !== null"
-                 class="absolute top-0 bottom-0 pointer-events-none border-l-2 border-dashed border-fuchsia-500 opacity-70 z-50 transition-all duration-75"
-                 :style="`left: ${activePixelX}px;`" x-cloak>
+                class="absolute top-0 bottom-0 pointer-events-none border-l-2 border-dashed border-fuchsia-500 opacity-70 z-50 transition-all duration-75"
+                :style="`left: ${activePixelX}px;`" x-cloak>
             </div>
-            
+
             <!-- Top Canvases: Small Multiples -->
             <div class="flex flex-col gap-0 w-full relative pt-2">
-                <div class="h-[120px] w-full relative"><canvas x-ref="wCanvas"></canvas><span class="absolute top-2 left-4 text-[10px] text-cyan-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">Web Traffic (Visits)</span></div>
-                <div class="h-[90px] w-full relative"><canvas x-ref="eCanvas"></canvas><span class="absolute top-2 left-4 text-[10px] text-purple-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">Email Opens</span></div>
-                <div class="h-[90px] w-full relative"><canvas x-ref="sCanvas"></canvas><span class="absolute top-2 left-4 text-[10px] text-blue-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">Social Ads (Clicks)</span></div>
-                <div class="h-[120px] w-full relative"><canvas x-ref="oCanvas"></canvas><span class="absolute top-2 left-4 text-[10px] text-emerald-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">CRM Opps Created</span></div>
+                <div class="h-[120px] w-full relative"><canvas x-ref="wCanvas"></canvas><span
+                        class="absolute top-2 left-4 text-[10px] text-cyan-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">Web
+                        Traffic (Visits)</span></div>
+                <div class="h-[90px] w-full relative"><canvas x-ref="eCanvas"></canvas><span
+                        class="absolute top-2 left-4 text-[10px] text-purple-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">Email
+                        Opens</span></div>
+                <div class="h-[90px] w-full relative"><canvas x-ref="sCanvas"></canvas><span
+                        class="absolute top-2 left-4 text-[10px] text-blue-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">Social
+                        Ads (Clicks)</span></div>
+                <div class="h-[120px] w-full relative"><canvas x-ref="oCanvas"></canvas><span
+                        class="absolute top-2 left-4 text-[10px] text-emerald-400 bg-black/80 px-2 py-0.5 rounded font-bold uppercase tracking-widest pointer-events-none">CRM
+                        Opps Created</span></div>
             </div>
-            
+
             <!-- Bottom Canvas: Timeline Track -->
             <div class="w-full h-[150px] mt-4 pt-4 border-t border-dark-700/50 relative">
-                <div class="absolute top-2 left-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none">Release Cadence</div>
+                <div
+                    class="absolute top-2 left-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest pointer-events-none">
+                    Release Cadence</div>
                 <canvas x-ref="timelineCanvas"></canvas>
             </div>
         </div>
-        
+
         <!-- Omnichannel Asset Impact Matrix -->
         <div class="mt-8 border-t border-dark-800 pt-8">
             <div x-data="{ 
@@ -315,22 +325,33 @@
                     return num ? num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0';
                 }
             }">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-b border-dark-800 pb-2 gap-4">
+                <div
+                    class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 border-b border-dark-800 pb-2 gap-4">
                     <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 md:mb-0 mr-4">Omnichannel Asset Impact Matrix</h4>
-                        
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 md:mb-0 mr-4">
+                            Omnichannel Asset Impact Matrix</h4>
+
                         <!-- Tabs -->
                         <div class="flex gap-6">
-                            <button @click="currentTab = 'Web'" :class="currentTab === 'Web' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'" class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Web Pages</button>
-                            <button @click="currentTab = 'LinkedIn'" :class="currentTab === 'LinkedIn' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'" class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Social Ads</button>
-                            <button @click="currentTab = 'Email'" :class="currentTab === 'Email' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'" class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Email</button>
+                            <button @click="currentTab = 'Web'"
+                                :class="currentTab === 'Web' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'"
+                                class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Web
+                                Pages</button>
+                            <button @click="currentTab = 'LinkedIn'"
+                                :class="currentTab === 'LinkedIn' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'"
+                                class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Social
+                                Ads</button>
+                            <button @click="currentTab = 'Email'"
+                                :class="currentTab === 'Email' ? 'border-brand-500 text-slate-100' : 'border-transparent text-slate-500 hover:text-slate-300'"
+                                class="border-b-2 pb-1 text-[10px] font-bold uppercase tracking-widest transition-colors">Email</button>
                         </div>
                     </div>
-                    
+
                     <!-- Sort Dropdown -->
                     <div class="flex items-center gap-3 mb-2 md:mb-0 lg:mb-0">
                         <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sort by:</span>
-                        <select x-model="sortBy" class="bg-dark-900 border border-dark-700 text-xs font-bold text-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer">
+                        <select x-model="sortBy"
+                            class="bg-dark-900 border border-dark-700 text-xs font-bold text-slate-300 rounded px-2 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer">
                             <option value="recency">Recency</option>
                             <option value="views">Viewership</option>
                             <option value="individuals">Individuals engaged</option>
@@ -344,9 +365,9 @@
                 <!-- Asset Rows -->
                 <div class="space-y-3">
                     <template x-for="(m, index) in sortedMatrix" :key="m.asset_name">
-                        <div class="relative bg-dark-900 border border-dark-800 hover:border-emerald-500/50 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 py-3 px-4 md:px-5 group flex flex-col md:flex-row items-start md:items-center justify-between cursor-pointer rounded gap-3 md:gap-0" 
-                             @click="$dispatch('open-asset-modal', { ...m, timeframe: typeof activeTimeframe !== 'undefined' ? activeTimeframe : 0 })"
-                             x-data="{
+                        <div class="relative bg-dark-900 border border-dark-800 hover:bg-white/10 transition-all duration-300 py-3 px-4 md:px-5 group flex flex-col md:flex-row items-start md:items-center justify-between cursor-pointer rounded gap-3 md:gap-0"
+                            @click="$dispatch('open-asset-modal', { ...m, timeframe: typeof activeTimeframe !== 'undefined' ? activeTimeframe : 0 })"
+                            x-data="{
                                 sparkline: m.sparkline || [],
                                 sparklineDates: m.sparkline_dates || [],
                                 chartInstance: null,
@@ -450,17 +471,21 @@
                                     });
                                 }
                              }" x-init="initSparkline()">
-                            
+
                             <!-- Left: Asset Info -->
                             <div class="flex flex-col w-full md:w-[30%] pr-0 md:pr-4 shrink-0 overflow-hidden">
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1 min-w-0 grid">
-                                        <h5 class="col-start-1 row-start-1 text-xs font-bold text-slate-200 truncate transition-opacity duration-300 group-hover:opacity-0" :title="m.title" x-text="m.title"></h5>
-                                        <h5 class="col-start-1 row-start-1 text-xs font-bold font-mono text-brand-400 truncate transition-opacity duration-300 opacity-0 group-hover:opacity-100" :title="m.asset_name" x-text="m.asset_name"></h5>
+                                        <h5 class="col-start-1 row-start-1 text-xs font-bold text-slate-200 truncate transition-opacity duration-300 group-hover:opacity-0"
+                                            :title="m.title" x-text="m.title"></h5>
+                                        <h5 class="col-start-1 row-start-1 text-xs font-bold font-mono text-brand-400 truncate transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                                            :title="m.asset_name" x-text="m.asset_name"></h5>
                                     </div>
                                     <template x-if="['Fatigued', 'Action Required'].includes(m.health)">
-                                        <span class="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center shrink-0">
-                                            <span class="w-1 h-1 rounded-full bg-rose-400 mr-1.5 animate-pulse"></span>Fatigued
+                                        <span
+                                            class="px-2 py-0.5 rounded text-[9px] uppercase font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center shrink-0">
+                                            <span
+                                                class="w-1 h-1 rounded-full bg-rose-400 mr-1.5 animate-pulse"></span>Fatigued
                                         </span>
                                     </template>
                                 </div>
@@ -475,37 +500,56 @@
                             </div>
 
                             <!-- Right: Metrics & Hover Action -->
-                            <div class="flex items-center justify-start md:justify-end relative w-full md:w-auto shrink-0 pl-0 md:pl-2">
-                                <div class="flex items-center gap-3 md:gap-4 bg-dark-950 px-3 md:px-4 py-2 border border-dark-800 rounded group-hover:border-dark-600 transition-colors duration-300 shadow-sm w-full md:w-auto justify-between md:justify-start">
+                            <div
+                                class="flex items-center justify-start md:justify-end relative w-full md:w-auto shrink-0 pl-0 md:pl-2">
+                                <div
+                                    class="flex items-center gap-3 md:gap-4 bg-dark-950 px-3 md:px-4 py-2 border border-dark-800 rounded group-hover:border-dark-600 transition-colors duration-300 shadow-sm w-full md:w-auto justify-between md:justify-start">
                                     <div class="text-center">
-                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5" x-text="m.type === 'Web' ? 'Views' : m.type === 'LinkedIn' ? 'Clicks' : 'Opens'"></div>
-                                        <div class="text-base font-bold text-slate-200 font-mono" x-text="formatNumber(m.engagement)"></div>
+                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5"
+                                            x-text="m.type === 'Web' ? 'Views' : m.type === 'LinkedIn' ? 'Clicks' : 'Opens'">
+                                        </div>
+                                        <div class="text-base font-bold text-slate-200 font-mono"
+                                            x-text="formatNumber(m.engagement)"></div>
                                     </div>
                                     <div class="w-px h-6 bg-dark-800"></div>
                                     <div class="text-center">
-                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Individuals</div>
-                                        <div class="text-base font-bold text-slate-200 font-mono" x-text="formatNumber(m.individuals_engaged)"></div>
+                                        <div
+                                            class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">
+                                            Individuals</div>
+                                        <div class="text-base font-bold text-slate-200 font-mono"
+                                            x-text="formatNumber(m.individuals_engaged)"></div>
                                     </div>
                                     <div class="w-px h-6 bg-dark-800"></div>
                                     <div class="text-center hidden sm:block">
-                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Accounts</div>
-                                        <div class="text-base font-bold text-slate-200 font-mono" x-text="formatNumber(m.accounts_activated)"></div>
+                                        <div
+                                            class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">
+                                            Accounts</div>
+                                        <div class="text-base font-bold text-slate-200 font-mono"
+                                            x-text="formatNumber(m.accounts_activated)"></div>
                                     </div>
                                     <div class="w-px h-6 bg-dark-800 hidden md:block"></div>
                                     <div class="text-center hidden md:block">
-                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Pipeline</div>
-                                        <div class="text-base font-bold text-slate-200 font-mono" x-text="m.fractional_pipeline ? '$' + (m.fractional_pipeline / 1000000).toFixed(1) + 'M' : '$0'"></div>
+                                        <div
+                                            class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">
+                                            Pipeline</div>
+                                        <div class="text-base font-bold text-slate-200 font-mono"
+                                            x-text="m.fractional_pipeline ? '$' + (m.fractional_pipeline / 1000000).toFixed(1) + 'M' : '$0'">
+                                        </div>
                                     </div>
                                     <div class="w-px h-6 bg-dark-800 hidden sm:block"></div>
                                     <div class="text-center">
-                                        <div class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">Impact</div>
-                                        <div class="text-base font-bold font-mono" :style="`color: ${getImpactColor(m.impact_score)}`" x-text="m.impact_score"></div>
+                                        <div
+                                            class="text-[9px] uppercase font-bold text-slate-500 tracking-wider mb-0.5">
+                                            Impact</div>
+                                        <div class="text-base font-bold font-mono"
+                                            :style="`color: ${getImpactColor(m.impact_score)}`" x-text="m.impact_score">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </template>
-                    
+
                     <template x-if="sortedMatrix.length === 0">
                         <div class="p-12 text-center border border-dashed border-dark-600 rounded-xl bg-dark-800/30">
                             <i class="fa-solid fa-ghost text-4xl text-dark-600 mb-3"></i>
@@ -514,7 +558,7 @@
                     </template>
                 </div>
             </div>
-            
+
             <!-- Topic Performance Clusters (Inside the same boundary) -->
             <div hx-get="/api/dashboard/topic-clusters?campaign_id={{ campaign_id }}" hx-trigger="load"></div>
 

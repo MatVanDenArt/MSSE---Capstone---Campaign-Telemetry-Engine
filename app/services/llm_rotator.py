@@ -90,8 +90,9 @@ if REDIS_URL:
     try:
         redis_client = redis.from_url(REDIS_URL, decode_responses=True)
         redis_client.ping()
+        print("Successfully connected to Redis!", flush=True) 
     except Exception as e:
-        print(f"Redis connection failed: {e}")
+        print(f"Redis connection failed on startup: {e}", flush=True)
         redis_client = None
 
 def get_cached_response(prompt: str):
@@ -99,8 +100,8 @@ def get_cached_response(prompt: str):
     if redis_client:
         try:
             return redis_client.get(f"llm_cache:{h}")
-        except:
-            pass
+        except Exception as e:
+            print(f"Redis GET error: {e}", flush=True)
     
     # Fallback to local JSON
     if os.path.exists(CACHE_FILE):
@@ -119,8 +120,8 @@ def set_cached_response(prompt: str, response_text: str):
         try:
             redis_client.setex(f"llm_cache:{h}", 86400, response_text) # 24 hr cache
             return
-        except:
-            pass
+        except Exception as e:
+            print(f"Redis SET error: {e}", flush=True)
             
     # Fallback to local JSON
     cache = {}
@@ -240,7 +241,7 @@ mcp_tools = [
     },
     {
         "name": "get_account_penetration",
-        "description": "Retrieves the account penetration grouped by company name and user seniority level.",
+        "description": "Returns AGGREGATE company-level engagement data grouped by company name and user seniority across all contacts. Use this to understand which companies are engaged with a campaign at a macro level. Do NOT use this tool to look up an individual person — for individual person queries (e.g. 'What is X interested in?', 'What has Y done?'), use get_user_journey instead.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -504,7 +505,7 @@ mcp_tools = [
     },
     {
         "name": "get_user_journey",
-        "description": "Returns the chronological, cross-channel touchpoints (interactions) of a specific lead.",
+        "description": "Returns the chronological, cross-channel touchpoints (interactions) of a specific named lead. Use this as the FIRST tool whenever a user asks about a specific person — e.g. 'What topics is [Name] interested in?', 'What has [Name] done?', 'Investigate [Name]'. Requires the person's full name and company. If the company is not provided by the user, you may infer it from context or ask the user before calling this tool.",
         "parameters": {
             "type": "object",
             "properties": {

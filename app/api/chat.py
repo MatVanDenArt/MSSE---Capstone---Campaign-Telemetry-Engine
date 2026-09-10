@@ -260,11 +260,30 @@ def chat_stream(task_id: str):
             # Unified Tool Calling Loop
             current_response = response
             executed_tools = []
+            last_call_signature = None  # Tracks (tool_name, frozen_args) to detect stuck loops
             for _ in range(5):
                 if current_response.function_calls:
                     tool_responses = []
                     for function_call in current_response.function_calls:
                         func_name = function_call.name
+                        args = {k: v for k, v in function_call.args.items()}
+                        
+                        # Guard: detect the model calling the same tool with identical args repeatedly
+                        call_signature = (func_name, str(sorted(args.items())))
+                        if call_signature == last_call_signature:
+                            tool_responses.append(
+                                types.Part.from_function_response(
+                                    name=func_name,
+                                    response={
+                                        "error": f"Tool '{func_name}' was already called with these exact arguments and failed. "
+                                                 f"Do NOT retry with the same inputs. Either use a different tool or "
+                                                 f"respond to the user with what you know so far."
+                                    }
+                                )
+                            )
+                            continue
+                        last_call_signature = call_signature
+
                         executed_tools.append(func_name)
                         friendly_name = func_name.replace('_', ' ').title()
                         if func_name == "get_user_journey": friendly_name = "Analyzing User Journey"
@@ -282,7 +301,6 @@ def chat_stream(task_id: str):
                                 </div>
                             </div>
                         ''')
-                        args = {k: v for k, v in function_call.args.items()}
                         
                         if func_name in tool_functions:
                             try:
@@ -294,8 +312,13 @@ def chat_stream(task_id: str):
                                     captured_html_timeline = result["html_timeline"]
                                     result["html_timeline"] = "[HTML TIMELINE RENDERED TO UI - DO NOT OUTPUT HTML. JUST PROVIDE A STRATEGIC SUMMARY]"
                             except Exception as e:
-                                # Graceful Degradation
-                                result = {"error": "tool failed"}
+                                # Informative degradation: tell the model what failed and why
+                                result = {
+                                    "error": f"Tool '{func_name}' raised an exception: {str(e)}. "
+                                             f"Arguments provided were: {args}. "
+                                             f"Check that all required arguments are present and correctly typed. "
+                                             f"Do NOT retry this tool with the same arguments."
+                                }
                         else:
                             result = {"error": f"Unknown tool: {func_name}"}
                         

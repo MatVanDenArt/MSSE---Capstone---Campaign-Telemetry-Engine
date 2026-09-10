@@ -139,7 +139,47 @@ To ensure local development works out-of-the-box without requiring a Redis conta
 ### Visualization: Chart.js
 Chart.js is performant enough to handle multiple mini-charts dynamically initialized inside Alpine blocks.
 
-## 6. Data simulation setup and logic
+## 6. Software and architectural patterns
+
+Every engineering decision involves a trade-off, and this project is no different. The following section describes the structural patterns I reached for, explains why they were appropriate for this context, and where I knowingly deviated from textbook ideals in the interest of delivery speed.
+
+### Facade pattern
+
+The MCP toolset is split across four domain modules — financial.py, abm_audience.py, asset_performance.py, and generative.py — each responsible for a distinct analytical area. However, scattering import paths across the codebase creates fragility: if a module is renamed or moved, every consumer breaks independently. To solve this, app/services/analytics.py acts as a **facade**: it re-exports the full toolset from a single, stable surface, so that dashboard.py, chat.py, and the test suite all import from one predictable location regardless of how the underlying modules are organised. 
+
+### Strategy pattern
+
+The AI copilot receives tool call requests from the Gemini model at runtime — and the application must resolve a string tool name (e.g., "map_buying_committee") to an actual Python callable without a chain of if/elif branches. I addressed this using a **tool registry**: a tool_functions dictionary in llm_rotator.py maps every tool name to its corresponding function reference. When the model requests a tool, the execution loop in chat.py looks up the name in this dictionary and calls whatever function it resolves to. The calling code is completely agnostic about which concrete function is invoked. Adding or removing a tool requires a single dictionary entry.
+
+### Adapter pattern
+
+The Google generative AI SDK changed its client API between versions, and maintaining compatibility with both is a practical concern during iterative development. Rather than littering the codebase with version checks, llm_rotator.py wraps each SDK generation in its own thin adapter, exposing a uniform interface to the rest of the application. The decision of which adapter is active is made once at initialisation time. This pattern is what makes the model agnosticism achievable in practice — switching to a different provider or SDK revision requires rewriting only the adapter internals, not the orchestration logic in chat.py.
+
+### Server-sent events
+
+Long-running LLM calls present a specific UX problem: if the backend waits for a complete response before returning anything, the user stares at a blank UI for several seconds. The standard HTTP request-response model is poorly suited to this. The solution I reached for is **server-sent events (SSE)**: when a chat message is submitted, the route handler immediately returns a task_id and a streaming StreamingResponse. The actual LLM work runs inside an event_generator() coroutine, pushing incremental HTML fragments to the browser as they become available. SSE was preferred over WebSockets here because the communication is unidirectional — the server pushes content to the client, not the other way around.
+
+### Server-driven UI
+
+The frontend never fetches raw JSON and then renders it client-side. Instead, every API route in dashboard.py returns a rendered HTML fragment that HTMX swaps directly into a named DOM target. This is a deliberate architectural choice. It means the server owns the presentation logic, templates stay in one place (Jinja2), and the AI copilot's responses — which are already Markdown-rendered HTML on the backend — can be injected into the chat panel as-is without any client-side parsing step. The trade-off is that each UI state change requires a round-trip to the server. Given that the application's primary content is analytically derived (querying SQLite, calling LLM APIs), that round-trip is already necessary, so the penalty is lower than it would be for a purely data-presentation use case.
+
+### The observer pattern
+
+Several components need to communicate without direct coupling. For example, clicking "Explore in detail" on a person card in the Accounts section needs to both open the copilot sidebar and submit a pre-structured query — but the card and the sidebar live in entirely separate parts of the DOM with no shared parent scope. Rather than introducing a global Alpine.js store (which would require coordinated state management across components), I used native browser CustomEvent dispatched on window as an **event bus**. Components that need to signal intent dispatch events (open-chat, open-asset-modal, open-user-modal), and the components that own those UI surfaces listen for them independently. This results in an observer pattern at the frontend layer where emitters and receivers are decoupled by design, and adding a new surface that responds to an existing event requires no changes to the emitter.
+
+### Dependency injection: applied selectively
+
+FastAPI's Depends(get_db) pattern manages request-scoped database connection lifecycles cleanly in the routing layer: connections are opened per-request, injected into the handler, and closed automatically when the response completes. This follows the **unit of work** pattern and prevents connection leaks under concurrent load. However, I have not applied this consistently throughout the codebase. The MCP tool functions in app/services/mcp_tools/ currently manage their own internal connections via direct get_db_connection() calls. This inconsistency exists because cleanly injecting a db parameter into the MCP tools would expose that parameter in the JSON schema visible to the LLM — an unacceptable leak of implementation detail into the tool contract. The resolution (decoupling the schema definitions from the callable implementations) is documented in §11 as a planned architectural action.
+
+### Application factory and lifespan management
+
+app/main.py uses FastAPI's lifespan async context manager which follows the **application factory** pattern: the application object is constructed and its lifecycle managed in one place, with startup and shutdown logic executing predictably within the context manager's scope. For the current capstone deployment, the lifespan handler is lightweight, but this structure means that future startup concerns — connection pool warming, model preloading, scheduled cache invalidation — can be added cleanly without touching route logic.
+
+### Global state as a deliberate prototype shortcut
+
+One pattern choice deserves an honest explanation: app/api/chat.py maintains chat_history and active_chat_tasks as module-level global variables. Every request in the application shares these objects, which means all users share the same conversation history and task queue. This was a deliberate shortcut for a single-user demonstration context — it avoids the complexity of session management while allowing the copilot to maintain context across a multi-turn conversation within a single browser session. In any multi-user deployment, including the live Render instance, two concurrent users would interleave their chat histories. The correct production architecture is a Redis-backed session store keyed by a user ID or signed session token, isolating chat state per user. The shortcut is acceptable for a capstone demonstration; it would need to be resolved before a team-level rollout.
+
+## 7. Data simulation setup and logic
 
 To effectively test the campaign telemetry engine and develop the AI copilot without relying on sensitive or static client data, the project employs a code-driven data simulation pipeline. Building real-time integrations with live GA4, Salesforce, and LinkedIn APIs was not possible due to operational sensitivity of the required data. The simulation cleanly abstracts the data complexity while aspiring to maintain the mathematical realism. 
 
@@ -284,14 +324,20 @@ While some deliberate architectural shortcuts were taken in the data access laye
 ### 1. Multi-tier architectural decoupling: Domain, presentation, and data access (Roadmap)
 The monolyth analytics.py ouples three distinct architectural tiers that represent key technical debt to address:
 - **Descriptive telemetry vs. prescriptive actions:** Passive metric aggregations currently share a namespace with rule-based decision engines (e.g., asset fatigue decay alerts, next-best-action scoring, and sales target prioritization). Separating descriptive telemetry from prescriptive alert actions into a dedicated recommendation/action engine will allow business rules to evolve without risking core analytical regression.
-- **Abstracting data access (repository pattern):** Both the UI services and MCP tools still manage ad-hoc SQL strings and connections internally. Introducing a formal `repository.py` layer will isolate raw database access behind entity repositories, converting the analytics and MCP modules into pure calculation and orchestration engines.
+- **Abstracting data access (repository pattern):** Both the UI services and MCP tools still manage ad-hoc SQL strings and connections internally. Introducing a formal repository.py layer will isolate raw database access behind entity repositories, converting the analytics and MCP modules into pure calculation and orchestration engines.
 
 ### 2. Full rollout of dependency injection
-While FastAPI's native **dependency injection** (Depends(get_db)) has been successfully implemented in the UI routing layer (dashboard.py) to manage database connection lifecycles via the Unit of Work pattern, the core MCP AI tools in `app/services/mcp_tools/` currently manage their own internal connections.
+While FastAPI's native **dependency injection** (Depends(get_db)) has been successfully implemented in the UI routing layer (dashboard.py) to manage database connection lifecycles via the Unit of Work pattern, the core MCP AI tools in app/services/mcp_tools/ currently manage their own internal connections.
 - **Roadmap action:** A future refactor will decouple the AI tool schema definitions from the underlying Python functions. This will allow me to inject database dependencies cleanly into the analytics layer without accidentally exposing the db connection parameter to the LLM's automated function calling schema.
 
 ### 3. Declarative tool chaining engine (MCP orchestration)
 To fully eliminate the need for hardcoded late binding in complex agentic workflows, the system will eventually adopt a full **declarative tool chaining** engine. Instead of the LLM guessing parameters or using hardcoded string enums, the LLM will construct a directed acyclic graph (DAG) using JSON references (e.g., budget: "$ref.get_budget_pacing.shortfall"). This will require building a robust Python orchestration layer capable of parsing the LLM's graph, executing tools sequentially, mapping dynamic output variables to inputs, and handling execution failures gracefully.
+
+### 4. Session-scoped chat state
+As documented in §6, chat_history and active_chat_tasks in app/api/chat.py are currently module-level globals, making them appropriate only for a single-user demonstration. Resolving this requires implementing a proper session management layer — the most pragmatic path being a Redis-backed store using a signed session token to key each user's history and active task queue independently. Since Redis is already a dependency of the caching layer, the infrastructure cost of this change is low; the effort lies in restructuring the chat route to read and write from a session-keyed hash rather than a shared list.
+
+### 5. N+1 query pattern in get_asset_personas
+In app/services/analytics.py, the get_asset_personas function runs a UserJourney sub-query for every user row returned by the outer query — a classic N+1 pattern. For the current simulated dataset this is not noticeable, but it would degrade linearly as the account list grows. The resolution is to consolidate the per-user timeline fetch into a single batched query using SQLite's GROUP_CONCAT on an ordered subquery, then reassemble the structured timeline in Python from the aggregated result. This would reduce the query count from N+1 to 2 regardless of user volume.
 
 ## 11. Project retrospective: Answering the executive question
 

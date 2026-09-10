@@ -168,7 +168,8 @@
                         automated emails, generating <code>mailchimp_events</code> tied to their email address.</li>
                     <li><strong class="text-white">Bottom funnel (Revenue)</strong>: If engagement is high, they are
                         resolved into <code>crm_users</code>. 30-90 days later, a pipeline event is pushed to
-                        <code>crm_opps</code>.</li>
+                        <code>crm_opps</code>.
+                    </li>
                 </ol>
             </div>
         </div>
@@ -182,7 +183,8 @@
             <div class="bg-dark-900 border border-dark-700 p-4 rounded-lg text-sm text-slate-300">
                 <p class="font-mono text-xs text-fuchsia-300 mb-2">// The identity chain</p>
                 <p class="mb-2"><span class="text-white font-bold">1. Anonymous</span>: User has only a
-                    <code>cookie_id</code> (LinkedIn -> GA4).</p>
+                    <code>cookie_id</code> (LinkedIn -> GA4).
+                </p>
                 <p class="mb-2"><span class="text-white font-bold">2. Known</span>: User submits a form. GA4 updates
                     with <code>user_id_captured</code>.</p>
                 <p><span class="text-white font-bold">3. Resolved</span>: The system queries <code>CRM_USERS</code> on
@@ -202,7 +204,8 @@
                 <p class="font-mono text-xs text-fuchsia-300 mb-2">// Context breakers (app/api/chat.py)</p>
                 <p class="mb-2"><span class="text-white font-bold">WIPE CONTEXT:</span> If the prompt starts with major
                     dashboard action triggers (e.g., <code>"review priority action:"</code>,
-                    <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).</p>
+                    <code>"investigate pipeline target:"</code>, <code>"generate campaign report"</code>).
+                </p>
                 <p><span class="text-white font-bold">RETAIN CONTEXT:</span> If the prompt is a conversational follow-up
                     or a direct LLM execution command (e.g., <code>"Execute: /api/draft..."</code>).</p>
             </div>
@@ -248,9 +251,11 @@
                         <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert</div>
                         <div class="text-xs font-semibold text-slate-200 mb-0.5">CPA anomaly detected</div>
                         <div class="text-[10px] text-slate-400 mb-1"><code>live_spend &gt; 1000</code> AND
-                            <code>cpa_diff &gt; 30%</code></div>
+                            <code>cpa_diff &gt; 30%</code>
+                        </div>
                         <div class="text-[10px] text-slate-500">MCP: <code>get_budget_pacing</code>,
-                            <code>calculate_blended_cpa</code></div>
+                            <code>calculate_blended_cpa</code>
+                        </div>
                     </div>
                     <div class="border-l-2 border-amber-500 pl-3 py-0.5">
                         <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
@@ -263,7 +268,8 @@
                         <div class="text-[9px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">Insight</div>
                         <div class="text-xs font-semibold text-slate-200 mb-0.5">TAM penetration stalled</div>
                         <div class="text-[10px] text-slate-400 mb-1"><code>days_active &gt; 30</code> AND
-                            <code>penetration &lt; 15%</code></div>
+                            <code>penetration &lt; 15%</code>
+                        </div>
                         <div class="text-[10px] text-slate-500">MCP: <code>get_tam_penetration</code></div>
                     </div>
                     <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
@@ -275,7 +281,8 @@
                         <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
                     </div>
                     <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution:
-                        <code>DELETE /api/dashboard/trigger/:id</code></div>
+                        <code>DELETE /api/dashboard/trigger/:id</code>
+                    </div>
                 </div>
 
                 <!-- Asset Performance -->
@@ -293,9 +300,11 @@
                             dismissable</div>
                         <div class="text-xs font-semibold text-slate-200 mb-0.5">Fatigued asset warning</div>
                         <div class="text-[10px] text-slate-400 mb-1"><code>asset.health == Fatigued</code> or
-                            <code>ai_recommendation</code> is set by the matrix query.</div>
+                            <code>ai_recommendation</code> is set by the matrix query.
+                        </div>
                         <div class="text-[10px] text-slate-500">MCP: <code>compare_asset_baselines</code>,
-                            <code>generate_ab_test_variants</code></div>
+                            <code>generate_ab_test_variants</code>
+                        </div>
                     </div>
                     <div class="border-l-2 border-rose-500 pl-3 py-0.5">
                         <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">Alert ·
@@ -323,7 +332,8 @@
                         <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
                     </div>
                     <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution:
-                        <code>GET /api/dashboard/investigate-asset</code></div>
+                        <code>GET /api/dashboard/investigate-asset</code>
+                    </div>
                 </div>
 
                 <!-- Audience & ABM -->
@@ -334,9 +344,11 @@
                         <div class="text-xs font-semibold text-slate-200 mb-0.5">SQL follow-up targets</div>
                         <div class="text-[10px] text-slate-400 mb-1">Top 4 from
                             <code>get_prioritized_sales_targets(campaign_id, timeframe)</code> — composite lead score:
-                            interactions × seniority × recency × account momentum. Timeframe-scoped.</div>
+                            interactions × seniority × recency × account momentum. Timeframe-scoped.
+                        </div>
                         <div class="text-[10px] text-slate-500">MCP: <code>map_buying_committee</code>,
-                            <code>get_intent_surge_signals</code></div>
+                            <code>get_intent_surge_signals</code>
+                        </div>
                     </div>
                     <div class="border-l-2 border-rose-500 pl-3 py-0.5">
                         <div class="text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">ABM signal ·
@@ -353,9 +365,11 @@
                         <div class="text-xs font-semibold text-slate-200 mb-0.5">Cross-dept expansion</div>
                         <div class="text-[10px] text-slate-400 mb-1">Real SQL: account with
                             <code>COUNT(DISTINCT persona_type) ≥ 2</code> in campaign window. Company name comes from
-                            live data.</div>
+                            live data.
+                        </div>
                         <div class="text-[10px] text-slate-500">MCP: <code>get_account_penetration</code>,
-                            <code>map_buying_committee</code></div>
+                            <code>map_buying_committee</code>
+                        </div>
                     </div>
                     <div class="border-l-2 border-fuchsia-500 pl-3 py-0.5">
                         <div class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest mb-0.5">AI generated
@@ -367,7 +381,8 @@
                         <div class="text-[10px] text-slate-500">MCP: any tool — LLM decides at runtime</div>
                     </div>
                     <div class="text-[10px] text-slate-600 pt-2 border-t border-dark-700">Resolution:
-                        <code>GET /api/dashboard/investigate-target</code></div>
+                        <code>GET /api/dashboard/investigate-target</code>
+                    </div>
                 </div>
             </div>
 
@@ -400,36 +415,38 @@
             <i class="fa-solid fa-bolt text-purple-400"></i> MCP copilot orchestration & execution sequence
         </h2>
         <p class="text-xs text-slate-400 mb-6">
-            To prevent arithmetic hallucinations and guarantee data integrity, the AI Copilot never calculates financial metrics directly or queries raw SQL unconstrained. This sequence diagram illustrates the real multi-turn Model Context Protocol (MCP) function calling loop implemented in <code>app/api/chat.py</code>:
+            To prevent arithmetic hallucinations and guarantee data integrity, the AI Copilot never calculates financial
+            metrics directly or queries raw SQL unconstrained. This sequence diagram illustrates the real multi-turn
+            Model Context Protocol (MCP) function calling loop implemented in <code>app/api/chat.py</code>:
         </p>
         <div class="bg-dark-900 rounded-lg p-6 border border-dark-700 overflow-x-auto">
             <div class="mermaid text-center">
-sequenceDiagram
-    autonumber
-    participant User
-    participant UI as Dashboard / Action Center
-    participant Router as FastAPI (POST /api/chat)
-    participant Cache as Cache (Redis / llm_cache.json)
-    participant LLM as Gemini 3.6 Flash (Rotator)
-    participant Analytics as Analytics Service (Python/SQLite)
+                sequenceDiagram
+                autonumber
+                participant User
+                participant UI as Dashboard / Action Center
+                participant Router as FastAPI (POST /api/chat)
+                participant Cache as Cache (Redis / llm_cache.json)
+                participant LLM as Gemini 3.6 Flash (Rotator)
+                participant Analytics as Analytics Service (Python/SQLite)
 
-    User->>UI: Clicks Action Card / Submits Prompt
-    UI->>Router: POST /api/chat (message, campaign_id, timeframe)
-    Router->>Cache: Check SHA-256 hash(prompt + context)
-    alt Cache Hit (Within 24h TTL)
-        Cache-->>Router: Return cached response (0ms latency, 0 tokens)
-    else Cache Miss
-        Router->>LLM: generate_content(prompt, tools=mcp_tools)
-        Note over LLM,Router: Autonomous Tool Resolution
-        LLM-->>Router: Returns function_call (e.g. simulate_budget_shift)
-        Router->>Analytics: Executes tool(campaign_id, timeframe)
-        Analytics-->>Router: Returns deterministic JSON metrics
-        Router->>LLM: Returns function_response (tool output)
-        Note over LLM,Router: Strategic Synthesis
-        LLM-->>Router: Returns final Markdown/HTML analysis
-        Router->>Cache: Persist response (Redis with 24h TTL or llm_cache.json fallback)
-    end
-    Router-->>UI: HTMX swaps response into #chat-history
+                User->>UI: Clicks Action Card / Submits Prompt
+                UI->>Router: POST /api/chat (message, campaign_id, timeframe)
+                Router->>Cache: Check SHA-256 hash(prompt + context)
+                alt Cache Hit (Within 24h TTL)
+                Cache-->>Router: Return cached response (0ms latency, 0 tokens)
+                else Cache Miss
+                Router->>LLM: generate_content(prompt, tools=mcp_tools)
+                Note over LLM,Router: Autonomous Tool Resolution
+                LLM-->>Router: Returns function_call (e.g. simulate_budget_shift)
+                Router->>Analytics: Executes tool(campaign_id, timeframe)
+                Analytics-->>Router: Returns deterministic JSON metrics
+                Router->>LLM: Returns function_response (tool output)
+                Note over LLM,Router: Strategic Synthesis
+                LLM-->>Router: Returns final Markdown/HTML analysis
+                Router->>Cache: Persist response (Redis with 24h TTL or llm_cache.json fallback)
+                end
+                Router-->>UI: HTMX swaps response into #chat-history
             </div>
         </div>
         <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-slate-300">
@@ -437,28 +454,35 @@ sequenceDiagram
                 <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
                     <i class="fa-solid fa-database"></i> 1. Dual-tier cache check
                 </span>
-                <p class="text-[11px] text-slate-400">Fast SHA-256 hash check against Redis with automatic local <code>llm_cache.json</code> fallback provides sub-millisecond response on repeats.</p>
+                <p class="text-[11px] text-slate-400">Fast SHA-256 hash check against Redis with automatic local
+                    <code>llm_cache.json</code> fallback provides sub-millisecond response on repeats.
+                </p>
             </div>
             <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
                 <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
                     <i class="fa-solid fa-code-branch"></i> 2. Autonomous dispatch
                 </span>
-                <p class="text-[11px] text-slate-400">On cache miss, Gemini selects and returns a structured <code>function_call</code> targeting one of 16 registered MCP schemas.</p>
+                <p class="text-[11px] text-slate-400">On cache miss, Gemini selects and returns a structured
+                    <code>function_call</code> targeting one of 16 registered MCP schemas.
+                </p>
             </div>
             <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
                 <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
                     <i class="fa-solid fa-calculator"></i> 3. Deterministic execution
                 </span>
-                <p class="text-[11px] text-slate-400">FastAPI intercepts the call and runs the verified analytical function in <code>analytics.py</code> directly against SQLite.</p>
+                <p class="text-[11px] text-slate-400">FastAPI intercepts the call and runs the verified analytical
+                    function in <code>analytics.py</code> directly against SQLite.</p>
             </div>
             <div class="bg-dark-900/60 p-3 rounded-lg border border-dark-700">
                 <span class="font-semibold text-purple-400 flex items-center gap-1.5 mb-1">
                     <i class="fa-solid fa-comments"></i> 4. Synthesis & swap
                 </span>
-                <p class="text-[11px] text-slate-400">Verified data is fed back to Gemini for strategic synthesis, persisted to cache, and streamed to <code>#chat-history</code>.</p>
+                <p class="text-[11px] text-slate-400">Verified data is fed back to Gemini for strategic synthesis,
+                    persisted to cache, and streamed to <code>#chat-history</code>.</p>
             </div>
         </div>
     </div>
+
 </div>
 
 <script type="module">

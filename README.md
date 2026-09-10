@@ -49,7 +49,8 @@ Built with a lightweight stack focused on hyper-performance and rapid iteration.
 4. **Access the dashboard**
    Navigate to http://localhost:8000/dashboard in your browser.
 
-
+## Live demo on Render
+   https://msse-capstone-campaign-telemetry-engine.onrender.com/
 
 
 ## AI copilot architecture
