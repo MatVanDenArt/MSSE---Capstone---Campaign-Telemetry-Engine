@@ -96,6 +96,7 @@ if REDIS_URL:
         redis_client = None
 
 def get_cached_response(prompt: str):
+    print("DEBUG: get_cached_response was triggered!", flush=True)
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
     if redis_client:
         try:
@@ -115,6 +116,7 @@ def get_cached_response(prompt: str):
     return None
 
 def set_cached_response(prompt: str, response_text: str):
+    print("DEBUG: set_cached_response was triggered!", flush=True)
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
     if redis_client:
         try:
