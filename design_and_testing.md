@@ -52,7 +52,7 @@ The user experience is built on a deliberate three-pillar philosophy:
 To combat the inherent risk of large language model (LLM) hallucinations when analysing raw data, the AI copilot architecture heavily relies on a model context protocol (MCP)-like approach:
 
 - **Deterministic data anchoring**: The AI does *not* query raw database tables freely, nor does it perform its own mathematical aggregations. Instead, deterministic, strictly tested Python functions run the core mathematical and business logic.
-- **Dynamic MCP function calling**: The copilot provides the LLM with structured JSON tool declarations (mcp_tools). When a user submits an analytical query or triggers an **Action center** task, Gemini dynamically selects which tool to invoke. FastAPI intercepts the function_call, executes the Python function in app/services/analytics.py against the SQLite database, and returns the verified JSON payload back to the model via types.Part.from_function_response.
+- **Dynamic MCP function calling**: The copilot provides the LLM with structured JSON tool declarations (mcp_tools). When a user submits an analytical query or triggers an **Action center** task, Gemini dynamically selects which tool to invoke. FastAPI intercepts the function_call, executes the corresponding Python function in the modularized app/services/mcp_tools/ package (exposed via the app/services/analytics.py facade) against the SQLite database, and returns the verified JSON payload back to the model via types.Part.from_function_response.
 - **Hallucination elimination**: Because the LLM is only tasked with *interpreting*, *prioritising*, and *synthesising* factual context returned by verified Python functions—rather than performing arithmetic or generating unconstrained SQL—financial and performance metrics are mathematically consistent.
 
 ### MCP interaction flow
@@ -61,24 +61,31 @@ The sequence diagram below illustrates the actual multi-turn execution loop impl
 ![sequence diagram](/docs/sequence_diagram.jpg)
 
 ### Accessible python functions (MCP toolset)
-The LLM does not have open-ended database access. Instead, it is constrained to the outputs of the following analytical functions, which strictly scope data using campaign_id and timeframe:
+The LLM does not have open-ended database access. Instead, it is constrained to the outputs of 16 analytical functions, which strictly scope data using campaign_id and timeframe.
 
+#### 1. Financial & pipeline analytics (app/services/mcp_tools/financial.py)
 - **calculate_blended_cpa**(campaign_id, timeframe): Calculates the blended cost per acquisition across channels.
-- **get_account_penetration**(campaign_id, timeframe): Maps engagement to specific CRM target accounts.
-- **evaluate_trickle_threshold**(campaign_id, timeframe): Determines the decay in traffic volume over time.
-- **simulate_budget_shift**(campaign_id, timeframe): Simulates projected pipeline impact of budget reallocation.
-- **get_tam_penetration**(campaign_id, timeframe): Calculates total addressable market penetration.
-- **calculate_share_of_voice**(campaign_id, timeframe): Benchmarks campaign performance against competitors.
+- **simulate_budget_shift**(campaign_id, timeframe): Simulates projected pipeline impact of budget reallocation with fatigue dampening.
 - **get_executive_pipeline_kpis**(campaign_id, timeframe): Aggregates hard performance stats for the strategic TLDR.
-- **get_budget_pacing**(campaign_id, timeframe): Returns current vs. expected spend pacing.
-- **run_attribution_model**(campaign_id, timeframe): Executes specific multi-touch attribution models.
-- **compare_asset_baselines**(campaign_id, timeframe): Isolates performance gaps between two assets.
-- **map_buying_committee**(campaign_id, timeframe): Maps engaged personas within a specific account.
-- **get_intent_surge_signals**(campaign_id, timeframe): Identifies velocity spikes for an account.
-- **get_asset_impact_matrix**(campaign_id, timeframe): Calculates fatigue and ROI scores per asset.
-- **get_user_journey**(campaign_id, timeframe): Traces multi-channel touchpoints for a specific user.
-- **generate_ab_test_variants**(campaign_id, timeframe): Recommends data-backed A/B test variations.
-- **draft_outreach_sequence**(campaign_id, timeframe): Generates personalized sales outreach based on intent data.
+- **get_budget_pacing**(campaign_id, timeframe): Returns current vs. expected spend pacing and calculates daily run rates.
+- **run_attribution_model**(campaign_id, timeframe): Executes specific multi-touch attribution models (first-touch, last-touch, linear, W-shaped).
+
+#### 2. ABM & audience intelligence (app/services/mcp_tools/abm_audience.py)
+- **get_account_penetration**(campaign_id, timeframe): Maps engagement to specific CRM target accounts.
+- **get_tam_penetration**(campaign_id, timeframe): Calculates total addressable market penetration.
+- **map_buying_committee**(campaign_id, timeframe): Maps engaged personas and functional tiers within a target account.
+- **get_intent_surge_signals**(campaign_id, timeframe): Identifies 48-hour velocity spikes and surge signals per account.
+- **get_user_journey**(campaign_id, timeframe): Traces chronological multi-channel touchpoints for a specific prospect.
+
+#### 3. Asset performance (app/services/mcp_tools/asset_performance.py)
+- **evaluate_trickle_threshold**(campaign_id, timeframe): Determines traffic decay over time against peak volume thresholds.
+- **get_asset_impact_matrix**(campaign_id, timeframe): Calculates fatigue indices and ROI scores per creative asset.
+- **compare_asset_baselines**(campaign_id, timeframe): Isolates performance gaps and statistical deviations between two assets.
+- **calculate_share_of_voice**(campaign_id, timeframe): Benchmarks campaign performance and channel dominance against competitors.
+
+#### 4. Generative & outreach (app/services/mcp_tools/generative.py)
+- **generate_ab_test_variants**(campaign_id, timeframe): Recommends data-backed A/B test variations tailored to target buyer personas.
+- **draft_outreach_sequence**(campaign_id, timeframe): Generates structured multi-step sales outreach sequences based on intent signals.
 
 ### Tool execution architecture: Sequential vs. parallel execution
 The application supports batching multiple tool execution requests into a single API roundtrip to reduce latency. However, parallel execution introduces an orchestration challenge: an LLM cannot logically chain dependent tools if it calls them simultaneously (for example, attempting to simulate a budget shift before knowing the current pacing shortfall).
@@ -204,7 +211,7 @@ Before the AI model is allowed to reason about the data, the underlying mathemat
 
 ### 2. MCP contract testing (Preventing schema drift)
 As the AI model relies on a strictly defined JSON schema (mcp_tools) to understand the backend Python tools it can call, "schema drift" is a fatal risk. 
-- **Approach**: The tests/test_mcp_contracts.py suite programmatically iterates over every tool defined in the JSON schema. It utilises Python's inspect.signature to read the actual backend function in app/services/analytics.py.
+- **Approach**: The tests/test_mcp_contracts.py suite programmatically iterates over every tool defined in the JSON schema. It utilises Python's inspect.signature to read the actual backend function signatures exported through app/services/analytics.py and implemented within the modular app/services/mcp_tools/ domain modules.
 - **Coverage**: It mathematically asserts that every tool listed in the schema actually exists as a callable function, and that the parameters promised to the LLM exactly match the parameters the Python function accepts, making schema drift impossible.
 
 ### 3. MCP integration & data parity testing (Deterministic)
@@ -272,14 +279,15 @@ Since the architecture relies heavily on server-side rendering (SSR) via FastAPI
 
 ## 10. Technical debt & future architectural roadmap
 
-While some deliberate architectural shortcuts were taken in the data access layer to prioritise milestone delivery, the following structural refactoring is on the roadmap for a production-grade version:
+While some deliberate architectural shortcuts were taken in the data access layer to prioritise milestone delivery, the following structural refactorings address technical debt and chart the roadmap for a production-grade version:
 
-### 1. Abstracting data access via the repository pattern
-The core app/services/analytics.py service currently acts as a monolithic "God Object." It mixes raw SQLite queries (data access), Python mathematical aggregations (business logic), and dictionary formatting for the frontend charts (presentation logic). This violates the single responsibility principle (SRP). 
-- **Roadmap action:** The next step is to introduce a repository.py layer to abstract all raw SQL queries. The analytics service would then act strictly as an orchestrator, calling clean data objects from the repository and applying business logic on top.
+### 1. Multi-tier architectural decoupling: Domain, presentation, and data access (Roadmap)
+The monolyth analytics.py ouples three distinct architectural tiers that represent key technical debt to address:
+- **Descriptive telemetry vs. prescriptive actions:** Passive metric aggregations currently share a namespace with rule-based decision engines (e.g., asset fatigue decay alerts, next-best-action scoring, and sales target prioritization). Separating descriptive telemetry from prescriptive alert actions into a dedicated recommendation/action engine will allow business rules to evolve without risking core analytical regression.
+- **Abstracting data access (repository pattern):** Both the UI services and MCP tools still manage ad-hoc SQL strings and connections internally. Introducing a formal `repository.py` layer will isolate raw database access behind entity repositories, converting the analytics and MCP modules into pure calculation and orchestration engines.
 
 ### 2. Full rollout of dependency injection
-While FastAPI's native **dependency injection** (Depends(get_db)) has been successfully implemented in the UI routing layer (dashboard.py) to manage database connection lifecycles via the Unit of Work pattern, the core MCP AI tools in analytics.py currently manage their own internal connections.
+While FastAPI's native **dependency injection** (Depends(get_db)) has been successfully implemented in the UI routing layer (dashboard.py) to manage database connection lifecycles via the Unit of Work pattern, the core MCP AI tools in `app/services/mcp_tools/` currently manage their own internal connections.
 - **Roadmap action:** A future refactor will decouple the AI tool schema definitions from the underlying Python functions. This will allow me to inject database dependencies cleanly into the analytics layer without accidentally exposing the db connection parameter to the LLM's automated function calling schema.
 
 ### 3. Declarative tool chaining engine (MCP orchestration)
