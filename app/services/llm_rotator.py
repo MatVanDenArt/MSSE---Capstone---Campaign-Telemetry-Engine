@@ -102,30 +102,6 @@ def mark_key_exhausted(key: str):
 CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "llm_cache.json")
 TELEMETRY_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "ai_telemetry.json")
 
-def get_telemetry() -> dict:
-    """Return lifetime total API calls and cache hit counts from the telemetry store."""
-    if os.path.exists(TELEMETRY_FILE):
-        try:
-            with open(TELEMETRY_FILE, 'r') as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"total_calls": 0, "cache_hits": 0}
-
-def increment_telemetry(is_cache_hit: bool = False):
-    """Update and persist API invocation and cache performance metrics."""
-    t = get_telemetry()
-    if is_cache_hit:
-        t["cache_hits"] += 1
-    else:
-        t["total_calls"] += 1
-    try:
-        os.makedirs(os.path.dirname(TELEMETRY_FILE), exist_ok=True)
-        with open(TELEMETRY_FILE, 'w') as f:
-            json.dump(t, f)
-    except Exception:
-        pass
-
 REDIS_URL = os.getenv("REDIS_URL")
 redis_client = None
 if REDIS_URL:
@@ -136,6 +112,60 @@ if REDIS_URL:
     except Exception as e:
         print(f"Redis connection failed on startup: {e}", flush=True)
         redis_client = None
+
+def _read_local_telemetry() -> dict:
+    """Read telemetry metrics from local JSON store."""
+    if os.path.exists(TELEMETRY_FILE):
+        try:
+            with open(TELEMETRY_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"total_calls": 0, "cache_hits": 0}
+
+def get_telemetry() -> dict:
+    """Return lifetime total API calls and cache hit counts from Redis (primary) or local JSON (fallback)."""
+    if redis_client:
+        try:
+            total_calls = redis_client.get("ai_telemetry:total_calls")
+            cache_hits = redis_client.get("ai_telemetry:cache_hits")
+            if total_calls is not None or cache_hits is not None:
+                return {
+                    "total_calls": int(total_calls or 0),
+                    "cache_hits": int(cache_hits or 0)
+                }
+            # If Redis has no telemetry keys yet, seed baseline from local JSON
+            local = _read_local_telemetry()
+            if local["total_calls"] > 0 or local["cache_hits"] > 0:
+                redis_client.set("ai_telemetry:total_calls", local["total_calls"])
+                redis_client.set("ai_telemetry:cache_hits", local["cache_hits"])
+                return local
+        except Exception as e:
+            print(f"Redis get_telemetry error: {e}", flush=True)
+
+    return _read_local_telemetry()
+
+def increment_telemetry(is_cache_hit: bool = False):
+    """Update and persist API invocation and cache performance metrics across Redis and local JSON."""
+    key = "ai_telemetry:cache_hits" if is_cache_hit else "ai_telemetry:total_calls"
+    if redis_client:
+        try:
+            redis_client.incr(key)
+        except Exception as e:
+            print(f"Redis increment_telemetry error: {e}", flush=True)
+
+    # Maintain local JSON as dev/offline fallback
+    try:
+        t = _read_local_telemetry()
+        if is_cache_hit:
+            t["cache_hits"] += 1
+        else:
+            t["total_calls"] += 1
+        os.makedirs(os.path.dirname(TELEMETRY_FILE), exist_ok=True)
+        with open(TELEMETRY_FILE, 'w') as f:
+            json.dump(t, f)
+    except Exception:
+        pass
 
 def get_cached_response(prompt: str) -> str | None:
     """Check Redis (primary) or local JSON cache (fallback) for a pre-computed response."""

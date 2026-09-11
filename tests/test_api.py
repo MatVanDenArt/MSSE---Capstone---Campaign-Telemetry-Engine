@@ -69,3 +69,15 @@ def test_dashboard_action_center():
     
     assert response.status_code == 200, f"Action center endpoint failed with status {response.status_code}"
     assert "text/html" in response.headers["content-type"], "Response must be an HTML fragment"
+
+
+def test_telemetry_ai_calls_endpoint():
+    """Validates the live AI telemetry stats endpoint (/api/telemetry/ai-calls)."""
+    response = client.get("/api/telemetry/ai-calls")
+    assert response.status_code == 200
+    data = response.json()
+    assert "total_calls" in data
+    assert "cache_hits" in data
+    assert isinstance(data["total_calls"], int)
+    assert isinstance(data["cache_hits"], int)
+
