@@ -183,7 +183,8 @@ To balance low-latency parallel execution with data precision, I implemented **a
 
 ## 6. Core technology stack
 
-I chose a lightweight, server-driven architecture to prioritize development speed and performance.
+To support my project idea of a modern AI enabled marketing telemetry engine I chose a lightweight, server-driven architecture to prioritize development speed, AI alignment and performance.
+Building a data-heavy telemetry engine with an embedded AI copilot presents an architectural tension: the application requires the analytical and agentic orchestration power of Python, yet demands the snappy, responsive feel of a modern SaaS dashboard. Rather than defaulting to a complex, decoupled architecture—such as a React frontend wired to a separate Python microservice, I deliberately chose a lightweight, server-driven stack built around FastAPI, HTMX, and SQLite. This combination eliminates the overhead of synchronising state across client and server, allows streaming AI responses and SQL query results to be handled natively in one place and ensures portability with minimal configuration overhead whether the project is running locally or is deployed to the cloud on Render.
 
 ### Backend: FastAPI (Python)
 I chose FastAPI over alternatives like Flask or Django due to two specific requirements:

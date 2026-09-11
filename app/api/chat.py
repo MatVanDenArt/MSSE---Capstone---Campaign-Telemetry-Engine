@@ -24,6 +24,7 @@ from google import genai
 from google.genai import types
 from app.services.llm_rotator import mcp_tools, tool_functions
 import os
+import re
 import json
 import uuid
 
@@ -44,16 +45,45 @@ You MUST FIRST execute a data-gathering tool (e.g., get_budget_pacing) to find y
 When a user asks you to AUTOMATE or EXECUTE an action (e.g., 'Draft outreach for X', 'Sync Y to CRM', 'Suggest asset rotation'), acknowledge the command, briefly summarize why it's a good idea, and state that it has been successfully queued or executed. Keep responses concise and conversational.
 IMPORTANT: A request to 'Review Priority Action' is NOT an execution request. It is a request for analysis.
 
-When a user asks you to **Investigate** a pipeline target (e.g., 'Investigate pipeline target: X'), you should:
-1. Act as a strategic advisor. Summarize why this target is important based on the context in their prompt (e.g. number of interactions, recent activity). 
-2. Recommend an immediate next step (e.g., drafting an email, syncing to CRM).
-3. Append a special execute button at the very end of your response using this exact HTML structure, replacing [ACTION NAME] and [ACTION COMMAND] appropriately:
-<div class="mt-4"><button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "[ACTION COMMAND]"}' class="w-full py-2 bg-fuchsia-900/20 hover:bg-fuchsia-600/20 border border-fuchsia-500/50 hover:border-fuchsia-500 text-fuchsia-400 text-[10px] font-bold transition uppercase tracking-widest flex items-center justify-center gap-2"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button></div>
+RECOMMENDED NEXT STEPS & ACTIONS POLICY:
+When providing strategic recommendations, evaluating accounts or buying committees, or answering follow-up questions about target contacts:
+1. First, provide the detailed, multi-stakeholder strategy in text form under a `### Recommended Next Steps` header (e.g. 1. Launch executive-tailored messaging to [Executive]..., 2. Engage technical managers with compliance whitepapers..., 3. Coordinate multi-threaded sales outreach...). This section captures broader, nuanced multi-person strategies that cannot be reduced to a single button click.
+2. Next, ALWAYS conclude by providing 2 to 3 concrete, single-click executable action buttons grouped together under a single unified section header:
+   `### Recommended Actions`
+   Include both AI discovery actions and operational execution actions in this section, using our standard color coding:
+   
+   - For AI analytical discovery (e.g. "Detect Intent Surge Signals for [Account]", "Draft Executive Outreach Sequence for [Key Lead]", or "Run Multi-Touch Attribution"), use this fuchsia/pink-styled structure:
+   <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "[DISCOVERY COMMAND]", "intent": "chat"}' class="mb-2 w-full py-2 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[11px] font-['Inter',sans-serif] font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-wand-magic-sparkles"></i> [DISCOVERY NAME]</button>
+   
+   - For operational sales & marketing execution in our stack (e.g. "Sync Buying Committee to Salesforce CRM", "Stage Nurture Campaign in Marketo", "Schedule Sequence in Mailchimp", "Deploy Creative to LinkedIn Ads", or "Stage Copy on Matrix DXP"), use this cyan-styled structure:
+   <button hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{"message": "[ACTION COMMAND]", "intent": "automate"}' class="mb-2 w-full py-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-[11px] font-['Inter',sans-serif] font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
 
 When you retrieve a user's interaction history (using get_user_journey), the tool will return a JSON object with a placeholder indicating the timeline is rendered to the UI. Do NOT attempt to output the timeline yourself. Provide a concise strategic summary of their journey instead.
 
 When you generate A/B test variations (using generate_ab_test_variants), format the response clearly using markdown blockquotes for the copy and bold text for the Control/Variant A/Variant B labels. Include the strategic rationale.
+Always conclude by appending downstream operational execution buttons under a `### Recommended Actions` header:
+- Deploying creative variants: Suggest actions for LinkedIn Ads (e.g. 'Deploy Variant A to LinkedIn Campaign Drafts') or Matrix DXP (e.g. 'Stage Headline Variant on Matrix DXP Landing Page').
+Use the cyan button structure above.
+
 When you draft an outreach sequence (using draft_outreach_sequence), present the sequence clearly using markdown numbered lists or bold headers for each day/step, and italicize the actual email copy. Include the strategic note.
+Always conclude by appending downstream operational execution buttons under a `### Recommended Actions` header:
+- Suggest 2 operational execution actions for our marketing stack:
+  1. Schedule in Mailchimp (e.g. 'Schedule Sequence in Mailchimp Audience') or Marketo (e.g. 'Stage Nurture Campaign in Marketo')
+  2. Sync or log task in Salesforce (e.g. 'Sync Sequence & Log Task in Salesforce CRM')
+Use the cyan button structure above.
+
+SCOPE BOUNDARY & DEFENSIVE POLICY:
+You are an enterprise marketing intelligence copilot exclusively dedicated to Wood Group's B2B campaigns and telemetry.
+- If a user asks questions or issues instructions unrelated to marketing analytics, campaign telemetry, pipeline metrics, target accounts, B2B strategy, or platform actions (e.g., general trivia, personal advice, coding assistance, or creative tasks unrelated to B2B campaigns), politely decline and re-orient the user back to campaign insights.
+- State clearly and concisely: "I am specialized in Wood Group campaign telemetry and pipeline intelligence. I can help analyze CPA, budget pacing, buying committee engagement, or simulate budget shifts. How can I assist with your campaigns?"
+- Never execute tools or fabricate campaign metrics for off-topic requests.
+
+FORMATTING & EXECUTIVE READABILITY POLICY:
+Format all analytical responses with clear, scannable structure:
+- Use markdown headers (`### Executive Summary & Account Assessment`, `### Strategic Evaluation`).
+- For bulleted metrics, ALWAYS put each item on its own new line with a leading hyphen and bold key (e.g. `- **Influenced Pipeline:** $17.98M`).
+- Never concatenate multiple bullet points or asterisks onto the same line. Always put a blank line before and after bullet lists.
+- Separate distinct paragraphs with blank lines so the response is easy to read.
 """
 
 # ---------------------------------------------------------------------------
@@ -76,11 +106,73 @@ _SESSIONS_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", ".cache", "chat_sessions"
 )
 _SESSION_TTL = 86400  # 24 hours — same as LLM response cache
+_MAX_HISTORY_ENTRIES = 16  # Preserves ~4-5 multi-turn analytical exchanges while preventing context bloat
 
 
 def _session_file(session_id: str) -> str:
     os.makedirs(_SESSIONS_DIR, exist_ok=True)
     return os.path.join(_SESSIONS_DIR, f"{session_id}.json")
+
+
+def serialize_part(p) -> dict:
+    """Safely convert any Part, dict, or string to a JSON-serializable dict."""
+    if hasattr(p, "model_dump"):
+        d = p.model_dump(mode="json", exclude_none=True)
+    elif isinstance(p, dict):
+        d = {k: v for k, v in p.items() if v is not None}
+    elif isinstance(p, str):
+        d = {"text": p}
+    else:
+        d = {"text": str(p)}
+    # Strip raw binary thought_signature that corrupts serialization/SDK validation
+    d.pop("thought_signature", None)
+    return d
+
+
+def deserialize_part(p) -> types.Part | None:
+    """Safely reconstruct a types.Part from dict or Part instance."""
+    if isinstance(p, types.Part):
+        return p
+    clean = serialize_part(p)
+    if clean:
+        try:
+            return types.Part.model_validate(clean)
+        except Exception:
+            text_val = clean.get("text") or str(clean)
+            return types.Part.from_text(text=text_val)
+    return None
+
+
+def serialize_history(history: list) -> list[dict]:
+    """Convert history containing types.Content or dicts into clean JSON-serializable list."""
+    clean_history = []
+    for item in history:
+        role = item.get("role", "user") if isinstance(item, dict) else getattr(item, "role", "user")
+        raw_parts = item.get("parts", []) if isinstance(item, dict) else getattr(item, "parts", [])
+        clean_parts = []
+        for p in raw_parts:
+            part_dict = serialize_part(p)
+            if part_dict:
+                clean_parts.append(part_dict)
+        if clean_parts:
+            clean_history.append({"role": role, "parts": clean_parts})
+    return clean_history
+
+
+def deserialize_history(history_data: list) -> list[types.Content]:
+    """Reconstruct a list of types.Content objects suitable for Gemini SDK generate_content."""
+    restored = []
+    for item in history_data:
+        role = item.get("role", "user") if isinstance(item, dict) else getattr(item, "role", "user")
+        raw_parts = item.get("parts", []) if isinstance(item, dict) else getattr(item, "parts", [])
+        clean_parts = []
+        for p in raw_parts:
+            part_obj = deserialize_part(p)
+            if part_obj is not None:
+                clean_parts.append(part_obj)
+        if clean_parts:
+            restored.append(types.Content(role=role, parts=clean_parts))
+    return restored
 
 
 # ── history helpers ─────────────────────────────────────────────────────────
@@ -98,7 +190,7 @@ def get_session_history(session_id: str) -> list:
     path = _session_file(session_id)
     if os.path.exists(path):
         try:
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return data.get("history", [])
         except Exception:
@@ -108,7 +200,8 @@ def get_session_history(session_id: str) -> list:
 
 def save_session_history(session_id: str, history: list) -> None:
     """Persist *history* for *session_id* to Redis (primary) or local JSON (fallback)."""
-    serialised = json.dumps(history, default=_serialise_part)
+    clean_history = serialize_history(history)
+    serialised = json.dumps(clean_history)
 
     if redis_client:
         try:
@@ -122,11 +215,11 @@ def save_session_history(session_id: str, history: list) -> None:
         # Merge with existing file so we don't clobber pending tasks
         existing: dict = {}
         if os.path.exists(path):
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 existing = json.load(f)
-        existing["history"] = history
-        with open(path, "w") as f:
-            json.dump(existing, f, default=_serialise_part)
+        existing["history"] = clean_history
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(existing, f)
     except Exception:
         pass
 
@@ -234,7 +327,7 @@ def handle_chat(
     Workflow:
       1. Identifies or mints a session cookie (`cte_session`) to guarantee session isolation.
       2. Detects context-breaker prompts (e.g. 'Investigate pipeline target') to reset stale dialog.
-      3. Prunes history to a 12-turn sliding window ensuring conversation pairs remain valid.
+      3. Prunes history to a 16-turn sliding window ensuring conversation pairs remain valid.
       4. For automated/synchronous tasks (e.g. CRM sync), executes a simulated action response.
       5. For conversational & analytical queries, queues a pending task and returns an initial
          chat bubble containing an HTMX SSE connection (`sse-connect="/api/chat/stream/{task_id}"`).
@@ -260,7 +353,7 @@ def handle_chat(
         chat_history = []
 
     # Prevent chat history from growing unbounded and hanging the API
-    while len(chat_history) > 12:
+    while len(chat_history) > _MAX_HISTORY_ENTRIES:
         chat_history.pop(0)
         while chat_history:
             first = chat_history[0]
@@ -307,18 +400,32 @@ def handle_chat(
         msg_lower = message.lower()
         status_msg = "Record synchronized successfully"
 
-        if "crm" in msg_lower or "opportunity" in msg_lower or "sql" in msg_lower or "salesforce" in msg_lower:
+        if "salesforce" in msg_lower or "crm" in msg_lower or "opportunity" in msg_lower or "sql" in msg_lower or "lead" in msg_lower:
             logo_icon = "fa-salesforce text-sky-400"
             system_name = "Salesforce CRM"
-            status_msg = "Lead intent data synchronized successfully"
-        elif "campaign" in msg_lower or "linkedin" in msg_lower or "ads" in msg_lower:
+            status_msg = "Lead intent data & tasks synchronized successfully"
+        elif "marketo" in msg_lower or "nurture" in msg_lower or "automation" in msg_lower or "smart list" in msg_lower:
+            logo_icon = "fa-envelope text-fuchsia-400"
+            system_name = "Marketo"
+            status_msg = "Smart campaign & lead nurture workflow triggered successfully"
+        elif "mailchimp" in msg_lower or "newsletter" in msg_lower or "email campaign" in msg_lower or "audience" in msg_lower:
+            logo_icon = "fa-mailchimp text-amber-400"
+            system_name = "Mailchimp"
+            status_msg = "Email sequence scheduled & audience segmented successfully"
+        elif "linkedin" in msg_lower or "social" in msg_lower or "inmail" in msg_lower or "ad" in msg_lower:
             logo_icon = "fa-linkedin text-blue-500"
             system_name = "LinkedIn Ads"
             if "budget" in msg_lower or "shift" in msg_lower:
                 status_msg = "Budget reallocation applied successfully"
+            elif "creative" in msg_lower or "variant" in msg_lower or "copy" in msg_lower:
+                status_msg = "Creative variation deployed to campaign drafts"
             else:
-                status_msg = "Campaign parameters updated"
-        elif "email" in msg_lower or "outreach" in msg_lower or "newsletter" in msg_lower or "marketo" in msg_lower:
+                status_msg = "Campaign targeting & parameters updated"
+        elif "matrix" in msg_lower or "dxp" in msg_lower or "cms" in msg_lower or "website" in msg_lower or "web page" in msg_lower or "landing page" in msg_lower:
+            logo_icon = "fa-globe text-emerald-400"
+            system_name = "Matrix DXP"
+            status_msg = "Landing page experience & hero copy staged in CMS"
+        elif "email" in msg_lower or "outreach" in msg_lower:
             logo_icon = "fa-envelope text-fuchsia-400"
             system_name = "Marketo"
             status_msg = "Outreach workflow triggered successfully"
@@ -371,7 +478,7 @@ def handle_chat(
         "intent": intent,
         "reset_context": reset_context,
         "campaign_id": campaign_id,
-        "chat_history": json.dumps(chat_history, default=_serialise_part),
+        "chat_history": json.dumps(serialize_history(chat_history)),
     })
 
     sse_html = f'''
@@ -434,13 +541,26 @@ def chat_stream(task_id: str) -> StreamingResponse:
         campaign_id = task_data.get("campaign_id")
 
         # Restore history snapshot captured at request time so concurrent
-        # sessions don't interfere with each other.
+        # sessions don't interfere with each other, reconstructing genuine SDK Content objects.
         try:
-            chat_history = json.loads(task_data["chat_history"])
+            raw_history = json.loads(task_data["chat_history"])
+            chat_history = deserialize_history(raw_history)
         except Exception:
-            chat_history = get_session_history(session_id)
+            chat_history = deserialize_history(get_session_history(session_id))
 
         try:
+            # Yield immediate progress feedback so the UI updates from static placeholder
+            yield yield_html('''
+                <div class="flex gap-3 my-4">
+                    <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0 animate-pulse shadow-[0_0_10px_rgba(192,38,211,0.5)]">
+                        <i class="fa-solid fa-robot text-[10px] text-black"></i>
+                    </div>
+                    <div class="w-full min-w-0 flex items-center text-xs font-mono text-fuchsia-400/80 mt-1">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Analyzing request & orchestrating tools...
+                    </div>
+                </div>
+            ''')
+
             from app.services.llm_rotator import get_genai_client
             captured_html_timeline = None
 
@@ -457,12 +577,25 @@ def chat_stream(task_id: str) -> StreamingResponse:
     The user is reviewing a Priority Action from the dashboard Action Center. 
     Act as a strategic advisor. Analyze the action details provided by the user. Explain why it is a priority and what the impact is based on your telemetry tools if needed.
     
-    After your analysis, you MUST provide exactly 1 to 3 concrete automated next steps (e.g. "Draft Follow-Up Email", "Sync to Salesforce").
+    When evaluating an account or contact priority action, perform an integrated ABM assessment:
+    1. Inspect the contact's engagement history using `get_user_journey`.
+    2. Cross-reference their account's buying committee using `map_buying_committee` to identify whether senior decision-makers (C-Suite, VP/Director) are engaged alongside them.
+    3. Synthesize the findings into an executive briefing with these exact sections:
+       - `### Executive Summary & Account Assessment`
+       - `### Strategic Evaluation` (Include a bullet for `• **Strategic Recommendation:** ...` and a bullet for `• **Recommended Telemetry Discovery:** ...` explaining which analytical tool to run next to deepen account intelligence).
+       - `### Recommended Next Steps` (Detailed strategic recommendations in text form, outlining multi-stakeholder messaging angles and committee coordination)
     
-    To format this, you MUST place a `### Recommended Action(s)` header immediately before the buttons.
-    Then, for EACH suggested action, output an HTML button using this EXACT structure, replacing [ACTION NAME] with a short label (e.g. "Draft Email"), [ACTION COMMAND] with the specific automated instruction you would want the user to click, and [INTENT] with either 'automate' (if pushing data to a CRM/System) or 'chat' (if generating content like drafting an email):
-    
-    <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))\" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[ACTION COMMAND]", "intent": "[INTENT]", "trigger_id": "{trigger_id}", "campaign_id": "{campaign_id}", "timeframe": "{timeframe}"}}' class="mb-2 w-full py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
+    4. Next Steps & Interactive Buttons:
+       Provide exactly 2 to 3 contextual buttons grouped together under a single unified section header:
+       `### Recommended Actions`
+       
+       Include both AI discovery actions and operational execution actions in this single section, using distinct color coding:
+       
+       - For AI analytical discovery (using remaining MCP tools like "Detect Intent Surge Signals", "Run Multi-Touch Attribution", or "Evaluate Account TAM Penetration"), use this fuchsia/pink-styled structure:
+       <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))\" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[DISCOVERY COMMAND]", "intent": "chat", "trigger_id": "{trigger_id}", "campaign_id": "{campaign_id}", "timeframe": "{timeframe}"}}' class="mb-2 w-full py-2 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[11px] font-['Inter',sans-serif] font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-wand-magic-sparkles"></i> [DISCOVERY NAME]</button>
+       
+       - For operational sales & marketing execution in our stack (e.g. "Draft Executive Outreach Sequence" with intent='chat', "Sync Record to Salesforce CRM" with intent='automate', "Stage Nurture Campaign in Marketo" with intent='automate', or "Schedule Sequence in Mailchimp" with intent='automate'), use this cyan-styled structure:
+       <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))\" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[ACTION COMMAND]", "intent": "[INTENT]", "trigger_id": "{trigger_id}", "campaign_id": "{campaign_id}", "timeframe": "{timeframe}"}}' class="mb-2 w-full py-2 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 hover:text-white text-[11px] font-['Inter',sans-serif] font-bold transition-all uppercase tracking-wider flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
     """
 
             from app.services.llm_rotator import generate_content_with_fallback
@@ -504,7 +637,6 @@ def chat_stream(task_id: str) -> StreamingResponse:
                             continue
                         last_call_signature = call_signature
 
-                        executed_tools.append(func_name)
                         friendly_name = func_name.replace('_', ' ').title()
                         if func_name == "get_user_journey": friendly_name = "Analyzing User Journey"
                         elif func_name == "get_intent_surge_signals": friendly_name = "Detecting Intent Surge Signals"
@@ -542,6 +674,9 @@ def chat_stream(task_id: str) -> StreamingResponse:
                         else:
                             result = {"error": f"Unknown tool: {func_name}"}
 
+                        if "error" not in result:
+                            executed_tools.append(func_name)
+
                         tool_responses.append(
                             types.Part.from_function_response(
                                 name=func_name,
@@ -551,6 +686,17 @@ def chat_stream(task_id: str) -> StreamingResponse:
 
                     chat_history.append({"role": "model", "parts": current_response.candidates[0].content.parts})
                     chat_history.append({"role": "user", "parts": tool_responses})
+
+                    yield yield_html('''
+                        <div class="flex gap-3 my-4">
+                            <div class="w-6 h-6 bg-fuchsia-600 flex items-center justify-center shrink-0 animate-pulse shadow-[0_0_10px_rgba(192,38,211,0.5)]">
+                                <i class="fa-solid fa-robot text-[10px] text-black"></i>
+                            </div>
+                            <div class="w-full min-w-0 flex items-center text-xs font-mono text-fuchsia-400/80 mt-1">
+                                <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Synthesizing strategic analysis...
+                            </div>
+                        </div>
+                    ''')
 
                     current_response = generate_content_with_fallback(
                         contents=chat_history,
@@ -612,25 +758,87 @@ def chat_stream(task_id: str) -> StreamingResponse:
                 text_response = tool_ui + "\n" + text_response
 
             clear_btn = "<div class='mt-4 border-t border-dark-800 pt-4'><button onclick=\"this.innerHTML='<i class=&quot;fa-solid fa-check-double&quot;></i> Cleared'; this.disabled=true; this.classList.add('opacity-50', 'cursor-not-allowed'); window.dispatchEvent(new CustomEvent('task-resolved', {detail: {id: '" + trigger_id + "'}}));\" class='w-full py-1.5 bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-slate-400 text-slate-400 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded'><i class='fa-solid fa-check'></i> Clear Alert from Queue</button></div>" if (intent == "review" and trigger_id) else ""
+            
+            # Format and normalize markdown text for clean executive readability
+            formatted_text = text_response
+            # 1. Normalize compound bullets: replace '- • ' or '- * ' or '- - ' with standard markdown '- '
+            # CAUTION: Do NOT strip '*' if followed by another '*' (e.g. '**Bold**')!
+            formatted_text = re.sub(r'(?m)^(\s*[-*]\s*)•\s*', r'\1', formatted_text)
+            formatted_text = re.sub(r'(?m)^(\s*[-*]\s*)-\s+', r'\1', formatted_text)
+            formatted_text = re.sub(r'(?m)^(\s*[-*]\s*)\*(?!\*)\s+', r'\1', formatted_text)
+            # 2. Convert raw standalone unicode bullets '• ' at start of line to standard markdown '- '
+            formatted_text = re.sub(r'(?m)^\s*•\s*', '- ', formatted_text)
+            # 3. Expand inline bullets (" • " or " * ") onto distinct new lines (safeguarding **bold**)
+            formatted_text = re.sub(r'(?<![\*\s\-])\s+(?:•|\*(?!\*))\s+', '\n- ', formatted_text)
+            # 4. Clean up any accidental orphaned hyphen lines (e.g. '-' or '--' or '---')
+            formatted_text = re.sub(r'(?m)^\s*-+\s*$', '', formatted_text)
+            # 5. Ensure prominent section titles get markdown header syntax
+            for h in ["Strategic Priority Review", "Executive Summary & Account Assessment", "Strategic Evaluation", "Strategic Context & Analysis", "Why This is a Priority", "Buying Committee Coverage", "Recommended Next Steps", "Recommended Actions"]:
+                formatted_text = re.sub(rf'(?m)^({re.escape(h)}):?', r'\n### \1\n', formatted_text)
+            # 6. Ensure a blank line precedes any list block
+            formatted_text = re.sub(r'([^\n])\n(- |\* )', r'\1\n\n\2', formatted_text)
+
             import markdown
-            parsed_html = markdown.markdown(text_response)
+            parsed_html = markdown.markdown(formatted_text, extensions=['extra', 'sane_lists', 'nl2br'])
 
             ai_html = f"""
             <style>
-            .copilot-markdown p {{ margin-bottom: 1em; }}
-            .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3, .copilot-markdown h4 {{ font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; color: #fdf4ff; }}
-            .copilot-markdown ul:not(.list-none) {{ list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }}
-            .copilot-markdown ol:not(.list-none) {{ list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }}
-            .copilot-markdown li {{ margin-bottom: 0.5em; }}
-            .copilot-markdown strong {{ font-weight: bold; color: #fdf4ff; }}
+            .copilot-markdown h1, .copilot-markdown h2, .copilot-markdown h3, .copilot-markdown h4 {{
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 13px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #e879f9;
+                margin-top: 1.25rem;
+                margin-bottom: 0.5rem;
+                padding-bottom: 0.25rem;
+                border-bottom: 1px solid rgba(63, 63, 70, 0.4);
+            }}
+            .copilot-markdown h3:first-child, .copilot-markdown h2:first-child {{
+                margin-top: 0.25rem;
+            }}
+            .copilot-markdown p {{
+                margin-bottom: 0.75rem;
+                line-height: 1.65;
+            }}
+            .copilot-markdown ul:not(.list-none) {{
+                list-style-type: disc;
+                padding-left: 1.25rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.85rem;
+            }}
+            .copilot-markdown ol:not(.list-none) {{
+                list-style-type: decimal;
+                padding-left: 1.25rem;
+                margin-top: 0.5rem;
+                margin-bottom: 0.85rem;
+            }}
+            .copilot-markdown li {{
+                margin-bottom: 0.4rem;
+                line-height: 1.55;
+            }}
+            .copilot-markdown li::marker {{
+                color: #ffffff;
+            }}
+            .copilot-markdown strong {{
+                font-weight: 600;
+                color: #f8fafc;
+            }}
+            .copilot-markdown button {{
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+                font-size: 11px !important;
+                font-weight: 700 !important;
+                letter-spacing: 0.05em !important;
+            }}
             </style>
             <div class="flex gap-4">
                 <div class="w-8 h-8 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 flex items-center justify-center flex-shrink-0 mt-1">
                     <i class="fa-solid fa-robot text-fuchsia-400 text-sm"></i>
                 </div>
                 <div class="w-full min-w-0">
-                    <div class="bg-black border border-dark-700 p-4 w-full">
-                        <div class="text-slate-200 text-sm leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
+                    <div class="bg-black border border-dark-700 p-4 w-full rounded">
+                        <div class="text-[14px] text-slate-300 font-mono leading-relaxed copilot-markdown break-words overflow-x-hidden">{parsed_html}</div>
                         {clear_btn}
                     </div>
                 </div>

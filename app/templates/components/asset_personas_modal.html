@@ -235,7 +235,7 @@
                                     <div x-show="expanded" x-collapse class="mt-4 pt-4 border-t border-dark-700">
                                         <!-- Explore in detail -->
                                         <button @click.stop="
-                                                const msg = 'Investigate this contact: ' + user.name + ', ' + user.seniority + ' at ' + user.company + '. Retrieve their full cross-channel journey and summarize: 1. Which topics and assets they are most engaged with, 2. Their current lead stage, 3. The recommended next sales action.';
+                                                const msg = 'Investigate this contact: ' + user.name + ', ' + user.seniority + ' at ' + user.company + '. Retrieve their full cross-channel journey, cross-reference their account buying committee using map_buying_committee to identify coverage gaps, and summarize: 1. Most engaged topics and assets, 2. Buying committee alignment, 3. Recommended next sales action.';
                                                 const campaignId = document.getElementById('current_campaign') ? document.getElementById('current_campaign').value : '';
                                                 const timeframe = document.querySelector('[name=timeframe]') ? document.querySelector('[name=timeframe]').value : 0;
                                                 window.dispatchEvent(new CustomEvent('open-chat'));

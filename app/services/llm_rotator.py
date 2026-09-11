@@ -215,8 +215,8 @@ class LegacyModelWrapper:
 # Cascading model fallback chain for Flash tier.
 # Tries primary model first, falling back across alternative Flash models on 429/503 quota errors.
 FLASH_MODEL_CHAIN: list[str] = [
-    os.getenv("GEMINI_PRIMARY_MODEL", "gemini-3.8-flash"),
-    "gemini-3.6-flash",
+    os.getenv("GEMINI_PRIMARY_MODEL", "gemini-3.6-flash"),
+    "gemini-3.8-flash",
     "gemini-3.5-flash",
 ]
 
