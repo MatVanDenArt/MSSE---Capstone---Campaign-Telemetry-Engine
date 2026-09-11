@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice
+from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice, get_high_bounce_asset, get_spiking_asset, get_stalled_account, get_channel_roi_breakdown, get_topic_cluster_data, get_abm_account_breakdown
 import sqlite3
 import urllib.parse
 
@@ -13,6 +13,10 @@ _DEFAULT_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."
 DB_PATH = os.getenv("DATABASE_URL", _DEFAULT_DB)
 if not os.path.isabs(DB_PATH):
     DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", DB_PATH))
+
+# Default campaign shown when no campaign_id query param is supplied.
+# Override via the DEFAULT_CAMPAIGN_ID environment variable for different deployments.
+DEFAULT_CAMPAIGN_ID: str = os.getenv("DEFAULT_CAMPAIGN_ID", "CMP_LIVE_DECARBONIZATION_25_26")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -38,7 +42,7 @@ def get_sidebar(request: Request):
     return templates.TemplateResponse(request=request, name="components/sidebar.html", context={"campaigns": campaigns})
 
 @router.get("/dashboard/overview", response_class=HTMLResponse)
-def get_overview(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_overview(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
@@ -75,12 +79,11 @@ def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
     })
 
 @router.get("/dashboard/performance", response_class=HTMLResponse)
-def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_performance(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
 
     import uuid
-    import sqlite3 as _sqlite3
     from app.services.analytics import get_ai_recommended_actions
 
     dynamic_tasks = []
@@ -119,72 +122,36 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
                 "is_programmatic": True
             })
 
-    # --- Rule 3: High bounce asset — real SQL (bounce_flag rate > 60%, min 10 sessions) ---
-    try:
-        _conn = _sqlite3.connect(DB_PATH)
-        _conn.row_factory = _sqlite3.Row
-        _cur = _conn.cursor()
-        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-        _cur.execute(f"""
-            SELECT g.page_viewed,
-                   COALESCE(c.title, g.page_viewed) as title,
-                   COUNT(*) as total,
-                   SUM(g.bounce_flag) as bounces,
-                   ROUND(100.0 * SUM(g.bounce_flag) / COUNT(*), 1) as bounce_rate
-            FROM ga4_events g
-            LEFT JOIN content_metadata c ON g.page_viewed = c.url
-            WHERE g.utm_campaign = ? {tf_cond}
-            GROUP BY g.page_viewed
-            HAVING total >= 10 AND bounce_rate > 60
-            ORDER BY bounce_rate DESC
-            LIMIT 1
-        """, (campaign_id,))
-        high_bounce = _cur.fetchone()
-        if high_bounce:
-            enc_bounce = urllib.parse.quote(high_bounce['page_viewed'])
-            tid_bounce = f"TRG_{uuid.uuid4().hex[:8]}"
-            dynamic_tasks.append({
-                "id": tid_bounce,
-                "icon": "fa-arrow-right-from-bracket",
-                "icon_color": "text-rose-500",
-                "title": high_bounce['title'],
-                "subtitle": f"Bounce rate {high_bounce['bounce_rate']}% on {high_bounce['total']} sessions",
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid_bounce}",
-                "is_programmatic": True
-            })
+    # --- Rule 3: High bounce asset (bounce rate > 60%, min 10 sessions) ---
+    high_bounce = get_high_bounce_asset(campaign_id, timeframe)
+    if high_bounce:
+        enc_bounce = urllib.parse.quote(high_bounce['page_viewed'])
+        tid_bounce = f"TRG_{uuid.uuid4().hex[:8]}"
+        dynamic_tasks.append({
+            "id": tid_bounce,
+            "icon": "fa-arrow-right-from-bracket",
+            "icon_color": "text-rose-500",
+            "title": high_bounce['title'],
+            "subtitle": f"Bounce rate {high_bounce['bounce_rate']}% on {high_bounce['total']} sessions",
+            "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_bounce}&trigger_id={tid_bounce}",
+            "is_programmatic": True
+        })
 
-        # --- Rule 4: Spiking asset — last 7 days > 1.5× prior 7 days ---
-        _cur.execute(f"""
-            SELECT g.page_viewed,
-                   COALESCE(c.title, g.page_viewed) as title,
-                   SUM(CASE WHEN g.timestamp >= datetime('now', '-7 days') THEN 1 ELSE 0 END) as recent_views,
-                   SUM(CASE WHEN g.timestamp >= datetime('now', '-14 days')
-                            AND g.timestamp  < datetime('now', '-7 days') THEN 1 ELSE 0 END) as prior_views
-            FROM ga4_events g
-            LEFT JOIN content_metadata c ON g.page_viewed = c.url
-            WHERE g.utm_campaign = ? {tf_cond}
-            GROUP BY g.page_viewed
-            HAVING prior_views > 0 AND (CAST(recent_views AS REAL) / prior_views) > 1.5
-            ORDER BY (CAST(recent_views AS REAL) / prior_views) DESC
-            LIMIT 1
-        """, (campaign_id,))
-        spiking = _cur.fetchone()
-        if spiking:
-            enc_spike = urllib.parse.quote(spiking['page_viewed'])
-            ratio = round(spiking['recent_views'] / spiking['prior_views'], 1)
-            tid_spike = f"TRG_{uuid.uuid4().hex[:8]}"
-            dynamic_tasks.append({
-                "id": tid_spike,
-                "icon": "fa-bolt",
-                "icon_color": "text-emerald-500",
-                "title": spiking['title'],
-                "subtitle": f"Engagement up {ratio}× vs prior 7 days",
-                "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid_spike}",
-                "is_programmatic": True
-            })
-        _conn.close()
-    except Exception:
-        pass  # Degrade gracefully — deterministic cards still show
+    # --- Rule 4: Spiking asset (last 7 days > 1.5× prior 7 days) ---
+    spiking = get_spiking_asset(campaign_id, timeframe)
+    if spiking:
+        enc_spike = urllib.parse.quote(spiking['page_viewed'])
+        ratio = round(spiking['recent_views'] / spiking['prior_views'], 1)
+        tid_spike = f"TRG_{uuid.uuid4().hex[:8]}"
+        dynamic_tasks.append({
+            "id": tid_spike,
+            "icon": "fa-bolt",
+            "icon_color": "text-emerald-500",
+            "title": spiking['title'],
+            "subtitle": f"Engagement up {ratio}× vs prior 7 days",
+            "action_command": f"/api/dashboard/investigate-asset?campaign_id={campaign_id}&asset_name={enc_spike}&trigger_id={tid_spike}",
+            "is_programmatic": True
+        })
 
     # --- AI recommended actions will be fetched via HTMX to prevent blocking ---
     ai_copilot_actions = []
@@ -200,9 +167,8 @@ def get_performance(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATI
     })
 
 @router.get("/dashboard/audience", response_class=HTMLResponse)
-def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_audience(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
     from app.services.analytics import get_prioritized_sales_targets, get_ai_recommended_actions
-    import sqlite3 as _sqlite3
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
 
@@ -240,51 +206,31 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
             "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name={encoded_name}&company={encoded_company}&trigger_id={tid}"
         })
 
-    # --- Rule 2: Stalled account — real SQL (≥2 users engaged, no activity in 14 days) ---
+    # --- Rule 2: Stalled account (≥2 users engaged, no activity in 14 days) ---
+    stalled = get_stalled_account(campaign_id, timeframe)
+    if stalled:
+        enc_company = urllib.parse.quote(stalled['company_name'])
+        tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
+        copilot_tasks.append({
+            "id": tid_stalled,
+            "icon": "fa-hourglass-end",
+            "icon_color": "text-rose-500",
+            "title": f"Stalled account: {stalled['company_name']}",
+            "subtitle": f"{stalled['engaged_users']} users engaged — last active {stalled['last_active'][:10]}",
+            "is_programmatic": True,
+            "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company={enc_company}&trigger_id={tid_stalled}"
+        })
+
+    # --- Rule 3: Cross-dept expansion (2+ distinct persona types at same company) ---
     try:
-        _conn = _sqlite3.connect(DB_PATH)
-        _conn.row_factory = _sqlite3.Row
-        _cur = _conn.cursor()
-        tf_cond = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-
-        _cur.execute(f"""
-            WITH CampaignUsers AS (
-                SELECT user_id, MAX(timestamp) as last_touch
-                FROM ga4_events
-                WHERE utm_campaign = ? {tf_cond}
-                AND user_id IS NOT NULL
-                GROUP BY user_id
-            )
-            SELECT c.company_name,
-                   COUNT(DISTINCT cu.user_id) as engaged_users,
-                   MAX(cu.last_touch) as last_active
-            FROM CampaignUsers cu
-            JOIN crm_users c ON cu.user_id = c.user_id
-            GROUP BY c.company_name
-            HAVING engaged_users >= 2
-               AND last_active < date('now', '-14 days')
-            ORDER BY engaged_users DESC
-            LIMIT 1
-        """, (campaign_id,))
-        stalled = _cur.fetchone()
-        if stalled:
-            enc_company = urllib.parse.quote(stalled['company_name'])
-            tid_stalled = f"TRG_{uuid.uuid4().hex[:8]}"
-            copilot_tasks.append({
-                "id": tid_stalled,
-                "icon": "fa-hourglass-end",
-                "icon_color": "text-rose-500",
-                "title": f"Stalled account: {stalled['company_name']}",
-                "subtitle": f"{stalled['engaged_users']} users engaged — last active {stalled['last_active'][:10]}",
-                "is_programmatic": True,
-                "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company={enc_company}&trigger_id={tid_stalled}"
-            })
-
-        # --- Rule 3: Cross-dept expansion — real SQL (2+ distinct persona_types at same company) ---
-        _cur.execute(f"""
+        from app.services.analytics import get_db_connection as _get_db
+        _conn3 = _get_db()
+        _cur3 = _conn3.cursor()
+        tf_cond3 = f"AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
+        _cur3.execute(f"""
             WITH CampaignUsers AS (
                 SELECT DISTINCT user_id FROM ga4_events
-                WHERE utm_campaign = ? {tf_cond}
+                WHERE utm_campaign = ? {tf_cond3}
                 AND user_id IS NOT NULL
             )
             SELECT c.company_name,
@@ -297,7 +243,8 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
             ORDER BY persona_types DESC, total_engaged DESC
             LIMIT 1
         """, (campaign_id,))
-        multi_persona = _cur.fetchone()
+        multi_persona = _cur3.fetchone()
+        _conn3.close()
         if multi_persona:
             enc_mp = urllib.parse.quote(multi_persona['company_name'])
             tid_cross = f"TRG_{uuid.uuid4().hex[:8]}"
@@ -310,7 +257,6 @@ def get_audience(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_
                 "is_programmatic": True,
                 "action_command": f"/api/dashboard/investigate-target?campaign_id={campaign_id}&name=Unknown&company={enc_mp}&trigger_id={tid_cross}"
             })
-        _conn.close()
     except Exception:
         pass  # Degrade gracefully — follow-up target cards still show
 
@@ -423,7 +369,7 @@ def get_strategic_tldr_summary(campaign_id: str, timeframe: int):
     return generate_strategic_tldr(payload)
 
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
-def get_tldr(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_tldr(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
     try:
         tldr = get_strategic_tldr_summary(campaign_id, timeframe)
         return HTMLResponse(content=tldr)
@@ -631,7 +577,7 @@ def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None)
         
     return HTMLResponse(content=html_content)
 
-def get_account_penetration_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
+def get_account_penetration_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID) -> HTMLResponse:
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
     return templates.TemplateResponse(request=request, name="components/account_penetration.html", context={
@@ -669,7 +615,7 @@ def get_penetration_details(request: Request, campaign_id: str, company: str, se
     """)
 
 @router.get("/dashboard/timeline", response_class=HTMLResponse)
-def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26", timeframe: int = 0):
+def get_timeline_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/timeline.html", context={
@@ -679,7 +625,7 @@ def get_timeline_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZA
     })
 
 @router.get("/dashboard/asset-fatigue", response_class=HTMLResponse)
-def get_asset_fatigue_view(request: Request, campaign_id: str = "CMP_LIVE_DECARBONIZATION_25_26"):
+def get_asset_fatigue_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID) -> HTMLResponse:
     assets = get_asset_fatigue(campaign_id)
     return HTMLResponse(content="<div></div>")
 
@@ -778,266 +724,30 @@ def ui_lab_channel_roi(campaign_id: str):
     return templates.TemplateResponse(request=Request({"type": "http"}), name="components/mod_channel_roi.html", context={"matrix": matrix})
 
 @router.get('/dashboard/v2/channel-roi-data')
-def v2_channel_roi_data(campaign_id: str, timeframe: int = 0):
-    from app.services.analytics import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    tf_li = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-    tf_em = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-    tf_ga = f" AND timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-    tf_crm = f" AND o.timestamp >= datetime('now', '-{timeframe} days')" if timeframe > 0 else ""
-    
-    # LinkedIn
-    cursor.execute(f"SELECT SUM(spend_consumed) FROM linkedin_events WHERE campaign_id = ?{tf_li}", (campaign_id,))
-    row_li = cursor.fetchone()
-    li_spend = row_li[0] if row_li and row_li[0] else 0
-    
-    cursor.execute(f"""
-        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
-        FROM crm_opps o
-        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM linkedin_events WHERE campaign_id = ? {tf_li})
-    """, (campaign_id, campaign_id))
-    row = cursor.fetchone()
-    li_pipe = row[0] or 0.0
-    li_opps = row[1] or 0
-    
-    # Email
-    cursor.execute(f"SELECT COUNT(event_id) FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em}", (campaign_id,))
-    row_em = cursor.fetchone()
-    em_clicks = row_em[0] if row_em and row_em[0] else 0
-    em_spend = em_clicks * 1.50 # Simulated CPC
-    
-    cursor.execute(f"""
-        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
-        FROM crm_opps o
-        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em})
-    """, (campaign_id, campaign_id))
-    row = cursor.fetchone()
-    em_pipe = row[0] or 0.0
-    em_opps = row[1] or 0
-    
-    # Web
-    cursor.execute(f"SELECT COUNT(session_id) FROM ga4_events WHERE utm_campaign = ? {tf_ga}", (campaign_id,))
-    row_ga = cursor.fetchone()
-    web_views = row_ga[0] if row_ga and row_ga[0] else 0
-    web_spend = web_views * 0.80 # Simulated CPC
-    
-    cursor.execute(f"""
-        SELECT SUM(o.pipeline_value), COUNT(o.event_id)
-        FROM crm_opps o
-        WHERE o.utm_campaign = ? {tf_crm} AND o.user_id IN (SELECT user_id FROM ga4_events WHERE utm_campaign = ? {tf_ga})
-    """, (campaign_id, campaign_id))
-    row = cursor.fetchone()
-    web_pipe = row[0] or 0.0
-    web_opps = row[1] or 0
-    
-    # Total Pipeline for Share calculation
-    cursor.execute(f"SELECT SUM(o.pipeline_value) FROM crm_opps o WHERE o.utm_campaign = ? {tf_crm}", (campaign_id,))
-    total_pipe = cursor.fetchone()[0] or 1.0  # avoid division by zero
-    
-    # LinkedIn Engaged Accounts
-    cursor.execute(f"""
-        SELECT COUNT(DISTINCT account_id) FROM crm_users WHERE user_id IN (
-            SELECT user_id FROM linkedin_events WHERE campaign_id = ? {tf_li}
-        )
-    """, (campaign_id,))
-    li_accounts = cursor.fetchone()[0] or 0
-    
-    # Email Engaged Accounts
-    cursor.execute(f"""
-        SELECT COUNT(DISTINCT account_id) FROM crm_users WHERE user_id IN (
-            SELECT user_id FROM mailchimp_events WHERE campaign_id LIKE '%' || ? || '%' {tf_em}
-        )
-    """, (campaign_id,))
-    em_accounts = cursor.fetchone()[0] or 0
-    
-    # Web Engaged Accounts
-    cursor.execute(f"""
-        SELECT COUNT(DISTINCT account_id) FROM crm_users WHERE user_id IN (
-            SELECT user_id FROM ga4_events WHERE utm_campaign = ? {tf_ga}
-        )
-    """, (campaign_id,))
-    web_accounts = cursor.fetchone()[0] or 0
-    
-    conn.close()
-
-    def calc_metrics(spend, pipe, accounts, total_pipe):
-        return {
-            "spend": spend,
-            "pipeline": pipe,
-            "accounts": accounts,
-            "influence_share": round((pipe / total_pipe) * 100, 1) if total_pipe > 0 else 0,
-            "cpea": round(spend / accounts, 2) if accounts > 0 else spend
-        }
-
-    return JSONResponse(content={
-        "linkedin": calc_metrics(li_spend, li_pipe, li_accounts, total_pipe),
-        "email": calc_metrics(em_spend, em_pipe, em_accounts, total_pipe),
-        "web": calc_metrics(web_spend, web_pipe, web_accounts, total_pipe)
-    })
+def v2_channel_roi_data(campaign_id: str, timeframe: int = 0) -> JSONResponse:
+    return JSONResponse(content=get_channel_roi_breakdown(campaign_id, timeframe))
 
 def ui_lab_channel_roi_data(campaign_id: str):
     from app.services.analytics import get_channel_roi_data
     return JSONResponse(content=get_channel_roi_data(campaign_id))
 
 @router.get("/dashboard/target-accounts-modal", response_class=HTMLResponse)
-def get_target_accounts_modal(request: Request, campaign_id: str):
+def get_target_accounts_modal(request: Request, campaign_id: str) -> HTMLResponse:
     from app.services.analytics import get_prioritized_sales_targets
     targets = get_prioritized_sales_targets(campaign_id)
     return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
 
 @router.get("/dashboard/topic-clusters", response_class=HTMLResponse)
-def get_topic_clusters(request: Request, campaign_id: str):
-    from app.services.analytics import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Base query for all engagements mapped to topics and assets
-    query = '''
-    WITH AllEngagements AS (
-        SELECT g.timestamp, c.intent_topic, c.title, c.asset_type
-        FROM ga4_events g
-        JOIN content_metadata c ON g.page_viewed = c.url
-        WHERE g.utm_campaign = ?
-        
-        UNION ALL
-        
-        SELECT m.timestamp, c.intent_topic, c.title, c.asset_type
-        FROM mailchimp_events m
-        JOIN content_metadata c ON REPLACE(REPLACE(m.url_clicked, 'https://woodplc.com?utm_campaign=', ''), 'https://example.com?utm_source=mailchimp&utm_campaign=', '') = c.url
-        WHERE m.campaign_id = ? AND m.action = 'Open'
-        
-        UNION ALL
-        
-        SELECT l.timestamp, c.intent_topic, c.title, c.asset_type
-        FROM linkedin_events l
-        JOIN content_metadata c ON l.ad_id = c.url
-        WHERE l.campaign_id = ?
-    )
-    SELECT 
-        intent_topic,
-        title,
-        asset_type,
-        COUNT(timestamp) as engagements
-    FROM AllEngagements
-    GROUP BY intent_topic, title, asset_type
-    ORDER BY intent_topic, engagements DESC
-    '''
-    cursor.execute(query, (campaign_id, campaign_id, campaign_id))
-    rows = cursor.fetchall()
-    conn.close()
-    
-    # Process into hierarchical dictionary
-    topic_map = {}
-    for row in rows:
-        topic = row['intent_topic']
-        if topic not in topic_map:
-            topic_map[topic] = {
-                'intent_topic': topic,
-                'total_engagements': 0,
-                'assets': []
-            }
-        topic_map[topic]['assets'].append({
-            'title': row['title'],
-            'type': row['asset_type'],
-            'engagements': row['engagements']
-        })
-        topic_map[topic]['total_engagements'] += row['engagements']
-        
-    # Sort topics by total engagements
-    sorted_topics = sorted(list(topic_map.values()), key=lambda x: x['total_engagements'], reverse=True)
-    
+def get_topic_clusters(request: Request, campaign_id: str) -> HTMLResponse:
+    sorted_topics = get_topic_cluster_data(campaign_id)
     return templates.TemplateResponse(request=request, name="components/topic_clusters.html", context={
         "campaign_id": campaign_id,
-        "topics": sorted_topics
+        "topics": sorted_topics,
     })
 
 @router.get("/dashboard/abm-data")
-def get_abm_data(campaign_id: str):
-    from app.services.analytics import get_db_connection
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 1. Buying Committee (Users by Persona Type)
-    query = '''
-    WITH AllEvents AS (
-        SELECT timestamp, user_id FROM ga4_events WHERE utm_campaign = ? AND user_id IS NOT NULL
-        UNION ALL
-        SELECT m.timestamp, u.user_id FROM mailchimp_events m JOIN crm_users u ON m.email = u.email WHERE m.campaign_id LIKE ?
-        UNION ALL
-        SELECT l.timestamp, g.user_id FROM linkedin_events l JOIN (SELECT DISTINCT cookie_id, user_id FROM ga4_events WHERE user_id IS NOT NULL) g ON l.cookie_id = g.cookie_id WHERE l.campaign_id = ?
-    )
-    SELECT 
-        c.company_name, 
-        c.persona_type, 
-        COUNT(DISTINCT c.user_id) as user_count,
-        COUNT(a.timestamp) as interactions
-    FROM AllEvents a
-    JOIN crm_users c ON a.user_id = c.user_id
-    GROUP BY c.company_name, c.persona_type
-    ORDER BY interactions DESC
-    '''
-    cursor.execute(query, (campaign_id, f'%{campaign_id}%', campaign_id))
-    accounts = cursor.fetchall()
-    
-    # Process into structured account objects
-    account_map = {}
-    for row in accounts:
-        comp = row['company_name']
-        if comp not in account_map:
-            account_map[comp] = {
-                'company': comp, 
-                'total_interactions': 0, 
-                'technical_users': 0, 
-                'commercial_users': 0,
-                'crm_status': 'Target',
-                'pipeline_value': 0.0,
-                'won_value': 0.0,
-                'active_opp_value': 0.0,
-                'opportunities': []
-            }
-        
-        account_map[comp]['total_interactions'] += row['interactions']
-        if row['persona_type'] == 'Technical':
-            account_map[comp]['technical_users'] += row['user_count']
-        elif row['persona_type'] == 'Commercial':
-            account_map[comp]['commercial_users'] += row['user_count']
-            
-    # Add CRM Opportunities data
-    opps_query = '''
-    SELECT c.company_name, o.event_type, o.pipeline_value, o.timestamp
-    FROM crm_opps o
-    JOIN (SELECT DISTINCT account_id, company_name FROM crm_users) c ON o.account_id = c.account_id
-    WHERE o.utm_campaign = ?
-    ORDER BY o.timestamp DESC
-    '''
-    cursor.execute(opps_query, (campaign_id,))
-    for row in cursor.fetchall():
-        comp = row['company_name']
-        if comp in account_map:
-            val = float(row['pipeline_value'] or 0)
-            account_map[comp]['opportunities'].append({
-                'date': str(row['timestamp']).split(' ')[0],
-                'type': row['event_type'],
-                'value': val
-            })
-            account_map[comp]['pipeline_value'] += val
-            
-            # Update CRM status and specific values
-            current = account_map[comp]['crm_status']
-            if row['event_type'] == 'Closed Won':
-                account_map[comp]['crm_status'] = 'Customer'
-                account_map[comp]['won_value'] += val
-            elif row['event_type'] == 'Opportunity Created':
-                if current != 'Customer':
-                    account_map[comp]['crm_status'] = 'Active Opp'
-                account_map[comp]['active_opp_value'] += val
-                
-    sorted_accounts = sorted(list(account_map.values()), key=lambda x: x['total_interactions'], reverse=True)[:10]
-
-    conn.close()
-    return {"accounts": sorted_accounts}
+def get_abm_data(campaign_id: str) -> JSONResponse:
+    return JSONResponse(content=get_abm_account_breakdown(campaign_id))
 
 @router.get("/v2/api/targets")
 def v2_api_targets(campaign_id: str):
@@ -1117,3 +827,4 @@ def get_ai_chips(request: Request, campaign_id: str, timeframe: int = 0, tab: st
     return templates.TemplateResponse(request=request, name="components/oob_copilot_chips.html", context={
         "copilot_actions": ai_copilot_actions
     })
+
