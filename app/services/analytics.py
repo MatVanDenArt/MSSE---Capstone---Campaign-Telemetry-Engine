@@ -1,19 +1,47 @@
+"""
+Analytical Facade & Telemetry Aggregation Service
+
+This module acts as the central analytical facade for the Campaign Telemetry Engine,
+providing a high-level API over raw multi-channel data tables in `capstone.db`:
+  - `ga4_events`: Web pageviews, session durations, and bounce flags.
+  - `mailchimp_events`: Outbound email sends, opens, and link clicks.
+  - `linkedin_events`: Sponsored content impressions, ad clicks, and consumed budget.
+  - `crm_users`: B2B accounts, buying committee members, seniority, and contact metadata.
+  - `crm_opps`: Pipeline opportunities, contract values, and Closed Won revenue stages.
+  - `content_metadata`: Topic taxonomy, asset types, target personas, and publication dates.
+
+Architecture & Conventions:
+  - Facade Pattern: Unifies disparate channel sources into standard analytical metrics
+    (blended CPA, multi-touch attribution, fatigue ratings, account penetration).
+  - MCP Tool Exporter: Imports and re-exports all 16 domain tools from `app.services.mcp_tools`.
+  - Timeframe Scoping: Functions accept a `timeframe` integer argument representing days
+    (e.g., 30, 60, 90). Passing `timeframe=0` evaluates the full campaign history (All Time).
+  - Connection Lifecycle: Each public service function opens and closes its own SQLite
+    connection via `get_db_connection()`, maintaining isolation and thread safety.
+"""
+
 import sqlite3
 import json
+import os
 from functools import lru_cache
 
-import os
 _DEFAULT_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "capstone.db"))
 DB_PATH = os.getenv("DATABASE_URL", _DEFAULT_DB)
 if not os.path.isabs(DB_PATH):
     DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", DB_PATH))
 
 def get_db_connection():
+    """Return a new SQLite database connection configured with Row factory."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
+# ==============================================================================
+# 1. Model Context Protocol (MCP) Tool Re-exports
+# ==============================================================================
+
 from app.services.mcp_tools import (
+
     calculate_blended_cpa,
     get_account_penetration,
     evaluate_trickle_threshold,
@@ -32,6 +60,10 @@ from app.services.mcp_tools import (
     draft_outreach_sequence,
 )
 
+# ==============================================================================
+# 2. Campaign Discovery & Metadata
+# ==============================================================================
+
 # Human-readable display names for known campaign ID suffixes.
 # Add entries here when new campaigns are created rather than modifying get_all_campaigns().
 CAMPAIGN_DISPLAY_NAMES: dict[str, str] = {
@@ -41,7 +73,12 @@ CAMPAIGN_DISPLAY_NAMES: dict[str, str] = {
     "DECARBONIZATION_25_26": "Decarbonization '25/'26",
 }
 
+
 def get_all_campaigns() -> list:
+    """
+    Scan ga4_events, linkedin_events, and crm_opps to discover all active and historic campaigns.
+    Calculates attributed pipeline, start date, and active/inactive status per campaign.
+    """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -56,6 +93,7 @@ def get_all_campaigns() -> list:
                 SELECT utm_campaign as campaign_id FROM crm_opps WHERE utm_campaign IS NOT NULL
             )
         """)
+
         rows = cursor.fetchall()
         
         campaigns = []
@@ -145,6 +183,10 @@ def get_all_campaigns() -> list:
     except Exception as e:
         raise e
 
+
+# ==============================================================================
+# 3. Telemetry Anomaly & Dynamic Task Detectors
+# ==============================================================================
 
 def get_high_bounce_asset(campaign_id: str, timeframe: int = 0) -> dict | None:
     """Return the asset with the highest bounce rate (>60%, min 10 sessions) for an action-center card.
@@ -244,11 +286,26 @@ def get_stalled_account(campaign_id: str, timeframe: int = 0) -> dict | None:
         return None
 
 
+# ==============================================================================
+# 4. Executive KPI Benchmarking & Trajectory Calculations
+# ==============================================================================
+
 @lru_cache(maxsize=128)
 def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
+    """
+    Compute core marketing performance metrics compared against cross-campaign baselines.
+    
+    Metrics Calculated:
+      - Total Spend (blended LinkedIn spend + estimated Mailchimp clicks + GA4 sessions).
+      - Closed Won Opportunities & Total Pipeline Attributed.
+      - Blended Cost Per Acquisition (CPA).
+      - Target Accounts Engaged.
+      - 14-day daily sparkline trajectories for trending visualisations.
+    """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
         
         def fetch_metrics(campaign_id: str, days: int = None):
             date_filter = ""
@@ -403,7 +460,10 @@ def get_kpi_benchmarks(campaign_id: str, timeframe: int = 90) -> dict:
         }
     except Exception as e:
         raise e
+
+
 def get_campaign_start_date(campaign_id: str) -> str:
+    """Find the earliest event timestamp across GA4, LinkedIn, and Mailchimp for a campaign."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -422,7 +482,10 @@ def get_campaign_start_date(campaign_id: str) -> str:
         return str(res['start_date']).split(" ")[0] if res and res['start_date'] else "Unknown"
     except Exception as e:
         raise e
+
+
 def format_pipeline(val: float) -> str:
+    """Format numeric currency value into compact human-readable string ($1.2M, $450K, $120)."""
     if not val:
         return "$0"
     if val >= 1_000_000:
@@ -431,7 +494,13 @@ def format_pipeline(val: float) -> str:
         return f"${val/1_000:.0f}K"
     return f"${val:.0f}"
 
+
 def generate_strategic_tldr(payload: dict) -> str:
+    """
+    Synthesize an executive TLDR narrative from campaign benchmarks using Gemini.
+    Features prompt hashing, Redis caching, and a deterministic template fallback
+    if the AI provider is unreachable or rate-limited.
+    """
     from google import genai
     from google.genai import types
     try:
@@ -486,11 +555,24 @@ Format in plain text without markdown."""
         cpa = payload.get("window_cpa_dollars", 0)
         time_window = payload.get("time_window_analyzed", "All Time")
         return f"Across the {time_window.lower()} period, influenced pipeline stands at ${pipe/1e6:.2f}M with ${spend/1e3:.1f}k in media investment and a CPA of ${cpa:,.0f}. Overall account engagement and pipeline velocity remain steady across target accounts."
-# --- Advanced Analytics for Sprint B ---
+
+
+# ==============================================================================
+# 5. Omnichannel Timeline & Trajectory Series
+# ==============================================================================
+
 def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
+    """
+    Construct synchronized multi-channel daily time series for Chart.js:
+      - Web traffic sessions from ga4_events.
+      - LinkedIn ad clicks from linkedin_events.
+      - Email opens from mailchimp_events.
+      - CRM opportunities created with company and pipeline value annotations.
+    """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
         
         # Calculate true start/end dates for zoom framing
         from datetime import datetime, timedelta
@@ -603,10 +685,23 @@ def get_timeline_chart_data(campaign_id: str, timeframe: int = 90) -> dict:
         }
     except Exception as e:
         raise e
+
+
+# ==============================================================================
+# 6. Asset Fatigue & Strategic Next-Best-Action Synthesis
+# ==============================================================================
+
+
 def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
+    """
+    Evaluate content consumption decay across web assets.
+    Compares recent 30-day velocity against the prior 30-day baseline to assign
+    fatigue ratings: 'Healthy', 'Action Required', or 'Saturated'.
+    """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
         
         # Look at the specific pages viewed as "Assets"
         assets = []
@@ -662,8 +757,16 @@ def get_asset_fatigue(campaign_id: str, timeframe: int = 0) -> list:
         raise e
 
 def get_ai_recommended_actions(campaign_id: str, timeframe: int, tab: str = "overview") -> list:
+    """
+    Generate tab-aware, actionable AI recommendation prompts constrained strictly
+    to the 16 available backend MCP tool capabilities.
+    
+    Prompts are synthesized using Gemini, cached in Redis/JSON by prompt hash,
+    and formatted with FontAwesome icons and action-command strings.
+    """
     import json
     import uuid
+
     from datetime import datetime, timedelta
     from app.services.llm_rotator import get_genai_client, get_cached_response, set_cached_response
     from google.genai import types
@@ -792,8 +895,14 @@ Each object must have exactly these keys:
     return actions
 
 def generate_next_best_actions(campaign_id: str, timeframe: int = 0) -> list:
+    """
+    Produce the prioritized Action Center tasks for the active campaign and timeframe.
+    Combines active database triggers (`action_triggers`) with real-time heuristic checks
+    for stalled pipeline opportunities, underperforming whitepapers, and CPA surges.
+    """
     try:
         import uuid
+
         from datetime import datetime, timedelta
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1901,6 +2010,11 @@ def get_channel_roi_data(campaign_id: str) -> dict:
         return {'error': str(e)}
 
 def get_ui_lab_funnel_data(campaign_id: str, timeframe: int = 0) -> dict:
+    """
+    Compute progressive conversion funnel stages for the active campaign:
+    Visitors (all GA4 sessions) -> Engaged (non-bounce) -> Known (CRM user matched)
+    -> Pipeline (active opportunities) -> Won (Closed Won contracts).
+    """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1940,7 +2054,9 @@ def get_ui_lab_funnel_data(campaign_id: str, timeframe: int = 0) -> dict:
     except Exception as e:
         return {'error': str(e)}
 
+
 def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
+    """Aggregate total GA4 website engagements by calendar date for heatmap visualization."""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -1962,8 +2078,20 @@ def get_ui_lab_heatmap_data(campaign_id: str) -> dict:
     except Exception as e:
         return {'error': str(e)}
 
+
 def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timeframe: int = 0) -> list:
+    """
+    Retrieve all CRM contacts and their complete cross-channel touchpoint timelines
+    for a given marketing asset.
+    
+    Performance Architecture:
+      Uses a 2-query batched architecture (eliminating the previous N+1 sub-query loop):
+      - Query 1: Discovers all user IDs that engaged with the specific asset.
+      - Query 2: Performs a single batched UNION ALL across Web, Email, and LinkedIn
+        for all discovered user IDs via `IN (...)`, then groups the timeline in Python.
+    """
     import datetime as _dt
+
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -2123,8 +2251,13 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
 
 
 def get_funnel_drilldown_data(campaign_id: str, stage: str, timeframe: int = 0) -> list:
+    """
+    Fetch granular individual contacts and their interaction histories for a specific funnel stage:
+    `known_users`, `engaged_visitors`, `pipeline`, or `closed_won`.
+    """
     try:
         conn = get_db_connection()
+
         cursor = conn.cursor()
         
         data = []

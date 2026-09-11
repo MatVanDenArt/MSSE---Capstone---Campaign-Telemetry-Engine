@@ -1,9 +1,43 @@
+"""
+LLM Resilience, Key Rotation & Model Context Protocol (MCP) Tool Registry
+
+This module provides the foundational AI infrastructure for the Campaign Telemetry Engine:
+1. Multi-Key Round-Robin Rotation (`KeyManager`):
+   Mitigates Gemini API rate limits (HTTP 429 / RESOURCE_EXHAUSTED) by rotating across a pool
+   of comma-delimited API keys in `GEMINI_API_KEYS`. Exhausted keys are automatically placed in
+   a 60-second cooldown penalty box before re-entering circulation.
+
+2. Dual-Tier Response & Telemetry Caching:
+   Caches LLM responses by SHA-256 prompt hash. Uses Redis as the primary production cache
+   (with 24h TTL) and falls back to a local JSON cache file (`.cache/llm_cache.json`) for dev environments.
+
+3. SDK Abstraction & Compatibility:
+   Wraps both the modern `google.genai` Client (`NewClientWrapper`) and legacy `google.generativeai`
+   GenerativeModel (`LegacyModelWrapper`) with automatic response caching and quota metrics collection.
+
+4. MCP Tool Registry:
+   Maintains the canonical JSON Schema declarations (`mcp_tools`) and Python callable dispatch map
+   (`tool_functions`) for all 16 analytical functions exposed to the AI Copilot.
+"""
+
 import os
 import random
-
 import time
+import json
+import hashlib
+import redis
+
+
+# ==============================================================================
+# 1. Multi-Key Round-Robin Rotation & Rate Limit Resilience
+# ==============================================================================
 
 class KeyManager:
+    """
+    Manages a pool of Gemini API keys with round-robin dispatch and temporary cooldowns.
+    When an API call receives a 429 quota exhaustion error, the key is sidelined for 60 seconds
+    while subsequent requests use alternative keys in the pool.
+    """
     def __init__(self):
         self.keys = []
         self.cooldowns = {} # key -> timestamp when it was exhausted
@@ -12,7 +46,8 @@ class KeyManager:
         self.cooldown_period = 60 # 60 seconds penalty box
         
     def _initialize(self):
-        if self.initialized: return
+        if self.initialized:
+            return
         keys_str = os.environ.get("GEMINI_API_KEYS", "")
         if not keys_str:
             keys_str = os.environ.get("GEMINI_API_KEY", "")
@@ -20,6 +55,7 @@ class KeyManager:
         self.initialized = True
         
     def get_next_key(self) -> str:
+        """Fetch the next available key not currently quarantined by cooldown."""
         self._initialize()
         if not self.keys:
             return ""
@@ -40,13 +76,14 @@ class KeyManager:
             
             return key
             
-        # If ALL keys are in cooldown, just return the one that will expire soonest
-        # or just fallback to the current index
+        # If ALL keys are in cooldown, return the current index as fallback
         return self.keys[self.current_index]
         
     def mark_exhausted(self, key: str):
+        """Quarantine an exhausted API key in the penalty box."""
         if key:
             self.cooldowns[key] = time.time()
+
 
 _key_manager = KeyManager()
 
@@ -58,31 +95,36 @@ def mark_key_exhausted(key: str):
     """Places the key in a 60-second penalty box."""
     _key_manager.mark_exhausted(key)
 
-import json
-import hashlib
+# ==============================================================================
+# 2. Dual-Tier Response & Telemetry Caching
+# ==============================================================================
 
 CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "llm_cache.json")
 TELEMETRY_FILE = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "ai_telemetry.json")
 
-def get_telemetry():
+def get_telemetry() -> dict:
+    """Return lifetime total API calls and cache hit counts from the telemetry store."""
     if os.path.exists(TELEMETRY_FILE):
         try:
             with open(TELEMETRY_FILE, 'r') as f:
                 return json.load(f)
-        except:
+        except Exception:
             pass
     return {"total_calls": 0, "cache_hits": 0}
 
-def increment_telemetry(is_cache_hit=False):
+def increment_telemetry(is_cache_hit: bool = False):
+    """Update and persist API invocation and cache performance metrics."""
     t = get_telemetry()
     if is_cache_hit:
         t["cache_hits"] += 1
     else:
         t["total_calls"] += 1
-    with open(TELEMETRY_FILE, 'w') as f:
-        json.dump(t, f)
-
-import redis
+    try:
+        os.makedirs(os.path.dirname(TELEMETRY_FILE), exist_ok=True)
+        with open(TELEMETRY_FILE, 'w') as f:
+            json.dump(t, f)
+    except Exception:
+        pass
 
 REDIS_URL = os.getenv("REDIS_URL")
 redis_client = None
@@ -95,8 +137,8 @@ if REDIS_URL:
         print(f"Redis connection failed on startup: {e}", flush=True)
         redis_client = None
 
-def get_cached_response(prompt: str):
-    print("DEBUG: get_cached_response was triggered!", flush=True)
+def get_cached_response(prompt: str) -> str | None:
+    """Check Redis (primary) or local JSON cache (fallback) for a pre-computed response."""
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
     if redis_client:
         try:
@@ -111,12 +153,12 @@ def get_cached_response(prompt: str):
                 cache = json.load(f)
                 if h in cache:
                     return cache[h]
-        except:
+        except Exception:
             pass
     return None
 
 def set_cached_response(prompt: str, response_text: str):
-    print("DEBUG: set_cached_response was triggered!", flush=True)
+    """Store generated response in Redis (with 24h TTL) or append to local JSON cache."""
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
     if redis_client:
         try:
@@ -131,20 +173,30 @@ def set_cached_response(prompt: str, response_text: str):
         try:
             with open(CACHE_FILE, 'r') as f:
                 cache = json.load(f)
-        except:
+        except Exception:
             pass
     cache[h] = response_text
     try:
+        os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
         with open(CACHE_FILE, 'w') as f:
             json.dump(cache, f)
-    except:
+    except Exception:
         pass
 
+
+# ==============================================================================
+# 3. SDK Client Wrappers & Transparent Cache Interceptors
+# ==============================================================================
+
 class MockResponse:
+    """Minimal duck-typed response object emulating SDK GenerateContentResponse."""
     def __init__(self, text):
         self.text = text
+        self.function_calls = None
+        self.candidates = []
 
 class LegacyModelWrapper:
+    """Transparent cache interceptor for the legacy google.generativeai SDK."""
     def __init__(self, model):
         self._model = model
     
@@ -160,27 +212,105 @@ class LegacyModelWrapper:
         set_cached_response(prompt, resp.text)
         return resp
 
+# Cascading model fallback chain for Flash tier.
+# Tries primary model first, falling back across alternative Flash models on 429/503 quota errors.
+FLASH_MODEL_CHAIN: list[str] = [
+    os.getenv("GEMINI_PRIMARY_MODEL", "gemini-3.8-flash"),
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+]
+
+
+def generate_content_with_fallback(
+    contents,
+    config=None,
+    model_chain: list[str] = None,
+    max_key_retries: int = 3,
+    **kwargs
+):
+    """
+    Executes generate_content across a cascading fallback chain of Gemini Flash models
+    with automatic API key rotation on 429 (Resource Exhausted) or 503 (Overloaded) errors.
+
+    Resilience Strategy:
+      1. Tries primary model (default: gemini-3.8-flash) rotating across available API keys.
+      2. If all keys hit rate limits for that model, cascades to secondary (gemini-3.6-flash).
+      3. If secondary is exhausted, cascades to tertiary (gemini-3.5-flash).
+    """
+    from google import genai
+
+    if model_chain is None:
+        model_chain = FLASH_MODEL_CHAIN
+
+    prompt_str = str(contents)
+
+    # Check cache first before making any network calls
+    cached = get_cached_response(prompt_str)
+    if cached:
+        increment_telemetry(is_cache_hit=True)
+        return MockResponse(cached)
+
+    increment_telemetry(is_cache_hit=False)
+
+    call_kwargs = dict(kwargs)
+    if config is not None:
+        call_kwargs["config"] = config
+
+    last_err = None
+    for model_name in model_chain:
+        for attempt in range(max_key_retries):
+            api_key = get_random_api_key()
+            if not api_key:
+                raise ValueError("No Gemini API key found. Please set GEMINI_API_KEYS.")
+            try:
+                client = genai.Client(api_key=api_key)
+                resp = client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    **call_kwargs
+                )
+                if resp:
+                    try:
+                        if hasattr(resp, 'text') and resp.text:
+                            set_cached_response(prompt_str, resp.text)
+                    except Exception:
+                        pass
+                    return resp
+            except Exception as e:
+                last_err = e
+                err_msg = str(e)
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "503" in err_msg:
+                    mark_key_exhausted(api_key)
+                    print(f"[RETRY] Model '{model_name}' hit rate limit on key ...{api_key[-4:] if len(api_key)>=4 else ''}. Trying alternative key...", flush=True)
+                    continue
+                else:
+                    # Non-quota error (e.g. invalid argument, bad prompt syntax)
+                    raise e
+
+        print(f"[FALLBACK] Model '{model_name}' exhausted quota across keys. Cascading to next Flash model in fallback chain...", flush=True)
+
+    if last_err:
+        raise last_err
+
+
 class NewModelsWrapper:
+    """Transparent cache interceptor for the modern google.genai SDK models service."""
     def __init__(self, models):
         self._models = models
         
     def generate_content(self, model, contents, **kwargs):
-        prompt = str(contents)
-        cached = get_cached_response(prompt)
-        if cached:
-            increment_telemetry(is_cache_hit=True)
-            return MockResponse(cached)
-            
-        increment_telemetry(is_cache_hit=False)
-        resp = self._models.generate_content(model=model, contents=contents, **kwargs)
-        set_cached_response(prompt, resp.text)
-        return resp
+        # Create a priority cascade starting with the requested model
+        chain = [model] + [m for m in FLASH_MODEL_CHAIN if m != model]
+        return generate_content_with_fallback(contents=contents, model_chain=chain, **kwargs)
+
 
 class NewClientWrapper:
+    """Wraps google.genai.Client, injecting rotating credentials and response caching."""
     def __init__(self, client, api_key=None):
         self._client = client
         self.api_key = api_key
         self.models = NewModelsWrapper(client.models)
+
 
 def get_genai_client():
     """Returns a wrapped client for the new SDK (google-genai) using a managed key."""
@@ -191,7 +321,9 @@ def get_genai_client():
     client = genai.Client(api_key=api_key)
     return NewClientWrapper(client, api_key)
 
+
 def get_legacy_generative_model(model_name="gemini-3.6-flash"):
+
     """Returns a wrapped model for the old SDK (google.generativeai) using a random key."""
     import google.generativeai as genai
     api_key = get_random_api_key()
@@ -203,10 +335,19 @@ def get_legacy_generative_model(model_name="gemini-3.6-flash"):
     model = genai.GenerativeModel(model_name)
     return LegacyModelWrapper(model)
 
+
+# ==============================================================================
+# 4. Model Context Protocol (MCP) Tool Declarations & Dispatch Registry
+# ==============================================================================
+
+# Canonical analytical tools exported to the LLM agent via Gemini Function Declarations.
+# Each schema precisely specifies argument types and business descriptions so the model
+# can plan multi-turn reasoning steps autonomously.
 from app.services.analytics import (
     calculate_blended_cpa,
     get_account_penetration,
     evaluate_trickle_threshold,
+
     simulate_budget_shift,
     get_tam_penetration,
     calculate_share_of_voice,
@@ -594,6 +735,9 @@ mcp_tools = [
     }
 ]
 
+# Tool Registry (Strategy Pattern):
+# Maps tool names received from Gemini FunctionCall responses directly to their
+# corresponding executable Python service implementations in analytics.py.
 tool_functions = {
     "calculate_blended_cpa": calculate_blended_cpa,
     "get_account_penetration": get_account_penetration,
@@ -612,3 +756,4 @@ tool_functions = {
     "generate_ab_test_variants": generate_ab_test_variants,
     "draft_outreach_sequence": draft_outreach_sequence
 }
+

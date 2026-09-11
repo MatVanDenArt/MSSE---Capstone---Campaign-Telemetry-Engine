@@ -1,9 +1,20 @@
+"""
+Asset Performance & Content Health - Model Context Protocol (MCP) Tools
+
+Implements creative analytics, fatigue monitoring, and baseline benchmarking tools:
+  - `evaluate_trickle_threshold`: Detects traffic decay (>95% drop sustained for 7 days).
+  - `get_asset_impact_matrix`: Composite scoring of assets based on engagement and pipeline influence.
+  - `compare_asset_baselines`: Benchmark content performance against historical portfolio averages.
+  - `calculate_share_of_voice`: Brand impression and click dominance across marketing channels.
+"""
+
 from functools import lru_cache
 import datetime
 import hashlib
 from .common import get_db_connection
 
 def evaluate_trickle_threshold(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
+
     """
     Identify if a campaign's daily traffic dropped >95% from its peak and sustained that for 7 days.
     """

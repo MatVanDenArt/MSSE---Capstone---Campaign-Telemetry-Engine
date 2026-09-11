@@ -1,6 +1,20 @@
+"""
+Generative Content Synthesis - Model Context Protocol (MCP) Tools
+
+Implements AI-driven content generation tools invoked autonomously by the Copilot:
+  - `generate_ab_test_variants`: Synthesizes A/B test variations (Control, Variant A, Variant B)
+    along with strategic testing rationale for a given creative variable.
+  - `draft_outreach_sequence`: Drafts a tailored 3-step cadence (Email -> LinkedIn InMail -> Email)
+    personalized to target contact seniority and observed intent signals.
+"""
+
 import json
 
 def generate_ab_test_variants(asset_id: str, variable: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
+    """
+    Generate structured A/B test copy variations and strategic hypotheses for an asset.
+    Returns JSON with control, variant_a, variant_b, and strategic rationale.
+    """
     from app.services.llm_rotator import get_genai_client
     try:
         client = get_genai_client()
@@ -16,7 +30,11 @@ def generate_ab_test_variants(asset_id: str, variable: str, campaign_id: str = N
 
 
 def draft_outreach_sequence(persona: str, context_data: str, campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
+    """
+    Generate a 3-step multi-touch sales outreach cadence tailored to contact persona and observed intent signals.
+    """
     from app.services.llm_rotator import get_genai_client
+
     try:
         client = get_genai_client()
         prompt = f"""

@@ -1,6 +1,18 @@
+"""
+Financial & Budgetary Analytics - Model Context Protocol (MCP) Tools
+
+Implements core ROI, spend pacing, multi-touch attribution, and budget simulation tools:
+  - `calculate_blended_cpa`: Cross-channel media spend vs CRM closed-won contracts.
+  - `simulate_budget_shift`: Counterfactual budget reallocation modeling.
+  - `get_executive_pipeline_kpis`: High-level spend, pipeline, and contract counts.
+  - `get_budget_pacing`: Daily burn rates, pacing health, and runway projections.
+  - `run_attribution_model`: First-touch, last-touch, linear, and time-decay attribution models.
+"""
+
 from .common import get_db_connection
 
 def calculate_blended_cpa(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
+
     """
     Query total blended spend (LinkedIn + Email + Web) divided by total CRM Closed Won opportunities.
     Returns channel breakdown, benchmark CPA, and executive verdict.

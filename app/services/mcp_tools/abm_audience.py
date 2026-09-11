@@ -1,6 +1,18 @@
+"""
+ABM & Audience Analytics - Model Context Protocol (MCP) Tools
+
+Implements account-based marketing, buying committee, and individual journey tools:
+  - `get_account_penetration`: Company engagement breakdown grouped by seniority tier.
+  - `get_tam_penetration`: Total Addressable Market (TAM) coverage vs engaged accounts.
+  - `map_buying_committee`: Committee member persona discovery and coverage gap detection.
+  - `get_intent_surge_signals`: 48-hour velocity spikes signaling urgent sales opportunities.
+  - `get_user_journey`: Detailed chronological cross-channel touchpoint history for an individual.
+"""
+
 from .common import get_db_connection
 
 def get_account_penetration(campaign_id: str = None, timeframe: int = 0, **kwargs) -> dict:
+
     """
     Group users by company_name and seniority to return a summarized dictionary.
     Filtered by those who interacted with the specified campaign.

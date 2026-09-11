@@ -1,14 +1,54 @@
+"""
+Dashboard Presentation & Server-Driven UI (SDUI) Router
+
+This module defines all HTMX view endpoints, modal partials, and JSON data endpoints
+for the Campaign Telemetry Engine. 
+
+Key Architectural Patterns:
+    - Server-Driven UI (SDUI): HTMX attributes (hx-get, hx-post, hx-swap) drive client
+      navigation. Routes return modular Jinja2 HTML partials that are dynamically injected
+      into the active workspace without full page reloads.
+    - Decoupled Service Layer: All analytical SQL, multi-touch attribution, and anomaly
+      detection logic is delegated to `app.services.analytics`. This file handles only HTTP
+      request binding, parameter validation, and template context preparation.
+    - Deterministic & AI Actions: Action Center tasks combine deterministic rule-based
+      alerts (e.g. stalled accounts, traffic decay, high bounce rates) with AI Copilot
+      interactive suggestions.
+"""
+
 from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from app.services.analytics import evaluate_trickle_threshold, get_account_penetration, calculate_blended_cpa, get_kpi_benchmarks, generate_strategic_tldr, get_asset_impact_matrix, get_all_campaigns, get_timeline_chart_data, get_asset_fatigue, generate_next_best_actions, get_audience_network_data, get_sankey_data, get_asset_timeline_data, get_tam_penetration, calculate_share_of_voice, get_high_bounce_asset, get_spiking_asset, get_stalled_account, get_channel_roi_breakdown, get_topic_cluster_data, get_abm_account_breakdown
+from app.services.analytics import (
+    evaluate_trickle_threshold,
+    get_account_penetration,
+    calculate_blended_cpa,
+    get_kpi_benchmarks,
+    generate_strategic_tldr,
+    get_asset_impact_matrix,
+    get_all_campaigns,
+    get_timeline_chart_data,
+    get_asset_fatigue,
+    generate_next_best_actions,
+    get_audience_network_data,
+    get_sankey_data,
+    get_asset_timeline_data,
+    get_tam_penetration,
+    calculate_share_of_voice,
+    get_high_bounce_asset,
+    get_spiking_asset,
+    get_stalled_account,
+    get_channel_roi_breakdown,
+    get_topic_cluster_data,
+    get_abm_account_breakdown,
+)
 import sqlite3
 import urllib.parse
+import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-import os
 _DEFAULT_DB = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "capstone.db"))
 DB_PATH = os.getenv("DATABASE_URL", _DEFAULT_DB)
 if not os.path.isabs(DB_PATH):
@@ -18,7 +58,9 @@ if not os.path.isabs(DB_PATH):
 # Override via the DEFAULT_CAMPAIGN_ID environment variable for different deployments.
 DEFAULT_CAMPAIGN_ID: str = os.getenv("DEFAULT_CAMPAIGN_ID", "CMP_LIVE_DECARBONIZATION_25_26")
 
+
 def get_db():
+    """FastAPI dependency yielding an isolated SQLite connection with row factory."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     try:
@@ -27,22 +69,51 @@ def get_db():
         conn.close()
 
 
+# ==============================================================================
+# 1. Workspace Shell & Navigation
+# ==============================================================================
 
 @router.get("/dashboard/workspace", response_class=HTMLResponse)
-def get_workspace(request: Request, campaign_id: str):
+def get_workspace(request: Request, campaign_id: str) -> HTMLResponse:
+    """
+    Render the primary workspace container for a specific campaign.
+    Hosts the global navigation, timeframe controls, dynamic tab views, and copilot chat drawer.
+    """
     from app.services.analytics import get_all_campaigns
     campaigns = get_all_campaigns()
     campaign = next((c for c in campaigns if c["campaign_id"] == campaign_id), None)
     is_active = campaign["is_active"] if campaign else True
-    return templates.TemplateResponse(request=request, name="workspace.html", context={"campaign_id": campaign_id, "is_active": is_active})
+    return templates.TemplateResponse(
+        request=request,
+        name="workspace.html",
+        context={"campaign_id": campaign_id, "is_active": is_active}
+    )
+
 
 @router.get("/dashboard/sidebar", response_class=HTMLResponse)
-def get_sidebar(request: Request):
+def get_sidebar(request: Request) -> HTMLResponse:
+    """
+    Render the campaign switching sidebar navigation partial.
+    """
     campaigns = get_all_campaigns()
-    return templates.TemplateResponse(request=request, name="components/sidebar.html", context={"campaigns": campaigns})
+    return templates.TemplateResponse(
+        request=request,
+        name="components/sidebar.html",
+        context={"campaigns": campaigns}
+    )
+
+
+# ==============================================================================
+# 2. Main Tab Partials (Overview, Performance, Audience)
+# ==============================================================================
 
 @router.get("/dashboard/overview", response_class=HTMLResponse)
 def get_overview(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
+    """
+    Executive Overview tab partial.
+    Aggregates top-level KPI benchmarks, timeline trajectory, asset impact matrix,
+    account penetration, TAM coverage, and share of voice for the active timeframe.
+    """
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
@@ -69,8 +140,14 @@ def get_overview(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timef
         "copilot_tasks": None
     })
 
+
 @router.get("/dashboard/action-center", response_class=HTMLResponse)
-def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
+def get_action_center(request: Request, campaign_id: str, timeframe: int = 0) -> HTMLResponse:
+    """
+    Out-Of-Band (OOB) Action Center widget partial.
+    Fetches prioritized next-best-actions synthesized across funnel velocity,
+    account penetration, and content decay signals.
+    """
     from app.services.analytics import generate_next_best_actions
     copilot_tasks = generate_next_best_actions(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/oob_action_center.html", context={
@@ -78,10 +155,17 @@ def get_action_center(request: Request, campaign_id: str, timeframe: int = 0):
         "copilot_actions": None
     })
 
+
 @router.get("/dashboard/performance", response_class=HTMLResponse)
 def get_performance(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
+    """
+    Asset & Content Performance tab partial.
+    Evaluates multi-touch engagement across web, email, and LinkedIn, generating
+    rule-based actionable alert cards (top impact, decay, high bounce, spike).
+    """
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
+
 
     import uuid
     from app.services.analytics import get_ai_recommended_actions
@@ -166,8 +250,14 @@ def get_performance(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, ti
         "copilot_tasks": dynamic_tasks
     })
 
+
 @router.get("/dashboard/audience", response_class=HTMLResponse)
 def get_audience(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
+    """
+    ABM Audience & Buying Committee tab partial.
+    Surfaces account penetration metrics, buying committee job-title distributions,
+    and priority sales target cards (SQL follow-ups, stalled accounts, cross-dept expansions).
+    """
     from app.services.analytics import get_prioritized_sales_targets, get_ai_recommended_actions
     data = get_account_penetration(campaign_id)
     penetration = data.get("account_penetration", {})
@@ -272,8 +362,12 @@ def get_audience(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timef
         "copilot_tasks": copilot_tasks
     })
 
+
 @router.get("/dashboard/audience-actions", response_class=HTMLResponse)
-def get_audience_actions(request: Request, campaign_id: str, company: str = None):
+def get_audience_actions(request: Request, campaign_id: str, company: str = None) -> HTMLResponse:
+    """
+    Render Out-of-Band (OOB) copilot chips and action tasks tailored to a specific company account.
+    """
     from app.services.analytics import get_prioritized_sales_targets
     import uuid
     import urllib.parse
@@ -349,7 +443,16 @@ def get_audience_actions(request: Request, campaign_id: str, company: str = None
         "copilot_tasks": copilot_tasks
     })
 
-def get_strategic_tldr_summary(campaign_id: str, timeframe: int):
+
+# ==============================================================================
+# 3. Action Center & Strategic Synthesis (TLDR, Investigation Modals)
+# ==============================================================================
+
+def get_strategic_tldr_summary(campaign_id: str, timeframe: int) -> str:
+    """
+    Format campaign benchmarks into a structured prompt payload and generate
+    an executive TLDR briefing via LLM synthesis with rule-based fallback.
+    """
     from app.services.analytics import get_kpi_benchmarks, generate_strategic_tldr, get_all_campaigns
     benchmarks = get_kpi_benchmarks(campaign_id, timeframe)
     overall_benchmarks = get_kpi_benchmarks(campaign_id, 0)
@@ -368,17 +471,29 @@ def get_strategic_tldr_summary(campaign_id: str, timeframe: int):
     
     return generate_strategic_tldr(payload)
 
+
 @router.get("/dashboard/tldr", response_class=HTMLResponse)
 def get_tldr(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
+    """
+    Fetch and return the executive narrative TLDR summary block for the active campaign window.
+    """
     try:
         tldr = get_strategic_tldr_summary(campaign_id, timeframe)
         return HTMLResponse(content=tldr)
     except Exception as e:
         return HTMLResponse(content="Across the analyzed window, campaign pipeline generation and target account engagement remain aligned with core baseline milestones.")
 
+
 @router.get("/dashboard/investigate-target", response_class=HTMLResponse)
-def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None, db: sqlite3.Connection = Depends(get_db)):
+def investigate_target(campaign_id: str, name: str, company: str, trigger_id: str = None, db: sqlite3.Connection = Depends(get_db)) -> HTMLResponse:
+    """
+    Priority Sales Target Investigation card.
+    Fetches the 10 most recent multi-touch interactions for an engaged account/contact,
+    generates an AI Context Analysis briefing justifying why this is an active SQL,
+    and returns an interactive investigation card with 1-click execution triggers.
+    """
     cursor = db.cursor()
+
     
     if name == 'Unknown':
         query = f"""
@@ -522,7 +637,12 @@ def investigate_target(campaign_id: str, name: str, company: str, trigger_id: st
     return HTMLResponse(content=html_content)
 
 @router.get("/dashboard/investigate-asset", response_class=HTMLResponse)
-def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None):
+def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None) -> HTMLResponse:
+    """
+    Asset Diagnostic & Fatigue Investigation card.
+    Retrieves impact score, health rating (Fatigued, At Risk, Strong), and AI recommendations
+    for an asset, presenting quick-action buttons to rotate creative or draft newsletters.
+    """
     matrix = get_asset_impact_matrix(campaign_id, 0)
     asset = next((m for m in matrix if m['asset_name'] == asset_name), None)
     
@@ -577,16 +697,13 @@ def investigate_asset(campaign_id: str, asset_name: str, trigger_id: str = None)
         
     return HTMLResponse(content=html_content)
 
-def get_account_penetration_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID) -> HTMLResponse:
-    data = get_account_penetration(campaign_id)
-    penetration = data.get("account_penetration", {})
-    return templates.TemplateResponse(request=request, name="components/account_penetration.html", context={
-        "campaign_id": campaign_id,
-        "penetration": penetration
-    })
 
 @router.get("/dashboard/penetration-details", response_class=HTMLResponse)
-def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str, db: sqlite3.Connection = Depends(get_db)):
+def get_penetration_details(request: Request, campaign_id: str, company: str, seniority: str, db: sqlite3.Connection = Depends(get_db)) -> HTMLResponse:
+    """
+    Modal drilldown displaying specific web content pages consumed by contacts
+    at a specified company matching the selected seniority tier.
+    """
     cursor = db.cursor()
     
     query = f"""
@@ -614,8 +731,12 @@ def get_penetration_details(request: Request, campaign_id: str, company: str, se
     </div>
     """)
 
+
 @router.get("/dashboard/timeline", response_class=HTMLResponse)
 def get_timeline_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, timeframe: int = 0) -> HTMLResponse:
+    """
+    Timeline view partial rendering the multi-channel engagement trajectory chart.
+    """
     chart_data = get_timeline_chart_data(campaign_id, timeframe)
     matrix = get_asset_impact_matrix(campaign_id, timeframe)
     return templates.TemplateResponse(request=request, name="components/timeline.html", context={
@@ -624,13 +745,12 @@ def get_timeline_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID, 
         "matrix": matrix
     })
 
-@router.get("/dashboard/asset-fatigue", response_class=HTMLResponse)
-def get_asset_fatigue_view(request: Request, campaign_id: str = DEFAULT_CAMPAIGN_ID) -> HTMLResponse:
-    assets = get_asset_fatigue(campaign_id)
-    return HTMLResponse(content="<div></div>")
 
 @router.get("/dashboard/alerts", response_class=HTMLResponse)
-def get_alerts_view(request: Request, campaign_id: str, timeframe: int = 0):
+def get_alerts_view(request: Request, campaign_id: str, timeframe: int = 0) -> HTMLResponse:
+    """
+    Dedicated alerts feed partial displaying high-priority synthesized marketing/sales warnings.
+    """
     actions = generate_next_best_actions(campaign_id, timeframe)
     if not actions:
         return HTMLResponse(content="") # Empty response if no alerts
@@ -638,49 +758,37 @@ def get_alerts_view(request: Request, campaign_id: str, timeframe: int = 0):
         "actions": actions
     })
 
+
+# ==============================================================================
+# 4. Interactive Actions & Resolution Endpoints
+# ==============================================================================
+
 @router.post("/dashboard/execute-action", response_class=HTMLResponse)
-def execute_action(request: Request, type: str, campaign_id: str):
-    # Mock execution endpoint
-    return HTMLResponse(content=f"<span class='text-emerald-400 font-bold'><i class='fa-solid fa-check mr-2'></i>Action Executed</span>")
+def execute_action(request: Request, type: str, campaign_id: str) -> HTMLResponse:
+    """
+    Mock automation execution endpoint confirming simulated background task queuing.
+    """
+    return HTMLResponse(content="<span class='text-emerald-400 font-bold'><i class='fa-solid fa-check mr-2'></i>Action Executed</span>")
 
-@router.get("/dashboard/data-model")
-def get_data_model_view(request: Request, campaign_id: str):
-    return templates.TemplateResponse(request=request, name="components/data_model.html", context={
-        "campaign_id": campaign_id
-    })
-
-@router.get("/dashboard/audience-data-scoped")
-def get_audience_data_scoped(campaign_id: str):
-    from app.services.analytics import get_scoped_audience_data
-    from fastapi.responses import JSONResponse
-    return JSONResponse(content=get_scoped_audience_data(campaign_id))
-
-@router.get("/dashboard/audience-data")
-def get_audience_data(campaign_id: str = None):
-    data = get_audience_network_data() # We will update this later if needed
-    return JSONResponse(content=data)
-
-@router.get("/dashboard/sankey-data")
-def get_sankey_data_route(campaign_id: str):
-    data = get_sankey_data(campaign_id)
-    return JSONResponse(content=data)
-
-@router.get("/dashboard/asset-timeline")
-def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0):
-    data = get_asset_timeline_data(campaign_id, timeframe)
-    return JSONResponse(content=data)
 
 @router.delete("/dashboard/trigger/{trigger_id}", response_class=HTMLResponse)
-def resolve_trigger(trigger_id: str, db: sqlite3.Connection = Depends(get_db)):
+def resolve_trigger(trigger_id: str, db: sqlite3.Connection = Depends(get_db)) -> HTMLResponse:
+    """
+    Dismiss an alert trigger from the action center queue upon user resolution.
+    """
     cursor = db.cursor()
     cursor.execute("UPDATE action_triggers SET resolved_status = 1 WHERE id = ?", (trigger_id,))
     db.commit()
     return HTMLResponse(content="")
 
+
 @router.post("/dashboard/generate-ai-insight")
-async def generate_ai_insight(request: Request):
+async def generate_ai_insight(request: Request) -> JSONResponse:
+    """
+    Generate an AI Strategic Diagnosis and momentum signals for a specific target account.
+    Returns structured JSON with diagnosis narrative and 1-3 warning/surge badge objects.
+    """
     from app.services.llm_rotator import get_genai_client
-    from fastapi.responses import JSONResponse
     import json
     
     try:
@@ -718,82 +826,138 @@ Ensure valid JSON output.
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
 
+# ==============================================================================
+# 5. Visualisation Data & UI Lab Endpoints
+# ==============================================================================
+
+@router.get("/dashboard/data-model")
+def get_data_model_view(request: Request, campaign_id: str) -> HTMLResponse:
+    """Interactive relational schema viewer and entity-relationship model component."""
+    return templates.TemplateResponse(request=request, name="components/data_model.html", context={"campaign_id": campaign_id})
+
+
+@router.get("/dashboard/audience-data-scoped")
+def get_audience_data_scoped(campaign_id: str) -> JSONResponse:
+    """Return campaign-scoped audience graph network data for D3/vis visualization."""
+    from app.services.analytics import get_scoped_audience_data
+    return JSONResponse(content=get_scoped_audience_data(campaign_id))
+
+
+@router.get("/dashboard/audience-data")
+def get_audience_data(campaign_id: str = None) -> JSONResponse:
+    """Return global audience network graph data."""
+    return JSONResponse(content=get_audience_network_data())
+
+
+@router.get("/dashboard/sankey-data")
+def get_sankey_data_route(campaign_id: str) -> JSONResponse:
+    """Return multi-channel Sankey diagram nodes and links for campaign traffic flow."""
+    return JSONResponse(content=get_sankey_data(campaign_id))
+
+
+@router.get("/dashboard/asset-timeline")
+def get_asset_timeline_data_route(campaign_id: str, timeframe: int = 0) -> JSONResponse:
+    """Return chronological time-series points per asset for engagement trendlines."""
+    return JSONResponse(content=get_asset_timeline_data(campaign_id, timeframe))
+
+
 @router.get('/dashboard/ui-lab/channel-roi')
-def ui_lab_channel_roi(campaign_id: str):
+def ui_lab_channel_roi(campaign_id: str) -> HTMLResponse:
+    """UI Lab channel ROI sandbox testing component."""
     matrix = get_asset_impact_matrix(campaign_id, 0)
     return templates.TemplateResponse(request=Request({"type": "http"}), name="components/mod_channel_roi.html", context={"matrix": matrix})
 
+
 @router.get('/dashboard/v2/channel-roi-data')
 def v2_channel_roi_data(campaign_id: str, timeframe: int = 0) -> JSONResponse:
+    """JSON feed returning per-channel spend, attributed pipeline, and cost-per-engaged-account."""
     return JSONResponse(content=get_channel_roi_breakdown(campaign_id, timeframe))
 
-def ui_lab_channel_roi_data(campaign_id: str):
-    from app.services.analytics import get_channel_roi_data
-    return JSONResponse(content=get_channel_roi_data(campaign_id))
 
 @router.get("/dashboard/target-accounts-modal", response_class=HTMLResponse)
 def get_target_accounts_modal(request: Request, campaign_id: str) -> HTMLResponse:
+    """Render full-screen modal showing all prioritized target accounts with stage badges."""
     from app.services.analytics import get_prioritized_sales_targets
     targets = get_prioritized_sales_targets(campaign_id)
     return templates.TemplateResponse(request=request, name="components/target_accounts_modal.html", context={"targets": targets, "campaign_id": campaign_id})
 
+
 @router.get("/dashboard/topic-clusters", response_class=HTMLResponse)
 def get_topic_clusters(request: Request, campaign_id: str) -> HTMLResponse:
+    """Render intent topic taxonomy cluster accordion showing assets grouped by strategic theme."""
     sorted_topics = get_topic_cluster_data(campaign_id)
     return templates.TemplateResponse(request=request, name="components/topic_clusters.html", context={
         "campaign_id": campaign_id,
         "topics": sorted_topics,
     })
 
+
 @router.get("/dashboard/abm-data")
 def get_abm_data(campaign_id: str) -> JSONResponse:
+    """Return aggregated ABM account penetration and CRM opportunity breakdown for charts."""
     return JSONResponse(content=get_abm_account_breakdown(campaign_id))
 
+
 @router.get("/v2/api/targets")
-def v2_api_targets(campaign_id: str):
+def v2_api_targets(campaign_id: str) -> JSONResponse:
+    """Return funnel progression counts across Cold, Engaged, MQL, SQL, and Closed Won stages."""
     from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id))
 
+
 @router.get('/dashboard/funnel-drilldown', response_class=HTMLResponse)
-def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0):
+def v2_funnel_drilldown(request: Request, campaign_id: str, stage: str, timeframe: int = 0) -> HTMLResponse:
+    """Render modal listing specific contacts and touchpoints qualifying for a selected funnel stage."""
     from app.services.analytics import get_funnel_drilldown_data
     data = get_funnel_drilldown_data(campaign_id, stage, timeframe)
     return templates.TemplateResponse(request=request, name="components/mod_funnel_modal.html", context={"data": data, "stage": stage})
 
+
 @router.get('/dashboard/ui-lab/funnel')
-def ui_lab_funnel(campaign_id: str, timeframe: int = 0):
+def ui_lab_funnel(campaign_id: str, timeframe: int = 0) -> JSONResponse:
+    """UI Lab funnel visualization payload."""
     from app.services.analytics import get_ui_lab_funnel_data
     return JSONResponse(content=get_ui_lab_funnel_data(campaign_id, timeframe))
 
+
 @router.get('/dashboard/ui-lab/heatmap')
-def ui_lab_heatmap(campaign_id: str):
+def ui_lab_heatmap(campaign_id: str) -> JSONResponse:
+    """Return day-of-week by hour-of-day engagement intensity matrix."""
     from app.services.analytics import get_ui_lab_heatmap_data
     return JSONResponse(content=get_ui_lab_heatmap_data(campaign_id))
 
 
 @router.get('/dashboard/sales-alerts')
-def get_sales_alerts(campaign_id: str):
+def get_sales_alerts(campaign_id: str) -> JSONResponse:
+    """Return active prioritized sales alerts."""
     from app.services.analytics import get_prioritized_sales_targets
-    from fastapi.responses import JSONResponse
     return JSONResponse(content=get_prioritized_sales_targets(campaign_id))
 
 
-from app.services.analytics import get_asset_personas
-
 @router.get("/asset-personas")
-def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str, timeframe: int = 0):
+def get_asset_personas_endpoint(campaign_id: str, asset_name: str, type: str, timeframe: int = 0) -> JSONResponse:
+    """
+    Return all user profiles and cross-channel interaction journeys associated with a specific asset.
+    Uses batched SQL query execution to prevent N+1 overhead.
+    """
+    from app.services.analytics import get_asset_personas
     users = get_asset_personas(campaign_id, asset_name, type, timeframe)
     return JSONResponse(content=users)
 
+
 @router.get("/telemetry/ai-calls")
-def get_ai_telemetry():
+def get_ai_telemetry() -> JSONResponse:
+    """Return aggregate count of LLM API requests and cache hit frequency."""
     from app.services.llm_rotator import get_telemetry
-    data = get_telemetry()
-    return JSONResponse(content=data)
+    return JSONResponse(content=get_telemetry())
 
 
 @router.get("/dashboard/ai-chips", response_class=HTMLResponse)
-def get_ai_chips(request: Request, campaign_id: str, timeframe: int = 0, tab: str = "overview"):
+def get_ai_chips(request: Request, campaign_id: str, timeframe: int = 0, tab: str = "overview") -> HTMLResponse:
+    """
+    Render Out-of-Band (OOB) copilot chips dynamically swapped below the chat input box
+    tailored to the currently active dashboard tab (Overview, Performance, Audience).
+    """
     from app.services.analytics import get_ai_recommended_actions
     ai_copilot_actions = []
     try:
@@ -827,4 +991,5 @@ def get_ai_chips(request: Request, campaign_id: str, timeframe: int = 0, tab: st
     return templates.TemplateResponse(request=request, name="components/oob_copilot_chips.html", context={
         "copilot_actions": ai_copilot_actions
     })
+
 

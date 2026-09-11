@@ -1,5 +1,25 @@
+"""
+AI Copilot & Conversational Agent Controller
+
+This module provides the conversational telemetry interface, automated action executor,
+and autonomous tool-calling engine for the Wood Group Campaign Telemetry Engine.
+
+Architecture & Design:
+    - Session Isolation: Each user conversation is partitioned by a unique session cookie
+      (`cte_session`). State is persisted using a dual-tier storage strategy: Redis as the
+      primary cache (matching production on Render) with a file-backed JSON store as local fallback.
+    - Zero-Math Policy: The LLM is strictly prohibited from computing financial or analytical
+      metrics in its heads. All CPAs, pipeline totals, and fatigue rates must be fetched via
+      the 16 registered Model Context Protocol (MCP) tools.
+    - Asynchronous SSE Streaming: Chat submissions (/api/chat) immediately return an initial
+      agent placeholder and connect to a Server-Sent Events (SSE) stream (/api/chat/stream/{task_id}).
+      Tool invocations and thought states are streamed live to the UI.
+    - Stuck-Loop Prevention: Tracks tool call signatures (tool_name + sorted arguments) to abort
+      repeated identical failing invocations and instruct the model to synthesize gracefully.
+"""
+
 from fastapi import APIRouter, Form, Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from google import genai
 from google.genai import types
 from app.services.llm_rotator import mcp_tools, tool_functions
@@ -10,6 +30,7 @@ import uuid
 router = APIRouter()
 
 SYSTEM_PROMPT = """You are the Wood Group Campaign Telemetry Engine AI Assistant.
+
 Your primary role is to execute priority actions, query telemetry data, and answer analytical questions about the marketing campaigns.
 
 ZERO-MATH POLICY:
@@ -206,9 +227,21 @@ def handle_chat(
     intent: str = Form(None),
     reset_context: str = Form("false"),
     campaign_id: str = Form(None),
-):
+) -> HTMLResponse:
+    """
+    Primary chat submission endpoint.
+    
+    Workflow:
+      1. Identifies or mints a session cookie (`cte_session`) to guarantee session isolation.
+      2. Detects context-breaker prompts (e.g. 'Investigate pipeline target') to reset stale dialog.
+      3. Prunes history to a 12-turn sliding window ensuring conversation pairs remain valid.
+      4. For automated/synchronous tasks (e.g. CRM sync), executes a simulated action response.
+      5. For conversational & analytical queries, queues a pending task and returns an initial
+         chat bubble containing an HTMX SSE connection (`sse-connect="/api/chat/stream/{task_id}"`).
+    """
     session_id, is_new_session = get_or_create_session_id(request)
     chat_history = get_session_history(session_id)
+
 
     context_breakers = [
         "review priority action:",
@@ -366,12 +399,23 @@ def handle_chat(
     return response
 
 
-from fastapi.responses import StreamingResponse
-
-
 @router.get("/chat/stream/{task_id}")
-def chat_stream(task_id: str):
+def chat_stream(task_id: str) -> StreamingResponse:
+    """
+    Server-Sent Events (SSE) streaming endpoint.
+    
+    Streams live thought process, autonomous tool execution updates, and the final
+    synthesized strategic analysis directly into the active chat interface.
+    
+    State Flow:
+      1. Atomically consumes the queued task (`task_id`) from Redis/local storage.
+      2. Injects current UI filters (`campaign_id`, `timeframe`) into system prompt context.
+      3. Invokes Gemini LLM with function declarations for the 16 MCP analytical tools.
+      4. Iterates tool execution loop, yielding HTML progress indicators per tool call.
+      5. Formats markdown, embeds interaction history timeline, and persists updated session history.
+    """
     task_data = pop_task(task_id)
+
     if not task_data:
         return StreamingResponse(iter([]), media_type="text/event-stream")
 
@@ -421,32 +465,17 @@ def chat_stream(task_id: str):
     <button onclick="window.dispatchEvent(new CustomEvent('task-resolved', {{detail: {{id: '{trigger_id}'}}}}))\" hx-post="/api/chat" hx-target="#chat-history" hx-swap="beforeend" hx-indicator="#loading-indicator" hx-vals='{{"message": "[ACTION COMMAND]", "intent": "[INTENT]", "trigger_id": "{trigger_id}", "campaign_id": "{campaign_id}", "timeframe": "{timeframe}"}}' class="mb-2 w-full py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-600/40 border border-fuchsia-500/50 hover:border-fuchsia-400 text-fuchsia-300 hover:text-white text-[10px] font-bold transition-all uppercase tracking-widest flex items-center justify-center gap-2 rounded"><i class="fa-solid fa-bolt"></i> [ACTION NAME]</button>
     """
 
-            response = None
-            last_err = None
-            from app.services.llm_rotator import get_genai_client, mark_key_exhausted
+            from app.services.llm_rotator import generate_content_with_fallback
 
-            for _ in range(5):
-                try:
-                    local_client = get_genai_client()
-                    response = local_client.models.generate_content(
-                        model='gemini-3.6-flash',
-                        contents=chat_history,
-                        config=types.GenerateContentConfig(
-                            system_instruction=context_prompt,
-                            tools=[types.Tool(function_declarations=mcp_tools)],
-                            temperature=0.2,
-                        )
-                    )
-                    break
-                except Exception as e:
-                    last_err = e
-                    error_msg = str(e)
-                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                        if hasattr(local_client, 'api_key'):
-                            mark_key_exhausted(local_client.api_key)
+            response = generate_content_with_fallback(
+                contents=chat_history,
+                config=types.GenerateContentConfig(
+                    system_instruction=context_prompt,
+                    tools=[types.Tool(function_declarations=mcp_tools)],
+                    temperature=0.2,
+                )
+            )
 
-            if not response:
-                raise last_err
 
             # Unified Tool Calling Loop
             current_response = response
@@ -523,31 +552,14 @@ def chat_stream(task_id: str):
                     chat_history.append({"role": "model", "parts": current_response.candidates[0].content.parts})
                     chat_history.append({"role": "user", "parts": tool_responses})
 
-                    from app.services.llm_rotator import get_genai_client
-
-                    last_err = None
-                    for attempt in range(5):
-                        try:
-                            local_client = get_genai_client()
-                            current_response = local_client.models.generate_content(
-                                model='gemini-3.6-flash',
-                                contents=chat_history,
-                                config=types.GenerateContentConfig(
-                                    system_instruction=context_prompt,
-                                    tools=[types.Tool(function_declarations=mcp_tools)],
-                                    temperature=0.2,
-                                )
-                            )
-                            break
-                        except Exception as e:
-                            last_err = e
-                            error_msg = str(e)
-                            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-                                if hasattr(local_client, 'api_key'):
-                                    mark_key_exhausted(local_client.api_key)
-
-                            if attempt == 4:
-                                raise e
+                    current_response = generate_content_with_fallback(
+                        contents=chat_history,
+                        config=types.GenerateContentConfig(
+                            system_instruction=context_prompt,
+                            tools=[types.Tool(function_declarations=mcp_tools)],
+                            temperature=0.2,
+                        )
+                    )
                 else:
                     break
 
