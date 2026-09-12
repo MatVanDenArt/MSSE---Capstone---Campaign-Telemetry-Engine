@@ -168,11 +168,15 @@ def increment_telemetry(is_cache_hit: bool = False):
         pass
 
 def get_cached_response(prompt: str) -> str | None:
-    """Check Redis (primary) or local JSON cache (fallback) for a pre-computed response."""
+    """Check Redis (primary) or local JSON cache (fallback) for a pre-computed response.
+    Automatically increments the cache hit telemetry counter upon finding a hit."""
     h = hashlib.sha256(prompt.encode('utf-8')).hexdigest()
     if redis_client:
         try:
-            return redis_client.get(f"llm_cache:{h}")
+            val = redis_client.get(f"llm_cache:{h}")
+            if val:
+                increment_telemetry(is_cache_hit=True)
+                return val
         except Exception as e:
             print(f"Redis GET error: {e}", flush=True)
     
@@ -182,6 +186,7 @@ def get_cached_response(prompt: str) -> str | None:
             with open(CACHE_FILE, 'r') as f:
                 cache = json.load(f)
                 if h in cache:
+                    increment_telemetry(is_cache_hit=True)
                     return cache[h]
         except Exception:
             pass
@@ -234,7 +239,6 @@ class LegacyModelWrapper:
         prompt = str(contents)
         cached = get_cached_response(prompt)
         if cached:
-            increment_telemetry(is_cache_hit=True)
             return MockResponse(cached)
             
         increment_telemetry(is_cache_hit=False)
@@ -277,7 +281,6 @@ def generate_content_with_fallback(
     # Check cache first before making any network calls
     cached = get_cached_response(prompt_str)
     if cached:
-        increment_telemetry(is_cache_hit=True)
         return MockResponse(cached)
 
     increment_telemetry(is_cache_hit=False)

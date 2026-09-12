@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     lifespan=lifespan,
     title="Wood Group Campaign Telemetry Engine",
+    version="1.0.0",
     description="ABM telemetry dashboard with autonomous AI copilot and multi-touch attribution"
 )
 
