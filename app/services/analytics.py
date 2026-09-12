@@ -2150,9 +2150,11 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
 
     # --- Query 2: fetch the full cross-channel journey for ALL matched users in one shot ---
     # Replaces the previous per-user sub-query loop (N+1 → 2 total queries).
+    # Explicitly CAST user_id to INT because ga4_events stores user_id as REAL (e.g. 22.0)
+    # whereas crm_users stores it as INTEGER (22).
     cursor.execute(f"""
         WITH UserJourney AS (
-            SELECT g.user_id,
+            SELECT CAST(g.user_id AS INT) as user_id,
                    'Web' as type,
                    COALESCE(c.title, g.page_viewed) as asset,
                    g.page_viewed as raw_asset,
@@ -2165,7 +2167,7 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
 
             UNION ALL
 
-            SELECT u.user_id,
+            SELECT CAST(u.user_id AS INT) as user_id,
                    'Email' as type,
                    COALESCE(c.title, REPLACE(REPLACE(m.url_clicked,
                        'https://woodplc.com?utm_campaign=', ''),
@@ -2184,7 +2186,7 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
 
             UNION ALL
 
-            SELECT g2.user_id,
+            SELECT CAST(g2.user_id AS INT) as user_id,
                    'LinkedIn' as type,
                    COALESCE(c.title, l.ad_id) as asset,
                    l.ad_id as raw_asset,
@@ -2208,7 +2210,7 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
     from collections import defaultdict
     timeline_by_uid: dict = defaultdict(list)
     for ar in all_timeline_rows:
-        uid = str(ar['user_id'])
+        uid = str(int(float(ar['user_id'])))
         nm = ar['asset']
         if not nm:
             nm = 'Homepage'
@@ -2234,7 +2236,7 @@ def get_asset_personas(campaign_id: str, asset_name: str, asset_type: str, timef
     # Assemble the final user list preserving original row order.
     users = []
     for r in rows:
-        uid = str(r['user_id'])
+        uid = str(int(float(r['user_id'])))
         timeline = timeline_by_uid.get(uid, [])
         users.append({
             'name': f"{r['first_name']} {r['last_name']}",

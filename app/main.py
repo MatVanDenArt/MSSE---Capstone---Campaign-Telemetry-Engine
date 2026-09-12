@@ -76,6 +76,13 @@ async def read_root():
     return RedirectResponse(url="/lobby")
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Serves the modern SVG favicon directly to browsers requesting /favicon.ico."""
+    from fastapi.responses import FileResponse
+    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "favicon.svg"), media_type="image/svg+xml")
+
+
 @app.get("/health")
 async def health_check():
     """

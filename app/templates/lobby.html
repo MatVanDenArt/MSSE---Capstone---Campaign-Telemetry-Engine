@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaign Lobby - Wood Group Telemetry</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,15 +28,142 @@
     </script>
     <style>
         body {
-            background-color: #000;
+            background-color: #000000;
             color: #f8fafc;
             font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        .cyber-grid {
-            background-size: 40px 40px;
-            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        /* Ambient Fluid Shifting Gradient Canvas (Dark Titanium / Pitch Black) */
+        .gradient-mesh-canvas {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+            background: #000000;
+        }
+
+        /* Dynamic floating accent lights - Substantially larger & smooth ambient breathing */
+        .gradient-orb {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(140px);
+            will-change: transform, opacity;
+            mix-blend-mode: screen;
+        }
+
+        /* Orb 1: Electric Cyan / Sky flare (top-left) - 10.0s cycle */
+        .orb-1 {
+            width: 1300px;
+            height: 1300px;
+            background: radial-gradient(circle, #06b6d4 0%, #0284c7 45%, transparent 70%);
+            top: -35%;
+            left: -15%;
+            opacity: 0.11;
+            animation: orb-drift-1 10.0s ease-in-out infinite alternate;
+        }
+
+        /* Orb 2: Vivid Fuchsia / Violet flare (bottom-right) - 11.0s cycle */
+        .orb-2 {
+            width: 1250px;
+            height: 1250px;
+            background: radial-gradient(circle, #d946ef 0%, #7c3aed 45%, transparent 70%);
+            bottom: -35%;
+            right: -15%;
+            opacity: 0.11;
+            animation: orb-drift-2 11.0s ease-in-out infinite alternate;
+        }
+
+        /* Orb 3: Emerald telemetry pulse (center-right) - 9.2s cycle */
+        .orb-3 {
+            width: 1100px;
+            height: 1100px;
+            background: radial-gradient(circle, #10b981 0%, #059669 45%, transparent 70%);
+            top: 20%;
+            right: 5%;
+            opacity: 0.08;
+            animation: orb-drift-3 9.2s ease-in-out infinite alternate;
+        }
+
+        /* Orb 4: Deep Royal Indigo (bottom-left) - 10.5s cycle */
+        .orb-4 {
+            width: 1150px;
+            height: 1150px;
+            background: radial-gradient(circle, #3b82f6 0%, #4f46e5 45%, transparent 70%);
+            bottom: 0%;
+            left: 0%;
+            opacity: 0.08;
+            animation: orb-drift-4 10.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes orb-drift-1 {
+            0% {
+                transform: translate(0, 0) scale(0.95);
+                opacity: 0.07;
+            }
+
+            50% {
+                transform: translate(110px, 60px) scale(1.22);
+                opacity: 0.16;
+            }
+
+            100% {
+                transform: translate(50px, 120px) scale(0.92);
+                opacity: 0.09;
+            }
+        }
+
+        @keyframes orb-drift-2 {
+            0% {
+                transform: translate(0, 0) scale(0.95);
+                opacity: 0.07;
+            }
+
+            50% {
+                transform: translate(-120px, -70px) scale(1.25);
+                opacity: 0.17;
+            }
+
+            100% {
+                transform: translate(-60px, -130px) scale(0.90);
+                opacity: 0.09;
+            }
+        }
+
+        @keyframes orb-drift-3 {
+            0% {
+                transform: translate(0, 0) scale(0.92);
+                opacity: 0.05;
+            }
+
+            50% {
+                transform: translate(-80px, 90px) scale(1.25);
+                opacity: 0.13;
+            }
+
+            100% {
+                transform: translate(90px, -50px) scale(1.05);
+                opacity: 0.07;
+            }
+        }
+
+        @keyframes orb-drift-4 {
+            0% {
+                transform: translate(0, 0) scale(0.95);
+                opacity: 0.05;
+            }
+
+            50% {
+                transform: translate(90px, -80px) scale(1.20);
+                opacity: 0.12;
+            }
+
+            100% {
+                transform: translate(-70px, 40px) scale(0.92);
+                opacity: 0.06;
+            }
         }
 
         @keyframes gradient-x {
@@ -52,18 +181,34 @@
             background-size: 200% 100%;
             animation: gradient-x 1.5s linear infinite;
         }
+
+        /* Glassmorphic card styling on pure dark background */
+        .campaign-card {
+            background: rgba(10, 10, 14, 0.75) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .campaign-card:hover {
+            background: rgba(18, 18, 26, 0.9) !important;
+            border-color: rgba(56, 189, 248, 0.45) !important;
+        }
     </style>
 </head>
 
-<body class="min-h-screen bg-black cyber-grid flex flex-col items-center p-8 relative overflow-x-hidden">
+<body class="min-h-screen flex flex-col items-center p-8 relative">
 
-    <!-- Ambient glow -->
-    <div class="fixed top-0 left-1/4 w-96 h-96 bg-fuchsia-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <!-- Breathing Multi-Gradient Canvas (Darker, 3x faster, mesh removed) -->
+    <div class="gradient-mesh-canvas">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+        <div class="gradient-orb orb-4"></div>
+    </div>
 
     <div class="max-w-6xl w-full z-10 mt-10">
         <!-- Header -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-6 border-b border-dark-800 pb-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-6">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight text-slate-200 mb-1">Campaign Telemetry Engine</h1>
                 <p class="text-slate-400 text-sm">Select a campaign to view performance metrics.</p>

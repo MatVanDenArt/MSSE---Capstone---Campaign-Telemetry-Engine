@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaign Workspace</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -79,6 +81,37 @@
 
         [x-cloak] {
             display: none !important;
+        }
+
+        /* Copilot Action Buttons: Responsive Icon Handling */
+        #chat-history .copilot-markdown button {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.5rem !important;
+            text-align: center !important;
+            line-height: 1.35 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+        }
+
+        #chat-history .copilot-markdown button i {
+            flex-shrink: 0 !important;
+            font-size: 11px !important;
+            line-height: 1 !important;
+            align-self: center !important;
+        }
+
+        /* On narrow viewports or compact sidebar widths, remove the decorative icons so text never squishes */
+        @media (max-width: 640px) {
+            #chat-history .copilot-markdown button i {
+                display: none !important;
+            }
+        }
+        @container (max-width: 420px) {
+            #chat-history .copilot-markdown button i {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -268,7 +301,7 @@
                 </div>
 
                 <!-- Chat Feed -->
-                <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar pb-6">
+                <div id="chat-history" class="flex-1 p-4 overflow-y-auto text-sm space-y-6 custom-scrollbar pb-6 @container">
 
                 </div>
             </div>

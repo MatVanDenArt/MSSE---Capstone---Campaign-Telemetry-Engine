@@ -81,3 +81,12 @@ def test_telemetry_ai_calls_endpoint():
     assert isinstance(data["total_calls"], int)
     assert isinstance(data["cache_hits"], int)
 
+
+def test_health_check_endpoint():
+    """Validates the container liveness/readiness probe (/health) used by Render and orchestrators."""
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == {"status": "ok"}
+
+

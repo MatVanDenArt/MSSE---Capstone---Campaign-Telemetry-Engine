@@ -830,6 +830,32 @@ def chat_stream(task_id: str) -> StreamingResponse:
                 font-size: 11px !important;
                 font-weight: 700 !important;
                 letter-spacing: 0.05em !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0.5rem !important;
+                text-align: center !important;
+                line-height: 1.35 !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+            }}
+            /* Robust icon handling: prevent icon collision with multi-line button labels */
+            .copilot-markdown button i {{
+                flex-shrink: 0 !important;
+                font-size: 11px !important;
+                line-height: 1 !important;
+                align-self: center !important;
+            }}
+            /* On compact containers or screens, hide decorative action button icons to give 100% width to label text */
+            @container (max-width: 420px) {{
+                .copilot-markdown button i {{
+                    display: none !important;
+                }}
+            }}
+            @media (max-width: 640px) {{
+                .copilot-markdown button i {{
+                    display: none !important;
+                }}
             }}
             </style>
             <div class="flex gap-4">

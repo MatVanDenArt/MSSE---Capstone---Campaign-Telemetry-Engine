@@ -102,28 +102,26 @@ This clean, 5-step modular architecture ensures that the analytics service can s
 
 ## 4. LLM model selection & adaptability
 
-The intelligence layer of the copilot is primarily driven by Google's **gemini-3.8-flash**, backed by an automated fallback cascade down to **gemini-3.6-flash** and **gemini-3.5-flash** for robusness of the free tier solution. Choosing this model family and structuring this specific multi-tier architecture emerged from analysing the actual demands of my agentic workflow against real-world API rate limits, latency profiles, and cost structures.
+The intelligence layer of the copilot is driven by Google's Gemini Flash model family, utilizing an automated fallback cascade across **gemini-3.6-flash**, **gemini-3.8-flash**, and **gemini-3.5-flash**. Choosing this model family and configuring this multi-tier architecture emerged from analyzing the actual demands of an agentic telemetry workflow against real-world API rate limits, latency profiles, and cost structures.
 
 ### The model landscape: Why Flash over Pro or local SLMs?
 When integrating an LLM into an analytical system, the temptation is often to reach for the most powerful frontier model available under the assumption that "smarter is always better." In my architecture, however, that assumption is incorrect for the following reasons:
 
-1. **Division of cognitive labour:** In my MCP architecture, I deliberately prohibit the LLM from performing raw arithmetic or database joins. All financial formulas (e.g., blended CPA, budget pacing run-rates) and data queries run deterministically in Python against indexed SQLite tables in sub-millisecond time. The model's responsibility is purely synthesis: reading verified JSON outputs, extracting meaningful business patterns, and explaining them to a marketing executive. Paying the latency and cost penalty of a frontier reasoning model simply to summarise structured JSON is an would be highly inefficient.
+1. **Division of cognitive labour:** In my MCP architecture, I deliberately prohibit the LLM from performing raw arithmetic or database joins. All financial formulas (e.g., blended CPA, budget pacing run-rates) and data queries run deterministically in Python against indexed SQLite tables in sub-millisecond time. The model's responsibility is purely synthesis: reading verified JSON outputs, extracting meaningful business patterns, and explaining them to a marketing executive. Paying the latency and cost penalty of a frontier reasoning model simply to summarize structured JSON would be highly inefficient.
 2. **Interactive UI latency:** The copilot lives in a server-driven HTMX interface with real-time SSE streaming. A user clicking "Analyse asset fatigue" expects the system to acknowledge and stream advice quickly, providing real-time feedback. Frontier "Pro" models typically exhibit higher time-to-first-token (TTFT) and slower generation speeds, which degrades the user experience into an awkward waiting game. Flash models, by contrast, routinely respond in under 800ms.
 3. **Quota constraints on the free tier:** For a capstone evaluation and live cloud demonstration (hosted on Render), relying on Google AI Studio's free tier is an operational necessity. On this tier, Pro models are throttled to a restrictive 2 Requests Per Minute (RPM) and 50 Requests Per Day (RPD). In my application, where a single user interaction can trigger a multi-turn tool calling sequence (inspecting committee members, checking asset fatigue, and recursively drafting an email sequence), a Pro model would exhaust the daily quota after barely three or four queries. In contrast, Flash family models provide 15 RPM and 1,500 RPD, offering the operational headroom needed for sustained demonstrations and automated evaluation suites.
 4. **Why not ultra-light / edge SLMs?** At the other extreme, sub-3B parameter local models (e.g., Gemma-2B, Llama-3.2-1B) struggle significantly with complex function-calling schemas. In early testing, smaller models frequently hallucinated nonexistent parameters or failed to return valid JSON tool calls. The Flash tier represents the exact sweet spot: industrial-grade function-calling reliability combined with high throughput.
 
-### Evaluating gemini-3.8-flash: Benefits and practical drawbacks
-Our primary production model is **gemini-3.8-flash**. Operating it across the test suites and interactive sessions highlighted clear strengths alongside distinct operational quirks:
+### Model selection in practice: Defaulting to gemini-3.6-flash vs. 3.8-flash preference
 
-#### Benefits
-- **Exceptional tool-calling precision:** Across the 16 analytical MCP tools, **gemini-3.8-flash** demonstrates near-zero parameter hallucination. It consistently infers the correct **campaign_id** and **timeframe** from conversational context and adheres strictly to the OpenAPI-compatible function schemas.
-- **1M+ token context headroom:** B2B buyer journeys in my data engine span 18 months of multi-touch events, buying committee rosters, and asset impact matrices. The extensive context window allows us to pass rich, chronological timelines without having to prematurely truncate or build complex chunking pipelines that risk losing causality.
-- **Crisp, commercially grounded tone:** Unlike earlier generations that tended toward generic marketing platitudes, 3.8 Flash reliably adopts an executive analytical tone. When asked to evaluate an underperforming asset, it cites specific metrics (e.g., "traffic decayed 84% from peak while CPA escalated to $1,420") and immediately proposes actionable budget reallocation steps.
+From an analytical reasoning and tone perspective, **gemini-3.8-flash** is actually my preferred model: it writes with a noticeably crisper, commercially grounded executive cadence and shows exceptional contextual nuance when synthesizing complex buying committees. 
 
-#### Drawbacks and engineering mitigations
-- **Over-eagerness in tool loops:** Flash models can occasionally be over-eager. In multi-turn tool loops, if an initial tool response yields a partial answer, the model sometimes attempts to call the exact same tool with the exact same arguments in the next turn. Left unchecked, this risks burning API quota in an infinite loop. I resolved this vulnerability by implementing an in-memory call signature tracker (**last_call_signature**) inside **app/api/chat.py** that detects duplicate calls and returns an informative break prompt.
-- **Formatting drift:** Because the HTMX frontend directly injects backend-rendered HTML into DOM slots, the model must output strictly formatted HTML action buttons. Flash models will occasionally wrap these buttons in markdown code blocks if not firmly instructed. This was addressed through rigid few-shot examples in the system prompt and defensive regex post-processing.
-- **Burst quota sensitivity:** Even with 15 RPM, running back-to-back automated evaluations or having two users interact simultaneously can momentarily trigger HTTP 429 (**RESOURCE_EXHAUSTED**) errors. I resolved this vulnerability during testing by implementing a multi-tiered model and api key resilience design.
+However, during continuous testing and evaluation runs, a practical reality emerged: because 3.8-flash is Google's newest and most popular flash model, it is heavily congested on the shared free tier. During peak evaluation periods, this resulted in frequent HTTP 429 (**RESOURCE_EXHAUSTED**) quota throttling, unexpected latency spikes, and transient availability drops. 
+
+As a pragmatic engineering decision, I configured the default to **gemini-3.6-flash**:
+- **Better availability & less contention:** 3.6-flash experiences significantly less traffic on the free tier. This translates into rock-solid uptime, vastly fewer 429 rate-limit errors, and a consistently snappier time-to-first-token (TTFT) during live demonstrations.
+- **Flawless function calling:** Despite being slightly older, 3.6-flash handles the 16 MCP tool declarations with identical parameter accuracy, adhering strictly to required schemas without hallucination.
+- **Resilient fallback cascade:** Should 3.6-flash ever experience a hiccup, our rotating fallback chain immediately tries 3.8-flash and 3.5-flash across our key rotation pool before giving up, ensuring users never see a dropped request.
 
 ### AI model abstraction layer
 I isolated all LLM interactions within a dedicated service layer (**app/services/llm_rotator.py**) rather than scattering SDK calls across the route handlers.
@@ -244,39 +242,55 @@ FastAPI's Depends(get_db) pattern manages request-scoped database connection lif
 
 app/main.py uses FastAPI's lifespan async context manager which follows the **application factory** pattern: the application object is constructed and its lifecycle managed in one place, with startup and shutdown logic executing predictably within the context manager's scope. For the current capstone deployment, the lifespan handler is lightweight, but this structure means that future startup concerns — connection pool warming, model preloading, scheduled cache invalidation — can be added cleanly without touching route logic.
 
-### Global state as a deliberate prototype shortcut
+### Session isolation: Moving beyond global state
 
-One pattern choice deserves an honest explanation: app/api/chat.py maintains chat_history and active_chat_tasks as module-level global variables. Every request in the application shares these objects, which means all users share the same conversation history and task queue. This was a deliberate shortcut for a single-user demonstration context — it avoids the complexity of session management while allowing the copilot to maintain context across a multi-turn conversation within a single browser session. In any multi-user deployment, including the live Render instance, two concurrent users would interleave their chat histories. The correct production architecture is a Redis-backed session store keyed by a user ID or signed session token, isolating chat state per user. The shortcut is acceptable for a capstone demonstration; it would need to be resolved before a team-level rollout.
+Early prototypes maintained **chat_history** and **active_chat_tasks** as module-level globals—a convenient shortcut for initial single-user development that created concurrency leaks in multi-user settings. I resolved this by refactoring **app/api/chat.py** to use cookie-authenticated session IDs (**cte_session**) backed by dual-tier persistence: Redis as primary (with 24h TTL) and local JSON files as dev fallback. Chat history and streaming tasks are now strictly isolated per user session.
 
 
 
-## 8. Deployment strategy & cost implications
+## 8. Deployment strategy and hosting architecture
 
-### Phase 1: Capstone release (PaaS / Cloud-native)
-For the initial capstone release, the application is designed to be deployed via **Render** (Platform-as-a-Service), automated through **GitHub actions**. 
-- **Setup**: Pushes to the main branch trigger a GitHub action that tests the application and deploys it directly to Render. The embedded SQLite database (capstone.db) is packaged within the deployment for zero-configuration testing.
-- **Cost**: Free. Render's free tiers are sufficient for demonstrating the UI, FastAPI backend, Redis,  and handling lightweight traffic.
-- **Limitations**: The SQLite database is ephemeral in containerised cloud environments unless mounted to a persistent disk. This is acceptable for the simulation, but not ultimatley suitable for production.
+### Capstone demonstration: Render
 
-### Phase 2: Enterprise production (Cloud vs. On-Premises)
-Moving beyond the capstone into a production enterprise environment requires architectural shifts, particularly concerning data privacy and scale.
+**Live demo on Render** 
+- https://msse-capstone-campaign-telemetry-engine.onrender.com/
 
-#### Option A: Managed cloud (AWS / Azure / GCP)
-- **Architecture**: The application database should migrate from SQLite to a managed PostgreSQL instance (e.g., AWS RDS). The FastAPI application should be deployed via container orchestration (e.g., AWS ECS or Kubernetes). Managed ETL tools (Fivetran/dbt) should be used to ingest real GA4 and CRM data continuously.
-- **Cost Implications**:  
-  - Database: ~$50-$200/month for a production RDS instance.
-  - Compute: ~$50-$100/month for scalable container hosting.
-  - LLM API Costs: Highly variable based on token usage. Utilising **gemini-3.8-flash** (with automated fallback down to 3.6 and 3.5) keeps operational costs minimal (fractions of a cent per query), while scaling across a broader organization would require budgeting for continuous token consumption. The application actively minimizes this expenditure through its dual-tier prompt caching layer.
-- **Pros**: Infinite scalability, zero hardware maintenance, rapid deployment.
+For the capstone demonstration, I deployed the engine on **Render** (free tier) with **GitHub Actions**:
+- **Zero-configuration setup:** The embedded SQLite database (**capstone.db**) is bundled directly into the container, allowing evaluators to access a fully working dashboard immediately without configuring external databases.
+- **Native Redis:** A managed Redis instance handles session state and AI telemetry caching in a live cloud environment without local container overhead.
+- **Automated CI/CD:** Every push to **main** triggers automated pytest suites in GitHub Actions that need to successfully pass before automatic deployment can take place.
 
-#### Option B: On-Premises / air-gapped deployment
-- **Architecture**: For enterprise engineering firms dealing with highly sensitive IP or with highly sensitive customer data, the entire stack can be deployed on internal, on-premises servers. Because the application is fully containerised, it can run on internal Kubernetes clusters.
-- **AI adaptation**: The llm_rotator.py abstraction allows the organisation to completely unplug from cloud-based AI providers (Google/OpenAI) and point the copilot to an internally hosted, open-source LLM (e.g., A marketing optimised model running via Ollama on a local GPU).
-- **Cost implications**: High CapEx, Low OpEx.
-  - Hardware: Significant upfront capital expenditure ($8-12k) for dedicated server equipped with high-VRAM GPUs (e.g., NVIDIA A100s or multiple RTX 4090s) necessary to run LLMs locally.
-  - Maintenance: Requires dedicated internal DevOps/IT personnel.
-  - API Costs: $0. Once the hardware is purchased, infinite AI queries can be made without paying token fees.
-- **Pros**: Absolute data sovereignty. Zero risk of proprietary CRM or pipeline data leaking to public cloud AI providers.
+
+### Production evaluation: Single company (~50 users)
+
+If deployed internally at a single enterprise client with roughly 50 marketing managers and commercial leads, keeping the deployment infrastructure simple and cost efficient is the optimal approach. The optimal solution needs to allow the prototype to find its way into the hands of the users easily and without any friction. It must be cost efficient and demonstrate value without placing a heavy burden on the IT department to deploy and maintain the solution. Balancing cost, data privacy and security concerns are the main  factors to consider, across both hosting infrastructure and LLM model choice. 
+
+#### 1. Hosting infrastructure options
+
+| Option | Stack | Monthly Cost | Maintenance Effort | Practical Fit |
+| :--- | :--- | :--- | :--- | :--- |
+| **Option A: Render managed** | FastAPI Web Service + Managed PostgreSQL + Managed Redis | **~\$50–\$60/mo** | **Near zero.** Fully managed SSL, automated backups, and push-to-deploy. | **Best choice for speed and cost.** Low overhead, perfect for an internal team. |
+| **Option B: AWS serverless / lightweight** | AWS App Runner + RDS PostgreSQL + ElastiCache | **~\$90–\$150/mo** | **Low.** Serverless containers; no EC2 instances or cluster management. | Fits directly inside corporate AWS tenant and IT security policies. |
+
+#### 2. AI model strategy and data privacy
+
+Because enterprise marketing telemetry involves commercially sensitive client and pipeline data, the AI backend must balance privacy guarantees against cost and reasoning power:
+
+| Strategy | Architecture | Cost Structure | Privacy & Governance | Verdict for a single enterprise client |
+| :--- | :--- | :--- | :--- | :--- |
+| **Cloud API (Gemini / OpenAI)** | Direct API calls via **llm_rotator.py** with multi-tier fallback (3.6/3.8 Flash) | **~\$5–\$20/mo** (fractions of a cent per query; free-tier for light usage). Redis prompt caching reduces calls further. | Enterprise agreements offer zero-data-retention. | **Recommended baseline if company security allows third-party API exposure.** Highest reasoning capability, lowest cost, and zero maintenance. |
+| **Enterprise private cloud (AWS Bedrock / Azure OpenAI)** | Managed private endpoints within the company’s corporate cloud account | **Pay-per-token** (~$20–$50/mo) with zero idle compute costs. | **High.** Data is legally and cryptographically isolated within the corporate tenancy. | **Best compromise if corporate security mandates zero third-party API exposure.** |
+| **Self-hosted on-premises (Ollama / vLLM)** | Open-source model (e.g., Llama 3 8B) running on internal company hardware | **High initial CapEx (\$10k+)** for enterprise server/GPU hardware. \$0 token fees, but ongoing internal IT maintenance. | **Absolute.** Zero external data transmission. | Unnecessary cost and complexity for 50 users; weaker reasoning on complex tool calling. |
+
+Thanks to the adapter pattern in **app/services/llm_rotator.py**, switching from public Gemini APIs to a corporate private endpoint (or local LLM) requires changing only the **OPENAI_BASE_URL** environment variable, without touching application logic.
+
+### Recommended production path
+
+For a single enterprise client with approximately 50 users, the most pragmatic path is **Render deployment with managed PostgreSQL database and Gemini cloud API** (under an enterprise zero-retention agreement). The entire platform cost would be around **$80/month total** with zero server maintenance. If corporate IT mandates keeping all workloads inside company cloud boundaries, the application deployment could pivot seamlessly to **AWS App Runner + AWS Bedrock** without requiring Kubernetes or dedicated infrastructure teams.
+
+### When would a heavy cloud architecture make sense?
+
+Complex orchestration (Kubernetes, Celery worker clusters, multi-region database failover) only becomes justified in the event that the application evolves from an internal tool into a commercial multi-tenant SaaS product serving dozens of external enterprises with high-throughput event ingestion. In the context of the prototype that is meant to represent a single enterprise client, keeping the deployment simple, managed, and inexpensive is an optimal solution.
 
 ## 9. Testing strategy
 
@@ -331,10 +345,11 @@ Because LLMs and remote inference APIs are subject to both non-deterministic res
 - **Parser & Schema Failure Resilience**: The **tests/test_llm_parsers.py** suite uses **unittest.mock.patch** to inject synthetic, malformed JSON payloads. It asserts that when an LLM returns unparseable or truncated JSON, the backend catches the error cleanly and devolves to a safe fallback state rather than crashing the route with an HTTP 500.
 - **Cascading Fallback & Quota Resilience**: The **tests/test_model_fallback.py** suite simulates HTTP 429 (**RESOURCE_EXHAUSTED**) quota limits on the primary **gemini-3.8-flash** model. It verifies that **generate_content_with_fallback** correctly quarantines exhausted API keys into the penalty box and cascades execution down the Flash model chain (**gemini-3.8-flash** $\rightarrow$ **gemini-3.6-flash** $\rightarrow$ **gemini-3.5-flash**), guaranteeing service continuity without user-visible failures.
 
-### 6. Presentation layer testing (API routes)
+### 6. Presentation layer & endpoint smoke testing (API routes)
 Because the frontend relies on HTMX for dynamic swapping, the FastAPI backend acts as the presentation layer.
-- **Approach**: The tests/test_api.py suite utilises fastapi.testclient.TestClient to programmatically fire HTTP GET requests against the core endpoints (e.g., /api/dashboard/overview).
-- **Coverage**: It asserts that the HTMX endpoints correctly return 200 OK status codes and valid HTML fragments, ensuring the UI remains intact even as the underlying analytics engine is refactored.
+- **Approach**: The tests/test_api.py carries out smoke testing of core routes and verifies container readiness.
+- **Coverage**: It asserts that UI endpoints (/api/dashboard/overview, /api/dashboard/performance, /api/dashboard/action-center) return 200 OK with valid HTML fragments, verifies live telemetry endpoints (/api/telemetry/ai-calls), and tests the /health container probe used by Render.
+
 
 ### 7. Continuous integration (GitHub Actions)
 To enforce quality control and prevent broken code from reaching production, the entire testing suite is automated via CI/CD.
