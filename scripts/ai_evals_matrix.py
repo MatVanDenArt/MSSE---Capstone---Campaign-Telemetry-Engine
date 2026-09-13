@@ -1,3 +1,25 @@
+"""
+LLM-as-a-Judge evaluation matrix & continuous quality harness
+
+This module implements an automated evaluation harness designed to systematically test,
+score, and track the output quality of all 16 analytical Model Context Protocol (MCP) tools
+exposed to the campaign telemetry engine AI copilot.
+
+Architectural purpose:
+    - Qualitative validation: Deterministic unit tests assert schema types and execution success,
+      but cannot judge whether an analytical payload is actionable for an executive. This harness
+      invokes each tool across multiple campaign timeframes (30d and 90d) and passes the structured
+      JSON payload to an independent Gemini LLM "Judge".
+    - 3-Dimensional scoring: Evaluates each tool output on a scale of 1 to 5 across:
+        1. Actionability: Does the payload provide concrete financial thresholds, directional
+           recommendations, or clear operational verdicts?
+        2. Contextual relevance: Does the payload answer the query intent without extraneous
+           database metadata or noise?
+        3. Sparsity: Is the response concise enough to conserve LLM context window attention?
+    - Iterative refinement tracking: Generates versioned markdown reports (ai_evals_report_v*.md)
+      used to benchmark improvements, fix calculation bugs, and eliminate failure cases.
+"""
+
 import os
 import sys
 import json

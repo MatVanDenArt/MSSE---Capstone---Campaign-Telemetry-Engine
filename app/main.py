@@ -1,11 +1,11 @@
 """
-Campaign Telemetry Engine (CTE) - Application Entrypoint
+Campaign telemetry engine - Application entrypoint
 
 This module bootstraps the FastAPI application, mounts static assets and Jinja2
 HTML templates, registers the route controllers (Dashboard and AI Chat), and
 defines the top-level navigation routes (Lobby, Root Redirect, and Health Probe).
 
-Architecture Note:
+Architecture note:
     The application follows a Server-Driven UI (SDUI) pattern using HTMX and
     Alpine.js. The FastAPI backend serves both full workspace pages and modular
     HTML partials that are swapped dynamically into the DOM without client-side

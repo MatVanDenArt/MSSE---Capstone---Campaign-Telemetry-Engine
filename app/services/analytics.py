@@ -1,7 +1,7 @@
 """
-Analytical Facade & Telemetry Aggregation Service
+Analytical facade & telemetry aggregation service
 
-This module acts as the central analytical facade for the Campaign Telemetry Engine,
+This module acts as the central analytical facade for the campaign telemetry engine,
 providing a high-level API over raw multi-channel data tables in `capstone.db`:
   - `ga4_events`: Web pageviews, session durations, and bounce flags.
   - `mailchimp_events`: Outbound email sends, opens, and link clicks.
@@ -10,13 +10,13 @@ providing a high-level API over raw multi-channel data tables in `capstone.db`:
   - `crm_opps`: Pipeline opportunities, contract values, and Closed Won revenue stages.
   - `content_metadata`: Topic taxonomy, asset types, target personas, and publication dates.
 
-Architecture & Conventions:
-  - Facade Pattern: Unifies disparate channel sources into standard analytical metrics
+Architecture & conventions:
+  - Facade pattern: Unifies disparate channel sources into standard analytical metrics
     (blended CPA, multi-touch attribution, fatigue ratings, account penetration).
-  - MCP Tool Exporter: Imports and re-exports all 16 domain tools from `app.services.mcp_tools`.
-  - Timeframe Scoping: Functions accept a `timeframe` integer argument representing days
+  - MCP tool exporter: Imports and re-exports all 16 domain tools from `app.services.mcp_tools`.
+  - Timeframe scoping: Functions accept a `timeframe` integer argument representing days
     (e.g., 30, 60, 90). Passing `timeframe=0` evaluates the full campaign history (All Time).
-  - Connection Lifecycle: Each public service function opens and closes its own SQLite
+  - Connection lifecycle: Each public service function opens and closes its own SQLite
     connection via `get_db_connection()`, maintaining isolation and thread safety.
 """
 

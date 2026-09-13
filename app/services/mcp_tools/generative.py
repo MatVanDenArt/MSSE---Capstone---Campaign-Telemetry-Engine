@@ -1,5 +1,5 @@
 """
-Generative Content Synthesis - Model Context Protocol (MCP) Tools
+Generative content synthesis - MCP tools
 
 Implements AI-driven content generation tools invoked autonomously by the Copilot:
   - `generate_ab_test_variants`: Synthesizes A/B test variations (Control, Variant A, Variant B)

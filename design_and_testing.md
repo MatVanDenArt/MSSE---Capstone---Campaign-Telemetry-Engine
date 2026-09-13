@@ -1,51 +1,36 @@
 # Campaign telemetry engine: Design and architecture document
 
-This document outlines the core architectural choices, rationale, and design systems implemented for the campaign telemetry engine project. 
+This document details the architectural decisions, design patterns, data simulation pipeline, and testing strategies implemented for the Campaign Telemetry Engine capstone project.
 
+## 1. Project rationale: Solving the actionability gap in B2B marketing
 
-## 1. Project rationale: Solving the actionability gap
+### The problem: Fragmented telemetry and 18-month attribution cycles
+Enterprise B2B marketing operates under fundamentally different constraints than B2C e-commerce:
+- Sales cycles routinely span 12 to 18 months.
+- Purchasing decisions involve multi-stakeholder buying committees (technical evaluators, commercial directors, and C-suite economic buyers) rather than individual impulse shoppers.
+- Marketing touchpoints are fragmented across siloed channels: anonymous website browsing (Google Analytics 4), outbound nurture cadences (Mailchimp), sponsored ad campaigns (LinkedIn Ads), and sales opportunity tracking (Salesforce CRM).
 
-### The market gap
-Imagine a chief marketing officer at a B2B firm asking: "We spent $150,000 on the 'Decarbonisation' campaign over the last 12 months. Did it actually help us win the $10M Equinor contract?"
+In practice, this creates an attribution breakdown at the top of the funnel. A prospective buyer typically researches anonymously across several visits before submitting a form or accepting an email nurture sequence. When analytics systems evaluate these touchpoints in isolation, paid acquisition channels appear to generate zero pipeline, leaving marketing leadership unable to tie early-stage campaign investments to multi-million-dollar closed contracts.
 
-In enterprise B2B marketing, which is characterized by 18-month sales cycles and complex buying committees, answering this is difficult. Marketers often use analytics tools designed for B2C transactions, forcing them to pull up disconnected screens: Google Analytics for web traffic, Mailchimp for emails, LinkedIn for ad clicks, and Salesforce for closed deals. 
+### The operational bottleneck: From observation to action
+Extracting actionable intelligence from this landscape historically required either dedicated data analysts writing complex ad-hoc SQL joins across data warehouses, or marketers manually stitching together spreadsheets from disconnected dashboards. Even when anomalies were identified—such as an ad asset exhausting its audience and burning budget—a significant lag separated observation from operational intervention.
 
-When data is this fragmented, it's easy to lose sight of the big picture and default to reporting vanity metrics rather than actual pipeline influence.
+### The engineering objective
+The Campaign Telemetry Engine addresses these challenges through three core systems:
+1. **Deterministic identity resolution:** A simulated ETL pipeline that stitches anonymous early-stage cookie IDs to downstream CRM profiles retroactively, establishing a continuous chronological timeline from first ad click to closed deal.
+2. **Prescriptive analytics with constrained AI orchestration:** Offloading financial math, multi-touch attribution, and fatigue detection to deterministic, strictly typed Python functions (via an MCP-inspired tool interface), using the LLM solely to synthesize patterns into strategic executive recommendations.
+3. **Action-driven server UI:** An HTMX and FastAPI interface that surfaces anomalies directly within an Action Center, enabling marketing and sales teams to review and trigger operational workflows with single-click actions.
 
-### The team gap
-Historically, extracting cross-channel insights required dedicated data analysts interpreting and consolidating data from multiple siloes, or marketers spending weeks mastering BI tools. This creates an operational bottleneck between seeing the data and deciding on the next best action.
+## 2. System design and user interface architecture
 
-### The solution: Combining prescriptive analytics and agentic AI
-This capstone project shifts the focus from purely descriptive analytics to actionable, AI-assisted insights. The **Campaign telemetry engine** acts as an automated system that connects these distinct data sources to stitch user **journeys** together. 
+The user interface follows three core functional modules designed for high information density and fast execution:
 
-Rather than requiring the user to hunt through complex graphs, the system programmatically surfaces anomalies (e.g., asset fatigue) via an Action Center. The integrated AI Copilot then uses this context to propose corrective actions.
-
-### Usability and target audience
-This platform is designed to aid decision makers who need immediate, actionable insights:
-
-- **CMO overview:** An executive dashboard providing marketing effectiveness metrics (e.g., pipeline velocity, blended CPA) without requiring deep dives into individual tactics.
-- **Campaign managers:** Unlocks tactical agility. The omnichannel asset matrix flags "asset fatigue", allowing for budget reallocation before ad spend is wasted.
-- **Sales leadership:** Bridges the marketing-sales divide. The account penetration view flags high-intent targets, helping sales directors draft highly contextualized outreach.
-
-### The capstone justification
-This project was selected because it integrates three core engineering challenges:
-
-1. **AI orchestration with constraints:** Implementing an MCP-like approach to force an LLM to rely strictly on deterministic Python functions, demonstrating how AI can be grounded in actual financial and performance data.
-2. **Server-driven UI:** Building a UI that dynamically injects interactive AI analysis directly into the user's workflow using HTMX and FastAPI.
-3. **Data stitching:** Architecting the logic to connect anonymous web cookies to known CRM contacts across a fragmented landscape via a robust simulation.
-
-The following sections detail the architectural decisions, the data simulation engine, the dual-tier caching strategy, and the iterative evaluation harness used to validate and harden the system.
-
-## 2. The user experience: Data visualisation, action centre, and copilot
-
-The user experience is built on a deliberate three-pillar philosophy:
-
-1. **Data visualisation:** 
-   High-density, scannable graphs and sections present unified telemetry. The visual elements (colours, sparklines, spacing) are constrained to convey health and channel identity quickly without overwhelming the user.
+1. **Telemetry visualisations:** 
+   Compact, scannable metric cards, multi-channel funnels, and performance tables present unified cross-channel data. Visual elements (color accents, sparklines, and status badges) are constrained to communicate channel performance and anomalies without visual clutter.
 2. **The action centre:** 
-   An automated, dynamic to-do list (priority actions) powered by the backend analytics engine. Instead of forcing the user to hunt for insights, the system mathematically detects trends and anomalies (e.g., calculating when an asset's traffic drops by 90% from its peak) and queues them up as actionable alerts.
-3. **The AI copilot:** 
-   An interactive assistant seamlessly embedded alongside the data. When the user interacts with an action centre item, the copilot guides them through execution—whether that means drafting a follow-up email sequence, analysing a channel mix, or suggesting asset rotations.
+   A dynamic queue of priority tasks surfaced by the analytics engine. The backend continuously evaluates live data against operational thresholds (e.g., flagging when an asset's 7-day traffic drops by more than 95% from its peak) and stages actionable intervention tasks.
+3. **The AI copilot sidebar:** 
+   An interactive conversational panel embedded directly alongside the dashboard. When an operator investigates a priority action, the copilot runs relevant backend diagnostic tools, summarizes the strategic context, and renders executable action buttons to trigger stack workflows (e.g., scheduling nurture sequences or syncing buying committee contacts to CRM).
 
 ## 3. Data simulation setup and logic
 
@@ -104,41 +89,47 @@ This clean, 5-step modular architecture ensures that the analytics service can s
 
 The intelligence layer of the copilot is driven by Google's Gemini Flash model family, utilizing an automated fallback cascade across **gemini-3.6-flash**, **gemini-3.8-flash**, and **gemini-3.5-flash**. Choosing this model family and configuring this multi-tier architecture emerged from analyzing the actual demands of an agentic telemetry workflow against real-world API rate limits, latency profiles, and cost structures.
 
-### The model landscape: Why Flash over Pro or local SLMs?
-When integrating an LLM into an analytical system, the temptation is often to reach for the most powerful frontier model available under the assumption that "smarter is always better." In my architecture, however, that assumption is incorrect for the following reasons:
+### Model landscape and practical trade-offs
+Integrating an LLM into an analytical telemetry system requires evaluating real-world latency, cost, and rate limits rather than defaulting to the largest frontier model:
 
-1. **Division of cognitive labour:** In my MCP architecture, I deliberately prohibit the LLM from performing raw arithmetic or database joins. All financial formulas (e.g., blended CPA, budget pacing run-rates) and data queries run deterministically in Python against indexed SQLite tables in sub-millisecond time. The model's responsibility is purely synthesis: reading verified JSON outputs, extracting meaningful business patterns, and explaining them to a marketing executive. Paying the latency and cost penalty of a frontier reasoning model simply to summarize structured JSON would be highly inefficient.
-2. **Interactive UI latency:** The copilot lives in a server-driven HTMX interface with real-time SSE streaming. A user clicking "Analyse asset fatigue" expects the system to acknowledge and stream advice quickly, providing real-time feedback. Frontier "Pro" models typically exhibit higher time-to-first-token (TTFT) and slower generation speeds, which degrades the user experience into an awkward waiting game. Flash models, by contrast, routinely respond in under 800ms.
-3. **Quota constraints on the free tier:** For a capstone evaluation and live cloud demonstration (hosted on Render), relying on Google AI Studio's free tier is an operational necessity. On this tier, Pro models are throttled to a restrictive 2 Requests Per Minute (RPM) and 50 Requests Per Day (RPD). In my application, where a single user interaction can trigger a multi-turn tool calling sequence (inspecting committee members, checking asset fatigue, and recursively drafting an email sequence), a Pro model would exhaust the daily quota after barely three or four queries. In contrast, Flash family models provide 15 RPM and 1,500 RPD, offering the operational headroom needed for sustained demonstrations and automated evaluation suites.
-4. **Why not ultra-light / edge SLMs?** At the other extreme, sub-3B parameter local models (e.g., Gemma-2B, Llama-3.2-1B) struggle significantly with complex function-calling schemas. In early testing, smaller models frequently hallucinated nonexistent parameters or failed to return valid JSON tool calls. The Flash tier represents the exact sweet spot: industrial-grade function-calling reliability combined with high throughput.
+1. **Offloading computation to deterministic Python:** In this architecture, the LLM is prohibited from performing raw arithmetic, statistical aggregations, or SQL joins. All calculations (blended CPA, pacing run rates, multi-touch weightings) run deterministically in Python against indexed SQLite tables in sub-millisecond time. The model's responsibility is strictly synthesis: parsing verified JSON outputs and explaining business implications to a marketing operator. Paying the latency and cost penalty of a frontier reasoning model (e.g., Gemini Pro or GPT-4) to summarize pre-computed JSON is an inefficient use of resources.
+2. **Interactive UI latency:** The copilot lives in a server-driven HTMX interface with real-time SSE streaming. Operators investigating asset fatigue expect near-instant feedback. Frontier models typically exhibit higher time-to-first-token (TTFT) and slower token generation, turning conversational workflows into an awkward waiting game. Flash-tier models routinely respond in under 800ms.
+3. **Free-tier quota constraints:** For a capstone evaluation and demonstration on Render, relying on Google AI Studio's free tier was a practical design choice. On this tier, Pro models are restricted to 2 requests per minute and 50 requests per day. Because a single user interaction can trigger multi-turn diagnostic sequences (evaluating buying committees, checking fatigue, and drafting sequences), a Pro model would exhaust the daily quota after three or four queries. Flash models provide 15 RPM and 1,500 RPD, offering the necessary headroom for continuous test runs and live demonstrations.
+4. **Local SLM limitations:** Sub-3B parameter local models (e.g., Gemma-2B, Llama-3.2-1B) struggle significantly with complex function-calling schemas. In early testing, smaller local models frequently hallucinated nonexistent parameters or failed to return valid JSON tool calls. Gemini Flash provides high tool-calling reliability while remaining within acceptable latency and cost boundaries.
 
 ### Model selection in practice: Defaulting to gemini-3.6-flash vs. 3.8-flash preference
 
-From an analytical reasoning and tone perspective, **gemini-3.8-flash** is actually my preferred model: it writes with a noticeably crisper, commercially grounded executive cadence and shows exceptional contextual nuance when synthesizing complex buying committees. 
+From an analytical reasoning perspective, **gemini-3.8-flash** is technically the preferred model: it writes with a crisper commercial tone and demonstrates stronger nuance when synthesizing complex committee data.
 
-However, during continuous testing and evaluation runs, a practical reality emerged: because 3.8-flash is Google's newest and most popular flash model, it is heavily congested on the shared free tier. During peak evaluation periods, this resulted in frequent HTTP 429 (**RESOURCE_EXHAUSTED**) quota throttling, unexpected latency spikes, and transient availability drops. 
+However, continuous evaluation runs revealed an operational bottleneck: because 3.8-flash is Google's newest and most popular flash model, it suffers from heavy congestion on the shared free tier, causing frequent HTTP 429 (**RESOURCE_EXHAUSTED**) quota throttling and latency spikes.
 
-As a pragmatic engineering decision, I configured the default to **gemini-3.6-flash**:
-- **Better availability & less contention:** 3.6-flash experiences significantly less traffic on the free tier. This translates into rock-solid uptime, vastly fewer 429 rate-limit errors, and a consistently snappier time-to-first-token (TTFT) during live demonstrations.
-- **Flawless function calling:** Despite being slightly older, 3.6-flash handles the 16 MCP tool declarations with identical parameter accuracy, adhering strictly to required schemas without hallucination.
-- **Resilient fallback cascade:** Should 3.6-flash ever experience a hiccup, our rotating fallback chain immediately tries 3.8-flash and 3.5-flash across our key rotation pool before giving up, ensuring users never see a dropped request.
+To guarantee system stability during live evaluations and test automation, **gemini-3.6-flash** was selected as the default primary model due to its consistent availability on the free tier. When requests fail or hit rate limits, the fallback cascade automatically attempts 3.8-flash and 3.5-flash.
 
-### AI model abstraction layer
-I isolated all LLM interactions within a dedicated service layer (**app/services/llm_rotator.py**) rather than scattering SDK calls across the route handlers.
+#### Model fallback cascade
+- Primary model: **gemini-3.6-flash**
+- Fallback model 1: **gemini-3.8-flash**
+- Fallback model 2: **gemini-3.5-flash**
 
-This abstraction provides flexibility:
-- **Centralized schema management**: Updating the tool JSON schemas in one location ensures the LLM adapts to new parameter requirements.
-- **Model agnosticism**: The core application passes generic text prompts to the rotator, which handles provider-specific SDK logic. 
-- **Future-proofing**: If there is a need to migrate to an open-source local model (such as a self-hosted Llama or Mistral instance), only the adapter inside **llm_rotator.py** needs to be updated.
+#### Practical advantages of 3.6-flash:
+- **Consistent availability:** 3.6-flash experiences significantly less traffic on the free tier, providing reliable uptime and vastly fewer 429 rate-limit errors.
+- **Reliable tool calling:** 3.6-flash parses and executes the 16 MCP tool declarations with high schema compliance, adhering strictly to required arguments without parameter hallucination.
+- **Cascading resilience:** If 3.6-flash encounters an error, the rotating fallback chain attempts 3.8-flash and 3.5-flash across the API key rotation pool before raising an exception.
 
+### AI service abstraction layer
+All LLM interactions are isolated within **app/services/llm_rotator.py** rather than dispersed across route handlers.
 
-## 5. AI architecture: The model context protocol (MCP)-like function calling approach
+This abstraction provides three practical benefits:
+- **Centralized schema definitions**: Tool schemas are defined and updated in one place.
+- **Provider agnosticism**: Application routes pass text prompts to the rotator, which handles provider SDK communication, credential rotation, and response caching.
+- **Migration path**: Migrating to an alternative cloud provider or local LLM server requires changing only the adapter inside **llm_rotator.py**, leaving application routes untouched.
 
-To combat the inherent risk of large language model (LLM) hallucinations when analysing raw data, the AI copilot architecture heavily relies on a model context protocol (MCP)-like approach:
+## 5. AI architecture: Model context protocol (MCP) tool integration
 
-- **Deterministic data anchoring**: The AI does *not* query raw database tables freely, nor does it perform its own mathematical aggregations. Instead, deterministic, strictly tested Python functions run the core mathematical and business logic.
-- **Dynamic MCP function calling**: The copilot provides the LLM with structured JSON tool declarations (mcp_tools). When a user submits an analytical query or triggers an **Action center** task, Gemini dynamically selects which tool to invoke. FastAPI intercepts the function_call, executes the corresponding Python function in the modularized app/services/mcp_tools/ package (exposed via the app/services/analytics.py facade) against the SQLite database, and returns the verified JSON payload back to the model via types.Part.from_function_response.
-- **Hallucination elimination**: Because the LLM is only tasked with *interpreting*, *prioritising*, and *synthesising* factual context returned by verified Python functions—rather than performing arithmetic or generating unconstrained SQL—financial and performance metrics are mathematically consistent.
+To prevent language model hallucinations when analyzing marketing telemetry, the AI copilot uses an architecture modeled after the Model Context Protocol (MCP):
+
+- **Deterministic data anchoring**: The LLM never writes raw SQL queries or performs metric math. Instead, dedicated Python functions execute all data retrieval and calculations.
+- **Structured tool calling**: The copilot provides the model with 16 structured JSON tool definitions (**mcp_tools**). When an analytical question or Action Center task is received, Gemini selects the appropriate tool and arguments. The FastAPI backend executes the corresponding Python function in **app/services/mcp_tools/** against the SQLite database, returning the verified JSON payload back to the model.
+- **Grounding and consistency**: Because the LLM is restricted to interpreting and synthesizing verified data returned by deterministic functions, financial calculations, CPAs, and conversion counts remain mathematically consistent.
 
 ### MCP interaction flow
 The sequence diagram below illustrates the actual multi-turn execution loop implemented in app/api/chat.py:
@@ -181,7 +172,7 @@ To balance low-latency parallel execution with data precision, I implemented **a
 
 ## 6. Core technology stack
 
-To support my project idea of a modern AI enabled marketing telemetry engine I chose a lightweight, server-driven architecture to prioritize development speed, AI alignment and performance.
+To support my project idea of a modern AI enabled marketing telemetry engine I chose a lightweight, server-driven architecture to prioritize development speed, to keep LLM orchestration and data processing in the same Python process.
 Building a data-heavy telemetry engine with an embedded AI copilot presents an architectural tension: the application requires the analytical and agentic orchestration power of Python, yet demands the snappy, responsive feel of a modern SaaS dashboard. Rather than defaulting to a complex, decoupled architecture—such as a React frontend wired to a separate Python microservice, I deliberately chose a lightweight, server-driven stack built around FastAPI, HTMX, and SQLite. This combination eliminates the overhead of synchronising state across client and server, allows streaming AI responses and SQL query results to be handled natively in one place and ensures portability with minimal configuration overhead whether the project is running locally or is deployed to the cloud on Render.
 
 ### Backend: FastAPI (Python)
@@ -207,8 +198,7 @@ To ensure local development works out-of-the-box without requiring a Redis conta
 Chart.js is performant enough to handle multiple mini-charts dynamically initialized inside Alpine blocks.
 
 ## 7. Software and architectural patterns
-
-Every engineering decision involves a trade-off, and this project is no different. The following section describes the structural patterns I reached for, explains why they were appropriate for this context, and where I knowingly deviated from textbook ideals in the interest of delivery speed.
+The following section outlines the key structural patterns used in the codebase, the engineering rationale behind them, and intentional trade-offs made during development.
 
 ### Facade pattern
 
@@ -342,8 +332,8 @@ This quantitative improvement proves the value of the evaluation harness: instea
 
 ### 5. LLM resilience & cascading fallback testing
 Because LLMs and remote inference APIs are subject to both non-deterministic response structures and burst-quota throttling, the backend incorporates comprehensive resilience testing:
-- **Parser & Schema Failure Resilience**: The **tests/test_llm_parsers.py** suite uses **unittest.mock.patch** to inject synthetic, malformed JSON payloads. It asserts that when an LLM returns unparseable or truncated JSON, the backend catches the error cleanly and devolves to a safe fallback state rather than crashing the route with an HTTP 500.
-- **Cascading Fallback & Quota Resilience**: The **tests/test_model_fallback.py** suite simulates HTTP 429 (**RESOURCE_EXHAUSTED**) quota limits on the primary **gemini-3.8-flash** model. It verifies that **generate_content_with_fallback** correctly quarantines exhausted API keys into the penalty box and cascades execution down the Flash model chain (**gemini-3.8-flash** $\rightarrow$ **gemini-3.6-flash** $\rightarrow$ **gemini-3.5-flash**), guaranteeing service continuity without user-visible failures.
+- **Parser & schema failure resilience**: The **tests/test_llm_parsers.py** suite uses **unittest.mock.patch** to inject synthetic, malformed JSON payloads. It asserts that when an LLM returns unparseable or truncated JSON, the backend catches the error cleanly and devolves to a safe fallback state rather than crashing the route with an HTTP 500.
+- **Cascading fallback & quota resilience**: The **tests/test_model_fallback.py** suite simulates HTTP 429 (**RESOURCE_EXHAUSTED**) quota limits on the primary **gemini-3.8-flash** model. It verifies that **generate_content_with_fallback** correctly quarantines exhausted API keys into the penalty box and cascades execution down the Flash model chain (**gemini-3.8-flash** $\rightarrow$ **gemini-3.6-flash** $\rightarrow$ **gemini-3.5-flash**), guaranteeing service continuity without user-visible failures.
 
 ### 6. Presentation layer & endpoint smoke testing (API routes)
 Because the frontend relies on HTMX for dynamic swapping, the FastAPI backend acts as the presentation layer.
@@ -374,28 +364,37 @@ Since the architecture relies heavily on server-side rendering (SSR) via FastAPI
 
 ## 11. Technical debt & future architectural roadmap
 
-While some deliberate architectural shortcuts were taken in the data access layer to prioritise milestone delivery, the following structural refactorings address technical debt and chart the roadmap for a production-grade version:
+While deliberate architectural trade-offs were made to prioritize functional milestone delivery, the following areas represent identified technical debt and form the roadmap for a production-grade release:
 
-### 1. Multi-tier architectural decoupling: Domain, presentation, and data access (Roadmap)
-The monolyth analytics.py ouples three distinct architectural tiers that represent key technical debt to address:
-- **Descriptive telemetry vs. prescriptive actions:** Passive metric aggregations currently share a namespace with rule-based decision engines (e.g., asset fatigue decay alerts, next-best-action scoring, and sales target prioritization). Separating descriptive telemetry from prescriptive alert actions into a dedicated recommendation/action engine will allow business rules to evolve without risking core analytical regression.
-- **Abstracting data access (repository pattern):** Both the UI services and MCP tools still manage ad-hoc SQL strings and connections internally. Introducing a formal repository.py layer will isolate raw database access behind entity repositories, converting the analytics and MCP modules into pure calculation and orchestration engines.
+### 1. Data access abstraction & complete dependency injection (Repository pattern)
+Both the UI services and MCP tools currently manage ad-hoc SQL strings and direct SQLite connections internally (**get_db_connection()**). While FastAPI's native **Depends(get_db)** pattern is applied in the HTTP routing layer (**dashboard.py**), the MCP tool functions manage their own connections to prevent the **db** parameter from leaking into the LLM's function-calling JSON schema.
 
-### 2. Full rollout of dependency injection
-While FastAPI's native **dependency injection** (Depends(get_db)) has been successfully implemented in the UI routing layer (dashboard.py) to manage database connection lifecycles via the Unit of Work pattern, the core MCP AI tools in app/services/mcp_tools/ currently manage their own internal connections.
-- **Roadmap action:** A future refactor will decouple the AI tool schema definitions from the underlying Python functions. This will allow me to inject database dependencies cleanly into the analytics layer without accidentally exposing the db connection parameter to the LLM's automated function calling schema.
+**Roadmap action:** 
+Introducing a formal **repository.py** layer will decouple raw SQL execution from business logic. Entity repositories (e.g., **CampaignRepository**, **OpportunityRepository**) will accept injected database connections at the service layer, while outer tool wrappers expose clean parameter contracts to the LLM. This converts the MCP modules into pure calculation and orchestration engines without leaking internal database handles into prompt contexts.
+
+### 2. Separation of descriptive telemetry from prescriptive alert logic
+The monolithic **app/services/analytics.py** facade currently couples passive metric aggregations (e.g., CPA calculations, TAM percentages) with rule-based operational alert logic (e.g., asset fatigue thresholds, next-best-action scoring, and sales target prioritization). 
+
+**Roadmap action:** 
+Separating descriptive reporting queries from the prescriptive recommendation rules into an independent decision engine will allow marketing business logic to evolve without risking regressions in core analytical calculations.
 
 ### 3. Declarative tool chaining engine (MCP orchestration)
-To fully eliminate the need for hardcoded late binding in complex agentic workflows, the system will eventually adopt a full **declarative tool chaining** engine. Instead of the LLM guessing parameters or using hardcoded string enums, the LLM will construct a directed acyclic graph (DAG) using JSON references (e.g., budget: "$ref.get_budget_pacing.shortfall"). This will require building a robust Python orchestration layer capable of parsing the LLM's graph, executing tools sequentially, mapping dynamic output variables to inputs, and handling execution failures gracefully.
+To eliminate the need for hardcoded string late-binding (e.g., **budget="REMAINING_BUDGET"**) in multi-step agentic workflows, the system will adopt a declarative tool-chaining engine. Instead of relying on string tokens, the LLM will output a directed acyclic graph using JSON references (e.g., **budget: "$ref.get_budget_pacing.shortfall"**). A dedicated Python orchestration runner will parse the graph, execute dependent tools in topological order, pass dynamic variables between stages, and handle partial tool failures gracefully.
+
+### 4. Accessibility and inclusive UX (WCAG 2.1 compliance)
+The current user interface prioritizes high-density data presentation and dark-mode aesthetic contrast tailored to rapid executive scanning. However, several accessibility (a11y) gaps remain that must be addressed for formal enterprise deployment:
+- **Keyboard navigation & focus management:** While standard form controls are navigable, custom modal drawers (such as the target persona journey timeline and deep-dive account panels) lack formal keyboard focus traps and **Escape**-key dismissal handlers.
+- **Screen reader semantics:** HTMX dynamic swaps (**hx-swap="innerHTML"**) update content without full page reloads. Adding **aria-live="polite"** regions to the AI copilot chat stream, status strips, and dynamically swapped metric tabs is necessary to ensure screen readers announce incoming streaming tokens and filter updates.
+- **Color contrast & chart accessibility:** Certain low-saturation badge combinations require calibration against WCAG 2.1 AA standards. In addition, data-dense Chart.js canvas visualizations currently lack fallback tabular representations (**sr-only** tables) for visually impaired users.
 
 
-## 12. Project retrospective: Answering the executive question
+## 12. Conclusion & retrospective
 
-Returning to the problem posed at the beginning of this document: *Did spending $150,000 on the 'Offshore Wind' campaign help win the $10M Equinor contract?*
+When I started this capstone, the goal was simple: take 18 months of messy, disconnected B2B touchpoints and turn them into an attribution model and AI copilot that people could actually trust.
 
-Under traditional fragmented analytics, answering that required manual data extraction across disconnected platforms, usually resulting in unhelpful vanity metrics. The Campaign Telemetry Engine solves this by uniting three core mechanisms:
-1. **Deterministic identity resolution:** Programmatically tying top-of-funnel anonymous ad clicks to downstream CRM accounts and opportunity stages across an 18-month buyer journey.
-2. **Constrained MCP orchestration:** Offloading financial math and multi-touch attribution to strictly verified Python functions, completely eliminating LLM calculation hallucinations.
-3. **Action-driven server UI:** Surfacing asset fatigue and budget pacing anomalies automatically through HTMX, allowing marketing and sales teams to act on telemetry rather than just observing it.
+Looking back at the build, two main lessons shaped the final architecture:
 
-By combining deterministic backend calculations with agentic synthesis, the engine allows the CMO to demonstrate verified multi-touch influence on the Equinor deal within seconds—bridging the gap between marketing spend and closed pipeline revenue.
+- **Calculations belong in code, not in prompts.** During early testing, letting the LLM do calculations or extrapolate numbers produced wild estimates and broken logic. The breakthrough came from running 12 rounds of evaluations using the judge harness and locking down all the numbers behind strict, unit-tested Python functions. Once the model was restricted to explaining verified calculations rather than inventing them, the copilot became dependable.
+- **The unified stack is a strength, but with trade-offs.** Building the entire app around FastAPI, Jinja2, and HTMX allowed the data logic, UI rendering, and AI copilot to share a single source of truth in Python. This eliminated multi-tier setup challenges like the contract drift and API synchronization, and made it possible to test the whole data flow end-to-end. While a high-concurrency production deployment would eventually warrant separating the long-lived AI streaming workers from the presentation layer, keeping them unified in this prototype project kept the architecture clean, transparent, and focused on core data accuracy and actinability.
+
+The campaign telmetry engine prototype delivers exactly what was needed: reliable attribution numbers that match across the UI and the AI copilot, paired with practical next steps marketing teams can take right away.

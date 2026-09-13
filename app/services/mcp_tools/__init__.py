@@ -1,7 +1,7 @@
 """
-MCP Tools Package
+MCP tools package
 
-Modular domain packages exporting all 16 Model Context Protocol analytical functions.
+Modular domain packages exporting all 16 MCP analytical functions.
 """
 
 from .financial import (

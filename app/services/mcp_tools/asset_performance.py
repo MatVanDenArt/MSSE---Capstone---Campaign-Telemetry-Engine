@@ -1,5 +1,5 @@
 """
-Asset Performance & Content Health - Model Context Protocol (MCP) Tools
+Asset performance & content health - MCP tools
 
 Implements creative analytics, fatigue monitoring, and baseline benchmarking tools:
   - `evaluate_trickle_threshold`: Detects traffic decay (>95% drop sustained for 7 days).

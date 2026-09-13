@@ -13,7 +13,6 @@ __pycache__/
 *$py.class
 
 # Databases
-# Removed general db ignore so we can track the capstone database
 # *.db
 # *.sqlite3
 
@@ -25,9 +24,9 @@ __pycache__/
 .Trashes
 ehthumbs.db
 Thumbs.db
-t a s k . m d  
- l l m _ c a c h e . j s o n  
- 
+task.md 
+llm_cache.json  
+
 # Archives and Scratchpads
 _archive/
 scratch/

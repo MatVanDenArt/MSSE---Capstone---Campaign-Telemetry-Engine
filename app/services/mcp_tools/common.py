@@ -1,5 +1,5 @@
 """
-Shared Utilities for Model Context Protocol (MCP) Domain Tools
+Shared utilities for MCP tools
 
 Provides database path resolution and thread-isolated SQLite connections
 configured with `sqlite3.Row` dictionaries for all analytical sub-modules.

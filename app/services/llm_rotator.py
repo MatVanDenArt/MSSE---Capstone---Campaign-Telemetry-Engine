@@ -1,21 +1,22 @@
 """
-LLM Resilience, Key Rotation & Model Context Protocol (MCP) Tool Registry
+LLM resilience, key rotation & model context protocol (MCP) tool registry
 
 This module provides the foundational AI infrastructure for the Campaign Telemetry Engine:
-1. Multi-Key Round-Robin Rotation (`KeyManager`):
+
+1. Multi-key round-robin rotation (`KeyManager`):
    Mitigates Gemini API rate limits (HTTP 429 / RESOURCE_EXHAUSTED) by rotating across a pool
    of comma-delimited API keys in `GEMINI_API_KEYS`. Exhausted keys are automatically placed in
    a 60-second cooldown penalty box before re-entering circulation.
 
-2. Dual-Tier Response & Telemetry Caching:
+2. Dual-tier response & telemetry caching:
    Caches LLM responses by SHA-256 prompt hash. Uses Redis as the primary production cache
    (with 24h TTL) and falls back to a local JSON cache file (`.cache/llm_cache.json`) for dev environments.
 
-3. SDK Abstraction & Compatibility:
+3. SDK abstraction & compatibility:
    Wraps both the modern `google.genai` Client (`NewClientWrapper`) and legacy `google.generativeai`
    GenerativeModel (`LegacyModelWrapper`) with automatic response caching and quota metrics collection.
 
-4. MCP Tool Registry:
+4. MCP tool registry:
    Maintains the canonical JSON Schema declarations (`mcp_tools`) and Python callable dispatch map
    (`tool_functions`) for all 16 analytical functions exposed to the AI Copilot.
 """

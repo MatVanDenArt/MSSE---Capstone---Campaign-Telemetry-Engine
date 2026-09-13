@@ -1,5 +1,5 @@
 """
-Financial & Budgetary Analytics - Model Context Protocol (MCP) Tools
+Financial & budgetary analytics - MCP tools
 
 Implements core ROI, spend pacing, multi-touch attribution, and budget simulation tools:
   - `calculate_blended_cpa`: Cross-channel media spend vs CRM closed-won contracts.

@@ -26,14 +26,14 @@ Built with a lightweight stack focused on hyper-performance and rapid iteration.
 
 
 ## Documentation
-  - ****design_and_testing.md****: Comprehensive breakdown of the system architecture, caching strategy, and 5-tier testing approach.  
+  - [design_and_testing.md](design_and_testing.md): Comprehensive breakdown of the system architecture, caching strategy, and 5-tier testing approach.  
 
 ## Discovery and user stories
-  - ****Miro board****: https://miro.com/app/board/uXjVHt5PIk4=/?share_link_id=556611025724 
-  - ****discovery_and_user_stories.md****: Core project requirements, B2B telemetry pain points, and persona-driven user stories.
+  - **Miro board**: https://miro.com/app/board/uXjVHt5PIk4=/?share_link_id=556611025724 
+  - [discovery_and_user_stories.md](docs/discovery_and_user_stories.md): Core project requirements, B2B telemetry pain points, and persona-driven user stories.
 
 ## Project management
-  - ****Trello board****: https://trello.com/b/rDaAjrNu/capstone-marketing-telemetry-engine
+  - **Trello board**: https://trello.com/b/rDaAjrNu/capstone-marketing-telemetry-engine
 
 ## Setup instructions
 
