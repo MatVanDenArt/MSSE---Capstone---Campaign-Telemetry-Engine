@@ -274,6 +274,11 @@ Because enterprise marketing telemetry involves commercially sensitive client an
 
 Thanks to the adapter pattern in **app/services/llm_rotator.py**, switching from public Gemini APIs to a corporate private endpoint (or local LLM) requires changing only the **OPENAI_BASE_URL** environment variable, without touching application logic.
 
+#### 3. Authentication and access control for enterprise rollout
+The capstone prototype intentionally runs without an authentication layer so that evaluators can access the live Render URL immediately without creating accounts or managing login tokens.
+
+For a 50-user internal rollout, building custom user tables and password flows in Python would be the wrong move. In an enterprise environment, this would integrate directly with the company's existing identity provider (such as Microsoft Entra ID, Okta, or Google Workspace) using OpenID Connect (OIDC). FastAPI handles this cleanly via session middleware or JWT validation at the ingress proxy, ensuring that user identity and organizational groups are verified before requests ever touch the application routes.
+
 ### Recommended production path
 
 For a single enterprise client with approximately 50 users, the most pragmatic path is **Render deployment with managed PostgreSQL database and Gemini cloud API** (under an enterprise zero-retention agreement). The entire platform cost would be around **$80/month total** with zero server maintenance. If corporate IT mandates keeping all workloads inside company cloud boundaries, the application deployment could pivot seamlessly to **AWS App Runner + AWS Bedrock** without requiring Kubernetes or dedicated infrastructure teams.
@@ -387,6 +392,14 @@ The current user interface prioritizes high-density data presentation and dark-m
 - **Screen reader semantics:** HTMX dynamic swaps (**hx-swap="innerHTML"**) update content without full page reloads. Adding **aria-live="polite"** regions to the AI copilot chat stream, status strips, and dynamically swapped metric tabs is necessary to ensure screen readers announce incoming streaming tokens and filter updates.
 - **Color contrast & chart accessibility:** Certain low-saturation badge combinations require calibration against WCAG 2.1 AA standards. In addition, data-dense Chart.js canvas visualizations currently lack fallback tabular representations (**sr-only** tables) for visually impaired users.
 
+### 5. Identity, role-based access (RBAC), and tenant data isolation
+Because the prototype was built to demonstrate attribution mechanics rather than user management, the current database schema assumes a single, open organization. While queries are scoped by `campaign_id`, there is no concept of user ownership or tenant separation.
+
+**Roadmap action:**
+- **Tenant isolation:** Moving to PostgreSQL in production will allow implementing Row-Level Security (RLS) or mandatory `organization_id` filters across all repository queries, ensuring one company's pipeline data can never leak into another tenant's session.
+- **Role-based permissions:** Not every marketing user needs access to raw contract amounts or executive-tier CRM notes. Introducing roles (e.g., *Campaign Manager* vs. *Commercial Director*) will let the application filter which MCP tools the AI copilot is allowed to invoke for a given session.
+- **Audit logging:** Enterprise compliance (SOC 2, GDPR) requires tracking what commercial data users query. Adding an audit log middleware to record prompt queries and tool execution arguments will provide the required audit trail.
+
 
 ## 12. Conclusion & retrospective
 
@@ -395,6 +408,6 @@ When I started this capstone, the goal was simple: take 18 months of messy, disc
 Looking back at the build, two main lessons shaped the final architecture:
 
 - **Calculations belong in code, not in prompts.** During early testing, letting the LLM do calculations or extrapolate numbers produced wild estimates and broken logic. The breakthrough came from running 12 rounds of evaluations using the judge harness and locking down all the numbers behind strict, unit-tested Python functions. Once the model was restricted to explaining verified calculations rather than inventing them, the copilot became dependable.
-- **The unified stack is a strength, but with trade-offs.** Building the entire app around FastAPI, Jinja2, and HTMX allowed the data logic, UI rendering, and AI copilot to share a single source of truth in Python. This eliminated multi-tier setup challenges like the contract drift and API synchronization, and made it possible to test the whole data flow end-to-end. While a high-concurrency production deployment would eventually warrant separating the long-lived AI streaming workers from the presentation layer, keeping them unified in this prototype project kept the architecture clean, transparent, and focused on core data accuracy and actinability.
+- **The unified stack is a strength, but with trade-offs.** Building the entire app around FastAPI, Jinja2, and HTMX allowed the data logic, UI rendering, and AI copilot to share a single source of truth in Python. This eliminated multi-tier setup challenges like the contract drift and API synchronization, and made it possible to test the whole data flow end-to-end. While a high-concurrency production deployment would eventually warrant separating the long-lived AI streaming workers from the presentation layer, keeping them unified in this prototype project kept the architecture clean, transparent, and focused on core data accuracy and actionability.
 
-The campaign telmetry engine prototype delivers exactly what was needed: reliable attribution numbers that match across the UI and the AI copilot, paired with practical next steps marketing teams can take right away.
+The campaign telemetry engine prototype delivers exactly what was needed: reliable attribution numbers that match across the UI and the AI copilot, paired with practical next steps marketing teams can take right away.
