@@ -277,7 +277,7 @@ Thanks to the adapter pattern in **app/services/llm_rotator.py**, switching from
 #### 3. Authentication and access control for enterprise rollout
 The capstone prototype intentionally runs without an authentication layer so that evaluators can access the live Render URL immediately without creating accounts or managing login tokens.
 
-For a 50-user internal rollout, building custom user tables and password flows in Python would be the wrong move. In an enterprise environment, this would integrate directly with the company's existing identity provider (such as Microsoft Entra ID, Okta, or Google Workspace) using OpenID Connect (OIDC). FastAPI handles this cleanly via session middleware or JWT validation at the ingress proxy, ensuring that user identity and organizational groups are verified before requests ever touch the application routes.
+In an enterprise environment, the application would integrate directly with the company's existing identity provider such as Microsoft Entra ID or Okta. FastAPI handles this cleanly via session middleware or **JSON web token** validation at the entry proxy, ensuring that user identity and organizational groups are verified before requests ever touch the application routes.
 
 ### Recommended production path
 
@@ -392,13 +392,13 @@ The current user interface prioritizes high-density data presentation and dark-m
 - **Screen reader semantics:** HTMX dynamic swaps (**hx-swap="innerHTML"**) update content without full page reloads. Adding **aria-live="polite"** regions to the AI copilot chat stream, status strips, and dynamically swapped metric tabs is necessary to ensure screen readers announce incoming streaming tokens and filter updates.
 - **Color contrast & chart accessibility:** Certain low-saturation badge combinations require calibration against WCAG 2.1 AA standards. In addition, data-dense Chart.js canvas visualizations currently lack fallback tabular representations (**sr-only** tables) for visually impaired users.
 
-### 5. Identity, role-based access (RBAC), and tenant data isolation
-Because the prototype was built to demonstrate attribution mechanics rather than user management, the current database schema assumes a single, open organization. While queries are scoped by `campaign_id`, there is no concept of user ownership or tenant separation.
+### 5. Identity, role-based access, and tenant data isolation
+Because the prototype was built to demonstrate attribution mechanics rather than user management, the current database schema assumes a single, open organization. While queries are scoped by campaign_id, there is no concept of user ownership or tenant separation.
 
 **Roadmap action:**
-- **Tenant isolation:** Moving to PostgreSQL in production will allow implementing Row-Level Security (RLS) or mandatory `organization_id` filters across all repository queries, ensuring one company's pipeline data can never leak into another tenant's session.
+- **Tenant isolation:** Moving to PostgreSQL in production will allow implementing row-level security or mandatory organization_id filters across all repository queries, ensuring one company's pipeline data can never leak into another tenant's session.
 - **Role-based permissions:** Not every marketing user needs access to raw contract amounts or executive-tier CRM notes. Introducing roles (e.g., *Campaign Manager* vs. *Commercial Director*) will let the application filter which MCP tools the AI copilot is allowed to invoke for a given session.
-- **Audit logging:** Enterprise compliance (SOC 2, GDPR) requires tracking what commercial data users query. Adding an audit log middleware to record prompt queries and tool execution arguments will provide the required audit trail.
+- **Audit logging:** Enterprise compliance (GDPR) requires tracking what commercial data users query. Adding an audit log middleware to record prompt queries and tool execution arguments will provide the required audit trail.
 
 
 ## 12. Conclusion & retrospective
